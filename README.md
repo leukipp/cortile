@@ -16,7 +16,7 @@ $ go get github.com/blrsn/zentile
 $ "$GOPATH/bin/zentile"
 ```
 
-Note: golang >= 1.10 required.
+[Binary releases](https://github.com/blrsn/zentile/releases) are also available.
 
 ### Commands
 
@@ -37,7 +37,7 @@ Keybinding                                          | Description
 ### Credits
 
 Inspired by BurntSushi's [pytyle](https://github.com/BurntSushi/pytyle3).  
-Theme used in the above gif comes from addy-dclxvi's [openbox theme collection](https://github.com/addy-dclxvi/openbox-theme-collections).
+Theme used in the screencast above, comes from addy-dclxvi's [openbox theme collection](https://github.com/addy-dclxvi/openbox-theme-collections).
 
 ## License
 
