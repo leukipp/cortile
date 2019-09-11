@@ -28,7 +28,9 @@ func (l *VerticalLayout) Do() {
 		}
 
 		for i, c := range l.masters {
-			c.UnDecorate()
+			if Config.HideDecor {
+				c.UnDecorate()
+			}
 			c.MoveResize(mx+gap, gap+wy+i*(mh+gap), mw-2*gap, mh)
 		}
 	}
@@ -40,7 +42,9 @@ func (l *VerticalLayout) Do() {
 		}
 
 		for i, c := range l.slaves {
-			c.UnDecorate()
+			if Config.HideDecor {
+				c.UnDecorate()
+			}
 			c.MoveResize(sx, gap+wy+i*(sh+gap), sw-gap, sh)
 		}
 	}
@@ -71,7 +75,9 @@ func (l *HorizontalLayout) Do() {
 		}
 
 		for i, c := range l.masters {
-			c.UnDecorate()
+			if Config.HideDecor {
+				c.UnDecorate()
+			}
 			c.MoveResize(gap+wx+i*(mw+gap), my+gap, mw, mh-2*gap)
 		}
 	}
@@ -83,7 +89,9 @@ func (l *HorizontalLayout) Do() {
 		}
 
 		for i, c := range l.slaves {
-			c.UnDecorate()
+			if Config.HideDecor {
+				c.UnDecorate()
+			}
 			c.MoveResize(gap+wy+i*(sw+gap), sy, sw, sh-gap)
 		}
 	}
