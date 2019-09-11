@@ -16,6 +16,7 @@ type cfg struct {
 	Keybindings map[string]string
 	Gap         int
 	Proportion  float64
+	HideDecor   bool `toml:"remove_decorations"`
 }
 
 func init() {
@@ -54,40 +55,44 @@ func configFilePath() string {
 	return filepath.Join(configFolderPath(), "config.toml")
 }
 
-var defaultConfig = `
+var defaultConfig = `# Window decorations will be removed if set to true
+remove_decorations = false
+
+# Adds spacing between windows
 gap = 5
+
+# How much to increment the master area size.
 proportion = 0.1
 
 [keybindings]
 
-# Tile the current workspace
+# Tile the current workspace.
 tile = "Control-Shift-t"
 
-# Untile the current workspace
+# Untile the current workspace.
 untile = "Control-Shift-u"
 
-# Make the active window as master
+# Make the active window as master.
 make_active_window_master = "Control-Shift-m"
 
-# Increase number of masters
+# Increase number of masters.
 increase_master = "Control-Shift-i"
 
-# Decrease the number of masters
+# Decrease the number of masters.
 decrease_master = "Control-Shift-d"
 
-# Cycles through the available layouts
+# Cycles through the available layouts.
 switch_layout = "Control-Shift-s"
 
-# Refreshes
-refresh = "Control-Shift-r"
-
-# Moves focus to the next window
+# Moves focus to the next window.
 next_window = "Control-Shift-n"
 
-# Moves focus to the previous window
+# Moves focus to the previous window.
 previous_window = "Control-Shift-p"
 
+# Increases the size of the master windows.
 increment_master = "Control-bracketright"
 
+# Decreases the size of the master windows.
 decrement_master = "Control-bracketleft"
 `

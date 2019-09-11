@@ -8,7 +8,6 @@ Automatic Tiling for EWMH Complaint Window Managers.
 - Comes with two simple tiling layouts [Vertical & Horizontal]
 - Customizable gap between tiling windows.
 - Autodetection of panels and docks.
-- Auto-hides window decorations on tiling.
 
 ## INSTALLATION
 ```

@@ -57,10 +57,23 @@ func (c Client) name() string {
 
 func (c Client) MoveResize(x, y, width, height int) {
 	c.Unmaximize()
-	err := c.window.WMMoveResize(x, y, width, height)
+
+	dw, dh := c.DecorDimensions()
+	err := c.window.WMMoveResize(x, y, width-dw, height-dh)
+
 	if err != nil {
 		log.Info("Error when moving ", c.name(), " ", err)
 	}
+}
+
+// DecorDimensions returns the width and height occupied by window decorations
+func (c Client) DecorDimensions() (width int, height int) {
+	cGeom, _ := xwindow.RawGeometry(state.X, xproto.Drawable(c.window.Id))
+	pGeom, _ := c.window.DecorGeometry()
+
+	w := pGeom.Width() - cGeom.Width()
+	h := pGeom.Height() - cGeom.Height()
+	return w, h
 }
 
 func (c Client) Unmaximize() {

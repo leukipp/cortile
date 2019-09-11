@@ -73,10 +73,4 @@ func bindKeys(t *tracker) {
 		ws.ActiveLayout().DecrementMaster()
 		ws.Tile()
 	})
-	keybind.KeyPressFun(
-		func(X *xgbutil.XUtil, ev xevent.KeyPressEvent) {
-			ws := t.workspaces[state.CurrentDesk]
-			ws.printStore()
-		}).Connect(state.X, state.X.RootWin(),
-		"Control-Shift-g", true)
 }
