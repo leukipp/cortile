@@ -1,21 +1,30 @@
 # zentile
-Automatic Tiling for EWMH Complaint Window Managers.
+Automatic Tiling for [EWMH Complaint Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints).
 
 ![zentile screencast](docs/screencast.gif)
 
 ## FEATURES
-- Zentile allows tiling on a per workspace basis. 
-- Comes with two simple tiling layouts [Vertical & Horizontal]
+- Workspace based tiling. You can enable tiling in one workspace and leave others untouched.
+- Comes with two simple tiling layouts (Vertical & Horizontal)
 - Customizable gap between tiling windows.
 - Autodetection of panels and docks.
 
 ## INSTALLATION
+**Binary Release**
+
+Download appropriate executable from [releases page](https://github.com/blrsn/zentile/releases)
+
+```
+$ chmod a+x zentile-linux-amd64
+$ ./zentile-linux-amd64
+```
+
+**Go get**
+
 ```
 $ go get github.com/blrsn/zentile
 $ "$GOPATH/bin/zentile"
 ```
-
-[Binary releases](https://github.com/blrsn/zentile/releases) are also available.
 
 ### Commands
 
@@ -31,7 +40,10 @@ Keybinding                                          | Description
 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>i</kbd>       | Increment number of master windows
 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd>       | Decrement number of master windows
 
-**Note:** zentile has been tested on Openbox.It should technically work with any ewmh complaint window manager.
+**Note:** Zentile has been tested on Openbox. It should work with any ewmh complaint window manager.
+
+### Known Bugs
+Zentile doesn't work well when iconify animation is enabled in Openbox.
 
 ### Credits
 

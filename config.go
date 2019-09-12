@@ -65,6 +65,10 @@ gap = 5
 proportion = 0.1
 
 [keybindings]
+# key sequences can have zero or more modifiers and exactly one key.
+# example: Control-Shift-t has two modifiers and one key.
+# You can view which keys activate which modifier using the 'xmodmap' program.
+# Key symbols can be found by pressing keys using the 'xev' program
 
 # Tile the current workspace.
 tile = "Control-Shift-t"
