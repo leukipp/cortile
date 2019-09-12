@@ -1,3 +1,4 @@
+// Package state provides the up-to-date state of the desktop.
 package state
 
 import (
@@ -11,15 +12,21 @@ import (
 )
 
 var (
-	X           *xgbutil.XUtil
-	DeskCount   uint
-	ActiveWin   xproto.Window
-	CurrentDesk uint
-	Stacking    []xproto.Window
+	X           *xgbutil.XUtil  // X connection object
+	DeskCount   uint            // Number of desktop workspaces.
+	ActiveWin   xproto.Window   // Current Active window
+	CurrentDesk uint            // Current Desktop
+	Stacking    []xproto.Window // List of client windows
 	workArea    []ewmh.Workarea
 )
 
-func init() {
+// Populate initializes the state variables and registers the callbacks required for keeping them up-to-date.
+func Populate() {
+	var err error
+	X, err = xgbutil.NewConn()
+	checkErr(err)
+
+	checkEwmhCompliance()
 	populateState()
 
 	win := xwindow.New(X, X.RootWin())
@@ -29,14 +36,13 @@ func init() {
 
 func populateState() {
 	var err error
-	X, err = xgbutil.NewConn()
-	checkErr(err)
-
 	DeskCount, err = ewmh.NumberOfDesktopsGet(X)
 	checkErr(err)
 
 	ActiveWin, err = ewmh.ActiveWindowGet(X)
-	checkErr(err)
+	if err != nil {
+		log.Info(err)
+	}
 
 	CurrentDesk, err = ewmh.CurrentDesktopGet(X)
 	checkErr(err)
@@ -51,6 +57,13 @@ func populateState() {
 func checkErr(err error) {
 	if err != nil {
 		log.Fatal("Error populating state: ", err)
+	}
+}
+
+func checkEwmhCompliance() {
+	_, err := ewmh.GetEwmhWM(X)
+	if err != nil {
+		log.Fatal("Window manager is not EWMH complaint!")
 	}
 }
 
@@ -73,6 +86,7 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	}
 }
 
+// WorkAreaDimensions returns the dimension of the requested workspace.
 func WorkAreaDimensions(num uint) (x, y, width, height int) {
 	w := workArea[num]
 	x = w.X
