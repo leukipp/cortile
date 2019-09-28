@@ -48,6 +48,7 @@ Zentile doesn't work well when iconify animation is enabled in Openbox.
 ### Credits
 
 Inspired by BurntSushi's [pytyle](https://github.com/BurntSushi/pytyle3).  
+This project would not have been possible without [xgbutil](https://github.com/BurntSushi/xgbutil).  
 Theme used in the screencast above, comes from addy-dclxvi's [openbox theme collection](https://github.com/addy-dclxvi/openbox-theme-collections).
 
 ## License
