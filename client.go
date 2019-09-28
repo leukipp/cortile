@@ -1,8 +1,11 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil/ewmh"
+	"github.com/BurntSushi/xgbutil/icccm"
 	"github.com/BurntSushi/xgbutil/motif"
 	"github.com/BurntSushi/xgbutil/xrect"
 	"github.com/BurntSushi/xgbutil/xwindow"
@@ -134,6 +137,21 @@ func isHidden(w xproto.Window) bool {
 	states, _ := ewmh.WmStateGet(state.X, w)
 	for _, state := range states {
 		if state == "_NET_WM_STATE_HIDDEN" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func shouldIgnore(w xproto.Window) bool {
+	c, err := icccm.WmClassGet(state.X, w)
+	if err != nil {
+		log.Warn(err)
+	}
+
+	for _, s := range Config.WindowsToIgnore {
+		if strings.EqualFold(c.Class, s) {
 			return true
 		}
 	}

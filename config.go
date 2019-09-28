@@ -13,10 +13,11 @@ import (
 var Config cfg
 
 type cfg struct {
-	Keybindings map[string]string
-	Gap         int
-	Proportion  float64
-	HideDecor   bool `toml:"remove_decorations"`
+	Keybindings     map[string]string
+	WindowsToIgnore []string `toml:"ignore"`
+	Gap             int
+	Proportion      float64
+	HideDecor       bool `toml:"remove_decorations"`
 }
 
 func init() {
@@ -55,8 +56,13 @@ func configFilePath() string {
 	return filepath.Join(configFolderPath(), "config.toml")
 }
 
-var defaultConfig = `# Window decorations will be removed if set to true
+var defaultConfig = `# Window decorations will be removed when tiling if set to true
 remove_decorations = false
+
+# Zentile will ignore windows added to this list.
+# You'll have to add WM_CLASS property of the window you want ignored.
+# You can get WM_CLASS property of a window, by running "xprop WM_CLASS" and clicking on the window.
+# ignore = ['ulauncher', 'gnome-screenshot']
 
 # Adds spacing between windows
 gap = 5
@@ -79,7 +85,7 @@ untile = "Control-Shift-u"
 # Make the active window as master.
 make_active_window_master = "Control-Shift-m"
 
-# Increase number of masters.
+# Increase the number of masters.
 increase_master = "Control-Shift-i"
 
 # Decrease the number of masters.

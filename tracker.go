@@ -29,7 +29,7 @@ func initTracker(ws map[uint]*Workspace) *tracker {
 func (tr *tracker) populateClients() {
 	clientList, _ := ewmh.ClientListStackingGet(state.X)
 	for _, w := range clientList {
-		if isHidden(w) {
+		if isHidden(w) || shouldIgnore(w) {
 			continue
 		}
 		tr.trackWindow(w)
