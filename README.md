@@ -40,10 +40,9 @@ Keybinding                                          | Description
 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>i</kbd>       | Increment number of master windows
 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd>       | Decrement number of master windows
 
-**Note:** Zentile has been tested on Openbox. It should work with any ewmh complaint window manager.
+The config file is located at `~/.config/zentile/config.toml`
 
-### Known Bugs
-Zentile doesn't work well when iconify animation is enabled in Openbox.
+**Note:** Zentile has been tested on Openbox. It should work with any EWMH complaint window manager.
 
 ### Credits
 

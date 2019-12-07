@@ -41,7 +41,7 @@ func configFolderPath() string {
 	case "linux":
 		xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
 		if xdgConfigHome != "" {
-			configFolder = xdgConfigHome
+			configFolder = filepath.Join(xdgConfigHome, "zentile")
 		} else {
 			configFolder, _ = homedir.Expand("~/.config/zentile/")
 		}
