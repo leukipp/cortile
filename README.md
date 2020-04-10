@@ -1,5 +1,8 @@
-# zentile
-Automatic Tiling for [EWMH Complaint Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints).
+<p align="center">
+  <img src="/docs/zentile-logo.png" alt="zentile logo"/>
+</p>
+
+On-demand tiling for Openbox, Xfce and other [EWMH Complaint Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints).
 
 ![zentile screencast](docs/screencast.gif)
 
