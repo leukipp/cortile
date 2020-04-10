@@ -4,34 +4,38 @@
 
 On-demand tiling for Openbox, Xfce and other [EWMH Complaint Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints).
 
-![zentile screencast](docs/screencast.gif)
+### Table of Contents
+- [Features](#features)
+- [Installation](#installation)
+- [Config](#config)
+- [Credits](#credits)
 
-## FEATURES
+### Features
 - Workspace based tiling. You can enable tiling in one workspace and leave others untouched.
-- Comes with two simple tiling layouts (Vertical & Horizontal)
+- Ships with two simple tiling layouts (Vertical & Horizontal)
 - Customizable gap between tiling windows.
 - Autodetection of panels and docks.
 
-## INSTALLATION
-**Binary Release**
+### Installation
 
-Download appropriate executable from [releases page](https://github.com/blrsn/zentile/releases)
+Download the pre-compiled binary from [releases page](https://github.com/blrsn/zentile/releases)
+and set executable permission.
 
 ```
 $ chmod a+x zentile-linux-amd64
 $ ./zentile-linux-amd64
 ```
 
-**Go get**
+Or compile from source
 
 ```
-$ go get github.com/blrsn/zentile
-$ "$GOPATH/bin/zentile"
+$ go get -u github.com/blrsn/zentile
+$ go install github.com/blrsn/zentile
 ```
 
-### Commands
+### Config
 
-Keybinding                                          | Description
+Default Keybinding                                  | Description
 ----------------------------------------------------|---------------------------------------
 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>t</kbd>       | Tile current workspace 
 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>u</kbd>       | Untile current workspace
@@ -45,14 +49,12 @@ Keybinding                                          | Description
 
 The config file is located at `~/.config/zentile/config.toml`
 
-**Note:** Zentile has been tested on Openbox. It should work with any EWMH complaint window manager.
-
 ### Credits
 
 Inspired by BurntSushi's [pytyle](https://github.com/BurntSushi/pytyle3).  
 This project would not have been possible without [xgbutil](https://github.com/BurntSushi/xgbutil).  
-Theme used in the screencast above, comes from addy-dclxvi's [openbox theme collection](https://github.com/addy-dclxvi/openbox-theme-collections).
+Logo was made with [Logomakr](https://logomakr.com/)
 
-## License
+### License
 
 zentile is licensed under the MIT License. See the full license text in [`LICENSE`](LICENSE).
