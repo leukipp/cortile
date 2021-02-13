@@ -92,7 +92,7 @@ func (l *HorizontalLayout) Do() {
 			if Config.HideDecor {
 				c.UnDecorate()
 			}
-			c.MoveResize(gap+wy+i*(sw+gap), sy, sw, sh-gap)
+			c.MoveResize(gap+wx+i*(sw+gap), sy, sw, sh-gap)
 		}
 	}
 
