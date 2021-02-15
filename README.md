@@ -42,10 +42,11 @@ Default Keybinding                                  | Description
 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>s</kbd>       | Cycle through layouts
 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>n</kbd>       | Goto next window
 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>p</kbd>       | Goto previous window
+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>m</kbd>       | Make the active window as master
 <kbd>Ctrl</kbd>+<kbd>]</kbd>                        | Increase size of master windows
 <kbd>Ctrl</kbd>+<kbd>[</kbd>                        | Decrease size of master windows
-<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>i</kbd>       | Increment number of master windows
-<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd>       | Decrement number of master windows
+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>i</kbd>       | Increase number of master windows
+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd>       | Decrease number of master windows
 
 The config file is located at `~/.config/zentile/config.toml`
 
