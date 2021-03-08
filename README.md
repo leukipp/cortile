@@ -2,7 +2,7 @@
   <img src="/docs/zentile-logo.png" alt="zentile logo"/>
 </p>
 
-On-demand tiling for Openbox, Xfce and other [EWMH Complaint Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints).
+On-demand tiling for Openbox, Xfce and other [EWMH Compliant Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints).
 
 ### Table of Contents
 - [Features](#features)
