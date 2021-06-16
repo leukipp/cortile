@@ -33,6 +33,14 @@ $ go get -u github.com/blrsn/zentile
 $ go install github.com/blrsn/zentile
 ```
 
+#### Arch Linux
+
+With an AUR helper such as [`yay`](https://github.com/Jguer/yay) installed:
+```
+$ yay -S zentile
+```
+
+
 ### Config
 
 Default Keybinding                                  | Description
