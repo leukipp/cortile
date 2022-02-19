@@ -36,7 +36,7 @@ func writeDefaultConfig() {
 	}
 
 	if _, err := os.Stat(configFilePath()); os.IsNotExist(err) {
-		defaultConfig, err := ioutil.ReadFile(filepath.Join("..", "config.toml"))
+		defaultConfig, err := ioutil.ReadFile("config.toml")
 		if err != nil {
 			log.Error(err)
 		}
