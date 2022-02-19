@@ -1,69 +1,76 @@
-<p align="center">
-  <img src="/docs/zentile-logo.png" alt="zentile logo"/>
-</p>
+# Cortile [WIP]
+Tiling manager with hot corner support for Xfce, OpenBox and other [EWMH Compliant Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints).
 
-On-demand tiling for Openbox, Xfce and other [EWMH Compliant Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints).
+## Features
+- Workspace based tiling.
+- Keyboard and hot corner events.
+- Vertical and horizontal tiling.
+- Resize of master/slave area.
+- Auto detection of panels.
+- Multi monitor support.
+- Customizable layouts.
 
-### Table of Contents
-- [Features](#features)
-- [Installation](#installation)
-- [Config](#config)
-- [Credits](#credits)
-
-### Features
-- Workspace based tiling. You can enable tiling in one workspace and leave others untouched.
-- Ships with two simple tiling layouts (Vertical & Horizontal)
-- Customizable gap between tiling windows.
-- Autodetection of panels and docks.
-
-### Installation
-
-Download the pre-compiled binary from [releases page](https://github.com/blrsn/zentile/releases)
-and set executable permission.
-
-```
-$ chmod a+x zentile-linux-amd64
-$ ./zentile-linux-amd64
+## Install
+### Remote source
+Install from GitHub:
+```bash
+go get -u github.com/leukipp/Cortile
+go install github.com/leukipp/Cortile
 ```
 
-Or compile from source
-
-```
-$ go get -u github.com/blrsn/zentile
-$ go install github.com/blrsn/zentile
-```
-
-#### Arch Linux
-
-With an AUR helper such as [`yay`](https://github.com/Jguer/yay) installed:
-```
-$ yay -S zentile
+### Local source
+Fetch from GitHub:
+```bash
+git clone https://github.com/leukipp/Cortile.git
+cd Cortile
 ```
 
+Make local changes and run:
+```bash
+go build
+go install
+```
 
-### Config
+## Run
+Start in verbose mode:
+```bash
+Cortile -v
+```
+Resizing of windows in Xfce can be done with <kbd>Alt</kbd>+<kbd>Right-Click</kbd>.
 
-Default Keybinding                                  | Description
-----------------------------------------------------|---------------------------------------
-<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>t</kbd>       | Tile current workspace 
-<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>u</kbd>       | Untile current workspace
-<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>s</kbd>       | Cycle through layouts
-<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>n</kbd>       | Goto next window
-<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>p</kbd>       | Goto previous window
-<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>m</kbd>       | Make the active window as master
-<kbd>Ctrl</kbd>+<kbd>]</kbd>                        | Increase size of master windows
-<kbd>Ctrl</kbd>+<kbd>[</kbd>                        | Decrease size of master windows
-<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>i</kbd>       | Increase number of master windows
-<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd>       | Decrease number of master windows
+## Config
+The config file is located at `~/.config/Cortile/config.toml`.
 
-The config file is located at `~/.config/zentile/config.toml`
+| Corner events  | Description                       |
+| -------------- | --------------------------------- |
+| `top-left`     | Cycle through layouts             |
+| `top-right`    | Make the active window as master  |
+| `bottom-right` | Increase number of master windows |
+| `bottom-left`  | Decrease number of master windows |
 
-### Credits
+| Key events                                    | Description                       |
+| --------------------------------------------- | --------------------------------- |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>t</kbd> | Tile current workspace            |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>u</kbd> | Untile current workspace          |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>m</kbd> | Make the active window as master  |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>i</kbd> | Increase number of master windows |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd> | Decrease number of master windows |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>s</kbd> | Cycle through layouts             |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>n</kbd> | Goto next window                  |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>p</kbd> | Goto previous window              |
+| <kbd>Ctrl</kbd>+<kbd>]</kbd>                  | Increase size of master windows   |
+| <kbd>Ctrl</kbd>+<kbd>[</kbd>                  | Decrease size of master windows   |
 
-Inspired by BurntSushi's [pytyle](https://github.com/BurntSushi/pytyle3).  
-This project would not have been possible without [xgbutil](https://github.com/BurntSushi/xgbutil).  
-Logo was made with [Logomakr](https://logomakr.com/)
+## WIP
+- Create default config (current: copy config template manually).
+- Configurable hot corners (current: hardcoded corner events).
+- Configurable LTR/RTL support (current: master is on the right side).
+- Proper dual monitor support (current: only biggest monitor is tiled).
+- Resizable windows (current: only master/slave proportion can be changed).
 
-### License
+## Credits
+Based on **zentile** from [Berin Larson](https://github.com/blrsn/):
+- [https://github.com/blrsn/zentile](https://github.com/blrsn/zentile)
 
-zentile is licensed under the MIT License. See the full license text in [`LICENSE`](LICENSE).
+## License
+[MIT](/LICENSE)

@@ -1,4 +1,4 @@
-module github.com/blrsn/zentile
+module github.com/leukipp/Cortile
 
 go 1.12
 

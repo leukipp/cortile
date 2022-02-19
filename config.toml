@@ -1,0 +1,67 @@
+# The WM_CLASS (class="ignore all", title="but allow main") of the window used for perl regex match.
+# You can find WM_CLASS string name by running "xprop WM_CLASS".
+ignore = [
+    ['xf.*', ''],
+    ['nm.*', ''],
+    ['gcr.*', ''],
+    ['polkit.*', ''],
+    ['wrapper.*', ''],
+    ['lightdm.*', ''],
+    ['blueman.*', ''],
+    ['pavucontrol.*', ''],
+    ['thunderbird.*', ''],
+    ['engrampa.*', ''],
+    ['gimp.*', '.*GIMP'],
+    ['inkscape.*', '.*Inkscape'],
+    ['firefox.*', '.*Mozilla Firefox'],
+]
+
+# Tiling will be enabled on application start if set to true
+startup_tiling = true
+
+# Window decorations will be removed when tiling if set to true
+remove_decorations = false
+
+# Adds spacing between windows
+gap = 4
+
+# Initial division of master area size.
+division = 0.5
+
+# How much to increment the master area size.
+proportion = 0.1
+
+
+[keybindings]
+# You can view which keys activate which modifier using the 'xmodmap' program.
+# Key symbols can be found by pressing keys using the 'xev' program.
+
+# Tile the current workspace.
+tile = "Control-Shift-t"
+
+# Untile the current workspace.
+untile = "Control-Shift-u"
+
+# Make the active window as master.
+make_active_window_master = "Control-Shift-m"
+
+# Increase the number of masters.
+increase_master = "Control-Shift-i"
+
+# Decrease the number of masters.
+decrease_master = "Control-Shift-d"
+
+# Cycles through the available layouts.
+switch_layout = "Control-Shift-s"
+
+# Moves focus to the next window.
+next_window = "Control-Shift-n"
+
+# Moves focus to the previous window.
+previous_window = "Control-Shift-p"
+
+# Increases the size of the master windows.
+increment_master = "Control-bracketright"
+
+# Decreases the size of the master windows.
+decrement_master = "Control-bracketleft"
