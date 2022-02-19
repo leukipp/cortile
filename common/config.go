@@ -9,6 +9,8 @@ import (
 	"github.com/BurntSushi/toml"
 
 	"github.com/mitchellh/go-homedir"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var Config ConfigMapper
@@ -34,8 +36,16 @@ func writeDefaultConfig() {
 	}
 
 	if _, err := os.Stat(configFilePath()); os.IsNotExist(err) {
-		ioutil.WriteFile(configFilePath(), []byte(defaultConfig), 0644)
+		defaultConfig, err := ioutil.ReadFile(filepath.Join("..", "config.toml"))
+		if err != nil {
+			log.Error(err)
+		}
+		ioutil.WriteFile(configFilePath(), defaultConfig, 0644)
 	}
+}
+
+func configFilePath() string {
+	return filepath.Join(configFolderPath(), "config.toml")
 }
 
 func configFolderPath() string {
@@ -54,9 +64,3 @@ func configFolderPath() string {
 
 	return configFolder
 }
-
-func configFilePath() string {
-	return filepath.Join(configFolderPath(), "config.toml")
-}
-
-var defaultConfig = `TODO`
