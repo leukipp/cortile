@@ -6,8 +6,8 @@ import (
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil"
 
-	"github.com/leukipp/Cortile/common"
-	"github.com/leukipp/Cortile/desktop"
+	"github.com/leukipp/cortile/common"
+	"github.com/leukipp/cortile/desktop"
 
 	log "github.com/sirupsen/logrus"
 )

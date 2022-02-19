@@ -11,8 +11,8 @@ import (
 	"github.com/BurntSushi/xgbutil/xevent"
 	"github.com/BurntSushi/xgbutil/xprop"
 
-	"github.com/leukipp/Cortile/common"
-	"github.com/leukipp/Cortile/store"
+	"github.com/leukipp/cortile/common"
+	"github.com/leukipp/cortile/store"
 
 	log "github.com/sirupsen/logrus"
 )

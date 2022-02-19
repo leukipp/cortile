@@ -1,4 +1,4 @@
-module github.com/leukipp/Cortile
+module github.com/leukipp/cortile
 
 go 1.12
 

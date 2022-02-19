@@ -7,9 +7,9 @@ import (
 
 	"github.com/BurntSushi/xgbutil/xevent"
 
-	"github.com/leukipp/Cortile/common"
-	"github.com/leukipp/Cortile/desktop"
-	"github.com/leukipp/Cortile/input"
+	"github.com/leukipp/cortile/common"
+	"github.com/leukipp/cortile/desktop"
+	"github.com/leukipp/cortile/input"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -49,7 +49,7 @@ func setLogLevel() {
 	var vv bool
 	var v bool
 
-	flag.StringVar(&l, "l", "/tmp/Cortile.log", "path of the logfile")
+	flag.StringVar(&l, "l", "/tmp/cortile.log", "path of the logfile")
 	flag.BoolVar(&vvv, "vvv", false, "very very verbose mode")
 	flag.BoolVar(&vv, "vv", false, "very verbose mode")
 	flag.BoolVar(&v, "v", false, "verbose mode")

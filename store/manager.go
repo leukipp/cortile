@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/leukipp/Cortile/common"
+	"github.com/leukipp/cortile/common"
 
 	log "github.com/sirupsen/logrus"
 )

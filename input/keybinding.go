@@ -5,8 +5,8 @@ import (
 	"github.com/BurntSushi/xgbutil/keybind"
 	"github.com/BurntSushi/xgbutil/xevent"
 
-	"github.com/leukipp/Cortile/common"
-	"github.com/leukipp/Cortile/desktop"
+	"github.com/leukipp/cortile/common"
+	"github.com/leukipp/cortile/desktop"
 
 	log "github.com/sirupsen/logrus"
 )

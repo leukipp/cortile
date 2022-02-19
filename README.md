@@ -14,15 +14,15 @@ Tiling manager with hot corner support for Xfce, OpenBox and other [EWMH Complia
 ### Remote source
 Install from GitHub:
 ```bash
-go get -u github.com/leukipp/Cortile
-go install github.com/leukipp/Cortile
+go get -u github.com/leukipp/cortile
+go install github.com/leukipp/cortile
 ```
 
 ### Local source
 Fetch from GitHub:
 ```bash
-git clone https://github.com/leukipp/Cortile.git
-cd Cortile
+git clone https://github.com/leukipp/cortile.git
+cd cortile
 ```
 
 Make local changes and run:
@@ -34,12 +34,12 @@ go install
 ## Run
 Start in verbose mode:
 ```bash
-Cortile -v
+cortile -v
 ```
 Resizing of windows in Xfce can be done with <kbd>Alt</kbd>+<kbd>Right-Click</kbd>.
 
 ## Config
-The config file is located at `~/.config/Cortile/config.toml`.
+The config file is located at `~/.config/cortile/config.toml`.
 
 | Corner events  | Description                       |
 | -------------- | --------------------------------- |

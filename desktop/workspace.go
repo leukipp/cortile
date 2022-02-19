@@ -1,9 +1,9 @@
 package desktop
 
 import (
-	"github.com/leukipp/Cortile/common"
-	"github.com/leukipp/Cortile/layout"
-	"github.com/leukipp/Cortile/store"
+	"github.com/leukipp/cortile/common"
+	"github.com/leukipp/cortile/layout"
+	"github.com/leukipp/cortile/store"
 
 	log "github.com/sirupsen/logrus"
 )

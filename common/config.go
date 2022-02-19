@@ -44,12 +44,12 @@ func configFolderPath() string {
 	case "linux":
 		xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
 		if xdgConfigHome != "" {
-			configFolder = filepath.Join(xdgConfigHome, "Cortile")
+			configFolder = filepath.Join(xdgConfigHome, "cortile")
 		} else {
-			configFolder, _ = homedir.Expand("~/.config/Cortile/")
+			configFolder, _ = homedir.Expand("~/.config/cortile/")
 		}
 	default:
-		configFolder, _ = homedir.Expand("~/.Cortile/")
+		configFolder, _ = homedir.Expand("~/.cortile/")
 	}
 
 	return configFolder
