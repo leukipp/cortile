@@ -20,7 +20,7 @@ import (
 func main() {
 
 	// allow only one instance
-	lock, err := createLockFile("/var/lock/contile.lock")
+	lock, err := createLockFile("/var/lock/cortile.lock")
 	if err != nil {
 		fmt.Println("cortile already running")
 		return
