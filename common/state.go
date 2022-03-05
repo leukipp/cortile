@@ -22,15 +22,13 @@ var (
 	Stacking    []xproto.Window // List of client windows
 	ActiveWin   xproto.Window   // Current active window
 	Corners     []Corner        // Corners for pointer events
-	//WorkArea   []ewmh.Workarea // Work area on desktop
 )
 
 type Head struct {
-	Screens  xinerama.Heads // Full screen size
-	Desktops xinerama.Heads // Desktop size (without menu offset)
+	Screens  xinerama.Heads // Screen size (full monitor size)
+	Desktops xinerama.Heads // Desktop size (workarea without panels)
 }
 
-// Populate initializes the state variables and registers the callbacks required for keeping them up-to-date.
 func Init() {
 	var err error
 
@@ -43,9 +41,6 @@ func Init() {
 
 	CurrentDesk, err = ewmh.CurrentDesktopGet(X)
 	checkFatal(err)
-
-	//WorkArea, err = ewmh.WorkareaGet(X)
-	//checkFatal(err)
 
 	ViewPorts, err = ViewPortsGet(X)
 	checkError(err)
@@ -94,7 +89,7 @@ func ViewPortsGet(X *xgbutil.XUtil) (Head, error) {
 			continue
 		}
 
-		// Apply struts to our desktops 'in place'
+		// Apply in place struts to our desktops
 		xrect.ApplyStrut(desktops, uint(rGeom.Width()), uint(rGeom.Height()),
 			strut.Left, strut.Right, strut.Top, strut.Bottom,
 			strut.LeftStartY, strut.LeftEndY,
@@ -109,24 +104,12 @@ func ViewPortsGet(X *xgbutil.XUtil) (Head, error) {
 	return Head{Screens: screens, Desktops: desktops}, err
 }
 
-// WorkAreaDimensions returns the dimension of the requested workspace.
-func WorkAreaDimensions(num uint) (x, y, w, h int) {
-	x, y, w, h = DesktopDimensions()
-	return
-
-	// TODO: evaluate workarea vs. desktop
-	//wa := WorkArea[num]
-	//x, y = wa.X, wa.Y
-	//w, h = int(wa.Width), int(wa.Height)
-	//return
-}
-
 func DesktopDimensions() (x, y, w, h int) {
 	for _, d := range ViewPorts.Desktops {
 		hx, hy := d.X(), d.Y()
 		hw, hh := int(d.Width()), int(d.Height())
 
-		// use biggest head (monitor) as working area
+		// Use biggest head (monitor) as desktop area
 		if hw*hh > w*h {
 			x, y = hx, hy
 			w, h = hw, hh
@@ -141,7 +124,7 @@ func ScreenDimensions() (x, y, w, h int) {
 		hx, hy := s.X(), s.Y()
 		hw, hh := int(s.Width()), int(s.Height())
 
-		// use biggest head (monitor) as working area
+		// Use biggest head (monitor) as screen area
 		if hw*hh > w*h {
 			x, y = hx, hy
 			w, h = hw, hh
@@ -184,6 +167,8 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	} else if aname == "_NET_DESKTOP_VIEWPORT" {
 		ViewPorts, err = ViewPortsGet(X)
 		Corners = CreateCorners()
+	} else if aname == "_NET_WORKAREA" {
+		ViewPorts, err = ViewPortsGet(X)
 	} else if aname == "_NET_CLIENT_LIST_STACKING" {
 		Stacking, err = ewmh.ClientListStackingGet(X)
 	} else if aname == "_NET_ACTIVE_WINDOW" {

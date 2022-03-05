@@ -154,21 +154,21 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		proportion := common.Config.Proportion
 		isMaster := ws.IsMaster(*c)
 		layoutType := l.GetType()
-		_, _, ww, wh := common.WorkAreaDimensions(ws.ActiveLayoutNum)
+		_, _, dw, dh := common.DesktopDimensions()
 
 		// calculate proportion based on resized window width (TODO: LTR/RTL gap support)
 		if layoutType == "vertical" {
-			proportion = float64(cw+gap) / float64(ww)
+			proportion = float64(cw+gap) / float64(dw)
 			if isMaster {
-				proportion = 1.0 - float64(cw+2*gap)/float64(ww)
+				proportion = 1.0 - float64(cw+2*gap)/float64(dw)
 			}
 		}
 
 		// calculate proportion based on resized window height (TODO: LTR/RTL gap support)
 		if layoutType == "horizontal" {
-			proportion = 1.0 - float64(ch+gap)/float64(wh)
+			proportion = 1.0 - float64(ch+gap)/float64(dh)
 			if isMaster {
-				proportion = float64(ch+2*gap) / float64(wh)
+				proportion = float64(ch+2*gap) / float64(dh)
 			}
 		}
 

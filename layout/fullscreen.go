@@ -26,8 +26,8 @@ func (l *FullscreenLayout) Do() {
 
 	gap := common.Config.Gap
 	for _, c := range l.All() {
-		x, y, w, h := common.WorkAreaDimensions(l.WorkspaceNum)
-		c.MoveResize(x+gap, y+gap, w-2*gap, h-2*gap)
+		dx, dy, dw, dh := common.DesktopDimensions()
+		c.MoveResize(dx+gap, dy+gap, dw-2*gap, dh-2*gap)
 	}
 }
 

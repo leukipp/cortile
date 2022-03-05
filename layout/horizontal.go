@@ -28,14 +28,14 @@ func CreateHorizontalLayout(workspaceNum uint) *HorizontalLayout {
 func (l *HorizontalLayout) Do() {
 	log.Info("Tile ", len(l.All()), " windows with ", l.GetType(), " layout")
 
-	wx, wy, ww, wh := common.WorkAreaDimensions(l.WorkspaceNum)
+	dx, dy, dw, dh := common.DesktopDimensions()
 	msize := len(l.Masters)
 	ssize := len(l.Slaves)
 
-	my := wy
-	mh := int(math.Round(float64(wh) * l.Proportion))
+	my := dy
+	mh := int(math.Round(float64(dh) * l.Proportion))
 	sy := my + mh
-	sh := wh - mh
+	sh := dh - mh
 	gap := common.Config.Gap
 
 	asize := len(l.All())
@@ -57,30 +57,30 @@ func (l *HorizontalLayout) Do() {
 	}
 
 	if msize > 0 {
-		mw := (ww - (msize+1)*gap) / msize
+		mw := (dw - (msize+1)*gap) / msize
 		if ssize == 0 {
-			mh = wh
+			mh = dh
 		}
 
 		for i, c := range l.Masters {
 			if common.Config.HideDecor {
 				c.UnDecorate()
 			}
-			c.MoveResize(gap+wx+i*(mw+gap), my+gap, mw, mh-2*gap)
+			c.MoveResize(gap+dx+i*(mw+gap), my+gap, mw, mh-2*gap)
 		}
 	}
 
 	if ssize > 0 {
-		sw := (ww - (ssize+1)*gap) / ssize
+		sw := (dw - (ssize+1)*gap) / ssize
 		if msize == 0 {
-			sy, sh = wy, wh
+			sy, sh = dy, dh
 		}
 
 		for i, c := range l.Slaves {
 			if common.Config.HideDecor {
 				c.UnDecorate()
 			}
-			c.MoveResize(gap+wx+i*(sw+gap), sy, sw, sh-gap)
+			c.MoveResize(gap+dx+i*(sw+gap), sy, sw, sh-gap)
 		}
 	}
 
