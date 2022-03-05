@@ -2,8 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"os"
+	"strconv"
+	"syscall"
 
 	"github.com/BurntSushi/xgbutil/xevent"
 
@@ -16,7 +19,13 @@ import (
 
 func main() {
 
-	// TODO: allow only one instance
+	// allow only one instance
+	lock, err := createLockFile("/var/lock/contile.lock")
+	if err != nil {
+		fmt.Println("cortile already running")
+		return
+	}
+	defer lock.Close()
 
 	// init log
 	setLogLevel()
@@ -43,13 +52,39 @@ func main() {
 	xevent.Main(common.X)
 }
 
+func createLockFile(filename string) (*os.File, error) {
+	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return nil, err
+	}
+
+	err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+	if err != nil {
+		file.Close()
+		return nil, err
+	}
+
+	contents := strconv.Itoa(os.Getpid())
+	if err := file.Truncate(0); err != nil {
+		file.Close()
+		return nil, err
+	}
+
+	if _, err := file.WriteString(contents); err != nil {
+		file.Close()
+		return nil, err
+	}
+
+	return file, nil
+}
+
 func setLogLevel() {
-	var l string
+	var logfile string
 	var vvv bool
 	var vv bool
 	var v bool
 
-	flag.StringVar(&l, "l", "/tmp/cortile.log", "path of the logfile")
+	flag.StringVar(&logfile, "logfile", "/tmp/cortile.log", "logfile path")
 	flag.BoolVar(&vvv, "vvv", false, "very very verbose mode")
 	flag.BoolVar(&vv, "vv", false, "very verbose mode")
 	flag.BoolVar(&v, "v", false, "verbose mode")
@@ -66,7 +101,7 @@ func setLogLevel() {
 	}
 	log.SetFormatter(&log.TextFormatter{ForceColors: true, FullTimestamp: true})
 
-	file, err := os.OpenFile(l, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if file == nil {
 		log.Error(err)
 		return
