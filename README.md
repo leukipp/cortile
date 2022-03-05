@@ -23,14 +23,14 @@ sudo pacman -S go
 ```
 
 ### Use remote source
-Install from GitHub:
+Install [cortile](https://github.com/leukipp/cortile) from GitHub:
 ```bash
 go get -u github.com/leukipp/cortile
 go install github.com/leukipp/cortile
 ```
 
 ### Use local source
-Clone from GitHub:
+Clone [cortile](https://github.com/leukipp/cortile) from GitHub:
 ```bash
 git clone https://github.com/leukipp/cortile.git
 cd cortile
