@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"syscall"
 
 	"github.com/BurntSushi/xgbutil/xevent"
@@ -19,7 +18,7 @@ import (
 
 func main() {
 
-	// allow only one instance
+	// Allow only one instance
 	lock, err := createLockFile("/var/lock/cortile.lock")
 	if err != nil {
 		fmt.Println("cortile already running")
@@ -27,28 +26,28 @@ func main() {
 	}
 	defer lock.Close()
 
-	// init log
+	// Init log
 	setLogLevel()
 
-	// init state
+	// Init state
 	common.Init()
 
-	// init workspace and tracker
+	// Init workspace and tracker
 	workspaces := desktop.CreateWorkspaces()
 	tracker := desktop.CreateTracker(workspaces)
 
-	// auto tile on startup
+	// Tile on startup
 	if common.Config.StartupTiling {
 		for _, ws := range workspaces {
 			ws.Tile()
 		}
 	}
 
-	// bind keys and mouse
+	// Bind keys and mouse
 	input.BindKeys(tracker)
 	input.BindMouse(tracker)
 
-	// run X event loop
+	// Run X event loop
 	xevent.Main(common.X)
 }
 
@@ -60,17 +59,6 @@ func createLockFile(filename string) (*os.File, error) {
 
 	err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
 	if err != nil {
-		file.Close()
-		return nil, err
-	}
-
-	contents := strconv.Itoa(os.Getpid())
-	if err := file.Truncate(0); err != nil {
-		file.Close()
-		return nil, err
-	}
-
-	if _, err := file.WriteString(contents); err != nil {
 		file.Close()
 		return nil, err
 	}
