@@ -14,13 +14,10 @@ import (
 
 func BindMouse(t *desktop.Tracker) {
 	backgroundTask(common.X, 100, func() {
-		// query mouse pointer
 		pointer, _ := xproto.QueryPointer(common.X.Conn(), common.X.RootWin()).Reply()
 		x, y := pointer.RootX, pointer.RootY
 
-		//log.Trace("Pointer at ", "x=", x, ", y=", y)
-
-		// update hotcorner states
+		// Check corner states
 		for i := range common.Corners {
 			hc := &common.Corners[i]
 
@@ -28,58 +25,50 @@ func BindMouse(t *desktop.Tracker) {
 			isActive := hc.IsActive(uint(x), uint(y))
 
 			if !wasActive && isActive {
-				// corner was entered
 				log.Debug("Corner at position ", hc.Area, " is hot [", hc.Name, "]")
 
-				// get active clients and workspace
+				// Get active clients and workspace
 				c := t.Clients[common.ActiveWin]
 				ws := t.Workspaces[common.CurrentDesk]
 
-				// TODO: load from config
-
-				// execute hotcorner actions
+				// TODO: Load from config
 				switch hc.Name {
 				case "top_left":
-					// switch_layout
 					ws.SwitchLayout()
 				case "top_center":
-					// TODO: top center
+					// TODO: Add top-center
 				case "top_right":
-					// make active window master
 					ws.ActiveLayout().MakeMaster(c)
 					ws.Tile()
 				case "center_right":
-					// TODO: center right
+					// TODO: Add center-right
 				case "bottom_right":
-					// increase master
 					ws.ActiveLayout().IncreaseMaster()
 					ws.Tile()
 				case "bottom_center":
-					// TODO: bottom center
+					// TODO: Add bottom-center
 				case "bottom_left":
-					// decrease master
 					ws.ActiveLayout().DecreaseMaster()
 					ws.Tile()
 				case "center_left":
-					// TODO: center left
+					// TODO: Add center-left
 				}
 			} else if wasActive && !isActive {
-				// corner was leaved
 				log.Debug("Corner at position ", hc.Area, " is cold [", hc.Name, "]")
 			}
 		}
 	})
 }
 
-// Poll X events in background
 func backgroundTask(X *xgbutil.XUtil, t time.Duration, f func()) {
 	go func() {
-		for range time.Tick(time.Millisecond * t) {
+		// Poll X events in background
+		for range time.Tick(t * time.Millisecond) {
 			_, err := X.Conn().PollForEvent()
 			if err != nil {
 				continue
 			}
-			// callback
+			// Callback
 			f()
 		}
 	}()

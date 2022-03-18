@@ -11,21 +11,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type KeyMapper struct {
-}
+type KeyMapper struct{}
 
 func BindKeys(t *desktop.Tracker) {
 	workspaces := t.Workspaces
 	keybind.Initialize(common.X)
 	k := KeyMapper{}
 
+	// Bind keyboard shortcuts
 	k.bind("tile", func() {
 		ws := workspaces[common.CurrentDesk]
-		ws.IsTiling = true
+		ws.TilingEnabled = true
 		ws.Tile()
 	})
 	k.bind("untile", func() {
 		ws := workspaces[common.CurrentDesk]
+		ws.TilingEnabled = false
 		ws.UnTile()
 	})
 	k.bind("make_active_window_master", func() {
@@ -70,9 +71,9 @@ func BindKeys(t *desktop.Tracker) {
 func (k KeyMapper) bind(action string, f func()) {
 	err := keybind.KeyPressFun(
 		func(X *xgbutil.XUtil, ev xevent.KeyPressEvent) {
-			// callback
+			// Callback
 			f()
-		}).Connect(common.X, common.X.RootWin(), common.Config.Keybindings[action], true)
+		}).Connect(common.X, common.X.RootWin(), common.Config.Keys[action], true)
 
 	if err != nil {
 		log.Warn(err)

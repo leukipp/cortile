@@ -134,25 +134,6 @@ func ScreenDimensions() (x, y, w, h int) {
 	return
 }
 
-func checkEwmhCompliance() {
-	_, err := ewmh.GetEwmhWM(X)
-	if err != nil {
-		log.Fatal("Window manager is not EWMH complaint!")
-	}
-}
-
-func checkFatal(err error) {
-	if err != nil {
-		log.Fatal("Error populating state ", err)
-	}
-}
-
-func checkError(err error) {
-	if err != nil {
-		log.Error("Warning populating state ", err)
-	}
-}
-
 func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	var err error
 
@@ -160,6 +141,7 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 
 	log.Debug("State event ", aname)
 
+	// Update common state variables
 	if aname == "_NET_NUMBER_OF_DESKTOPS" {
 		DeskCount, err = ewmh.NumberOfDesktopsGet(X)
 	} else if aname == "_NET_CURRENT_DESKTOP" {
@@ -177,5 +159,24 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 
 	if err != nil {
 		log.Warn("Warning updating state ", err)
+	}
+}
+
+func checkEwmhCompliance() {
+	_, err := ewmh.GetEwmhWM(X)
+	if err != nil {
+		log.Fatal("Window manager is not EWMH complaint!")
+	}
+}
+
+func checkFatal(err error) {
+	if err != nil {
+		log.Fatal("Error populating state ", err)
+	}
+}
+
+func checkError(err error) {
+	if err != nil {
+		log.Error("Warning populating state ", err)
 	}
 }

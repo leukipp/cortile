@@ -10,23 +10,23 @@ import (
 )
 
 type VerticalLayout struct {
-	*store.Manager
-	Proportion   float64
-	WorkspaceNum uint
-	Type         string
+	*store.Manager         // Layout store manager
+	Proportion     float64 // Master-slave proportion
+	WorkspaceNum   uint    // Active workspace index
+	Type           string  // Layout name
 }
 
 func CreateVerticalLayout(workspaceNum uint) *VerticalLayout {
 	return &VerticalLayout{
 		Manager:      store.CreateManager(),
-		Proportion:   1.0 - common.Config.Division, // TODO: LTR/RTL support
+		Proportion:   1.0 - common.Config.Proportion, // TODO: LTR/RTL support
 		WorkspaceNum: workspaceNum,
 		Type:         "vertical",
 	}
 }
 
 func (l *VerticalLayout) Do() {
-	log.Info("Tile ", len(l.All()), " windows with ", l.GetType(), " layout")
+	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetType(), " layout")
 
 	dx, dy, dw, dh := common.DesktopDimensions()
 	msize := len(l.Masters)
@@ -36,15 +36,14 @@ func (l *VerticalLayout) Do() {
 	mw := int(math.Round(float64(dw) * l.Proportion))
 	sx := mx + mw
 	sw := dw - mw
-	gap := common.Config.Gap
+	gap := common.Config.WindowGap
 
-	asize := len(l.All())
+	asize := len(l.Clients())
 	fsize := l.AllowedMasters
 
-	// swap master-slave area for LTR/RTL support (TODO: add to config)
-	swap := true
+	ltr := true // TODO: Load from config
 
-	if swap && asize > fsize {
+	if ltr && asize > fsize {
 		mxtmp := mx
 		mwtmp := mw
 		sxtmp := sx
@@ -63,7 +62,7 @@ func (l *VerticalLayout) Do() {
 		}
 
 		for i, c := range l.Masters {
-			if common.Config.HideDecor {
+			if !common.Config.WindowDecoration {
 				c.UnDecorate()
 			}
 			c.MoveResize(mx+gap, gap+dy+i*(mh+gap), mw-2*gap, mh)
@@ -77,7 +76,7 @@ func (l *VerticalLayout) Do() {
 		}
 
 		for i, c := range l.Slaves {
-			if common.Config.HideDecor {
+			if !common.Config.WindowDecoration {
 				c.UnDecorate()
 			}
 			c.MoveResize(sx, gap+dy+i*(sh+gap), sw-gap, sh)
@@ -102,19 +101,19 @@ func (l *VerticalLayout) PreviousClient() {
 }
 
 func (l *VerticalLayout) IncrementProportion() {
-	precision := 1.0 / common.Config.Proportion
-	proportion := math.Round(l.Proportion*precision)/precision + common.Config.Proportion
+	precision := 1.0 / common.Config.ProportionStep
+	proportion := math.Round(l.Proportion*precision)/precision + common.Config.ProportionStep
 	l.SetProportion(proportion)
 }
 
 func (l *VerticalLayout) DecrementProportion() {
-	precision := 1.0 / common.Config.Proportion
-	proportion := math.Round(l.Proportion*precision)/precision - common.Config.Proportion
+	precision := 1.0 / common.Config.ProportionStep
+	proportion := math.Round(l.Proportion*precision)/precision - common.Config.ProportionStep
 	l.SetProportion(proportion)
 }
 
 func (l *VerticalLayout) SetProportion(p float64) {
-	l.Proportion = math.Min(math.Max(p, 0.1), 0.9)
+	l.Proportion = math.Min(math.Max(p, common.Config.ProportionMin), common.Config.ProportionMax)
 }
 
 func (l *VerticalLayout) GetType() string {

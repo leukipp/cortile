@@ -21,17 +21,17 @@ import (
 var UNKNOWN = "<UNKNOWN>"
 
 type Client struct {
-	Win         *xwindow.Window
-	Desk        uint   // Desktop the client is currently in.
-	Name        string // Window title name.
-	Class       string // Window application name.
-	CurrentProp Prop   // Properties that the client has at the moment.
-	SavedProp   Prop   // Properties that the client had before it was tiled.
+	Win         *xwindow.Window // X window object
+	Desk        uint            // Desktop the client is currently in
+	Name        string          // Client window title name
+	Class       string          // Client window application name
+	CurrentProp Prop            // Properties that the client has at the moment
+	SavedProp   Prop            // Properties that the client had before tiling
 }
 
 type Prop struct {
-	Geom       xrect.Rect
-	Decoration bool
+	Geom       xrect.Rect // Client rectangle geometry
+	Decoration bool       // Decoration active or not
 }
 
 func CreateClient(w xproto.Window) (c Client) {
@@ -112,6 +112,10 @@ func (c *Client) Update() (success bool) {
 	return true
 }
 
+func (c Client) Activate() {
+	ewmh.ActiveWindowReq(common.X, c.Win.Id)
+}
+
 func (c Client) Unmaximize() {
 	ewmh.WmStateReq(common.X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_VERT")
 	ewmh.WmStateReq(common.X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_HORZ")
@@ -137,7 +141,6 @@ func (c Client) Decorate() {
 		})
 }
 
-// Restore resizes and decorates window to pre-tiling state.
 func (c Client) Restore() {
 	c.Decorate()
 
@@ -147,12 +150,6 @@ func (c Client) Restore() {
 	log.Info("Restoring window position x=", geom.X(), ", y=", geom.Y(), " [", c.Class, "]")
 }
 
-// Activate makes the client the currently active window.
-func (c Client) Activate() {
-	ewmh.ActiveWindowReq(common.X, c.Win.Id)
-}
-
-// Get window info.
 func GetInfo(w xproto.Window) (class string, name string, desk uint, states []string, hints *motif.Hints) {
 	var err error
 	var wmClass *icccm.WmClass
@@ -192,13 +189,11 @@ func GetInfo(w xproto.Window) (class string, name string, desk uint, states []st
 	return class, name, desk, states, hints
 }
 
-// hasDecoration returns true if the window has client decorations.
 func HasDecoration(w xproto.Window) bool {
 	_, _, _, _, hints := GetInfo(w)
 	return motif.Decor(hints)
 }
 
-// isMaximized returns true if the window has been maximized.
 func IsMaximized(w xproto.Window) bool {
 	class, name, _, states, _ := GetInfo(w)
 	if class == UNKNOWN {
@@ -215,7 +210,6 @@ func IsMaximized(w xproto.Window) bool {
 	return false
 }
 
-// isHidden returns true if the window has been minimized.
 func IsHidden(w xproto.Window) bool {
 	class, name, _, states, _ := GetInfo(w)
 	if class == UNKNOWN {
@@ -232,7 +226,6 @@ func IsHidden(w xproto.Window) bool {
 	return false
 }
 
-// isModal returns true if the window is a modal dialog.
 func IsModal(w xproto.Window) bool {
 	class, name, _, states, _ := GetInfo(w)
 	if class == UNKNOWN {
@@ -249,24 +242,23 @@ func IsModal(w xproto.Window) bool {
 	return false
 }
 
-// isIgnored returns true if the window is ignored by config.
 func IsIgnored(w xproto.Window) bool {
 	class, name, _, _, _ := GetInfo(w)
 	if class == UNKNOWN {
 		return true
 	}
 
-	for _, s := range common.Config.WindowsToIgnore {
+	for _, s := range common.Config.WindowIgnore {
 		conf_class := s[0]
 		conf_name := s[1]
 
 		reg_class := regexp.MustCompile(strings.ToLower(conf_class))
 		reg_name := regexp.MustCompile(strings.ToLower(conf_name))
 
-		// ignore all windows with this class...
+		// Ignore all windows with this class
 		class_match := reg_class.MatchString(strings.ToLower(class))
 
-		// ...except the window with a special name
+		// But allow the window with a special name
 		name_match := conf_name != "" && reg_name.MatchString(strings.ToLower(name))
 
 		if class_match && !name_match {
@@ -278,7 +270,6 @@ func IsIgnored(w xproto.Window) bool {
 	return false
 }
 
-// isInsideViewPort returns true if the window is partially inside viewport.
 func IsInsideViewPort(w xproto.Window) bool {
 	class, _, desk, _, _ := GetInfo(w)
 	if class == UNKNOWN {

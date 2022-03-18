@@ -8,9 +8,9 @@ import (
 )
 
 type FullscreenLayout struct {
-	*store.Manager
-	WorkspaceNum uint
-	Type         string
+	*store.Manager        // Layout store manager
+	WorkspaceNum   uint   // Active workspace index
+	Type           string // Layout name
 }
 
 func CreateFullscreenLayout(workspaceNum uint) *FullscreenLayout {
@@ -22,10 +22,10 @@ func CreateFullscreenLayout(workspaceNum uint) *FullscreenLayout {
 }
 
 func (l *FullscreenLayout) Do() {
-	log.Info("Tile ", len(l.All()), " windows with ", l.GetType(), " layout")
+	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetType(), " layout")
 
-	gap := common.Config.Gap
-	for _, c := range l.All() {
+	gap := common.Config.WindowGap
+	for _, c := range l.Clients() {
 		dx, dy, dw, dh := common.DesktopDimensions()
 		c.MoveResize(dx+gap, dy+gap, dw-2*gap, dh-2*gap)
 	}

@@ -16,13 +16,16 @@ import (
 var Config ConfigMapper
 
 type ConfigMapper struct {
-	Keybindings     map[string]string
-	WindowsToIgnore [][]string `toml:"ignore"`
-	Gap             int
-	Division        float64
-	Proportion      float64
-	HideDecor       bool `toml:"remove_decorations"`
-	StartupTiling   bool `toml:"startup_tiling"`
+	TilingEnabled    bool              `toml:"tiling_enabled"`    // Tile windows on startup
+	TilingLayout     string            `toml:"tiling_layout"`     // Tile windows on startup
+	Proportion       float64           `toml:"proportion"`        // Master-slave area initial proportion
+	ProportionMin    float64           `toml:"proportion_min"`    // Master-slave area minimum proportion
+	ProportionMax    float64           `toml:"proportion_max"`    // Master-slave area maximum proportion
+	ProportionStep   float64           `toml:"proportion_step"`   // Master-slave area step size proportion
+	WindowGap        int               `toml:"window_gap"`        // Gap size between windows
+	WindowDecoration bool              `toml:"window_decoration"` // Show window decorations
+	WindowIgnore     [][]string        `toml:"window_ignore"`     // Regex to ignore windows
+	Keys             map[string]string `toml:"keys"`              // Key bindings for shortcuts
 }
 
 func init() {
@@ -31,10 +34,12 @@ func init() {
 }
 
 func writeDefaultConfig() {
+	// Create config folder
 	if _, err := os.Stat(configFolderPath()); os.IsNotExist(err) {
 		os.MkdirAll(configFolderPath(), 0700)
 	}
 
+	// Write default config
 	if _, err := os.Stat(configFilePath()); os.IsNotExist(err) {
 		defaultConfig, err := ioutil.ReadFile("config.toml")
 		if err != nil {
@@ -44,12 +49,9 @@ func writeDefaultConfig() {
 	}
 }
 
-func configFilePath() string {
-	return filepath.Join(configFolderPath(), "config.toml")
-}
-
 func configFolderPath() string {
 	var configFolder string
+
 	switch runtime.GOOS {
 	case "linux":
 		xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
@@ -63,4 +65,8 @@ func configFolderPath() string {
 	}
 
 	return configFolder
+}
+
+func configFilePath() string {
+	return filepath.Join(configFolderPath(), "config.toml")
 }

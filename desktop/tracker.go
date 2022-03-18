@@ -18,8 +18,8 @@ import (
 )
 
 type Tracker struct {
-	Clients    map[xproto.Window]store.Client // List of clients that are being tracked.
-	Workspaces map[uint]*Workspace            // List of workspaces used.
+	Clients    map[xproto.Window]store.Client // List of clients that are being tracked
+	Workspaces map[uint]*Workspace            // List of workspaces used
 }
 
 func CreateTracker(ws map[uint]*Workspace) *Tracker {
@@ -28,45 +28,13 @@ func CreateTracker(ws map[uint]*Workspace) *Tracker {
 		Workspaces: ws,
 	}
 
+	// Init clients
 	xevent.PropertyNotifyFun(t.handleClientUpdates).Connect(common.X, common.X.RootWin())
 	t.populateClients()
 
 	return &t
 }
 
-// Adds window to tracked clients and layouts.
-func (tr *Tracker) trackWindow(w xproto.Window) {
-	if tr.isTracked(w) {
-		return
-	}
-
-	// Add new client
-	c := store.CreateClient(w)
-	tr.Clients[c.Win.Id] = c
-	ws := tr.Workspaces[c.Desk]
-	ws.AddClient(c)
-
-	// Wait with handler attachment, as some applications load saved geometry delayed
-	time.AfterFunc(time.Millisecond*800, func() {
-		tr.attachHandlers(&c)
-		tr.Workspaces[common.CurrentDesk].Tile()
-	})
-}
-
-// Remove window from tracked clients and layouts.
-func (tr *Tracker) untrackWindow(w xproto.Window) {
-	if tr.isTracked(w) {
-		c := tr.Clients[w]
-		ws := tr.Workspaces[c.Desk]
-
-		// Remove client
-		ws.RemoveClient(c)
-		xevent.Detach(common.X, w)
-		delete(tr.Clients, w)
-	}
-}
-
-// UpdateClients updates the list of tracked clients with the most up to date list of clients.
 func (tr *Tracker) populateClients() {
 
 	// Add trackable windows
@@ -81,7 +49,7 @@ func (tr *Tracker) populateClients() {
 		trackable := false
 		for _, w2 := range common.Stacking {
 			if w1 == w2 {
-				trackable = tr.isTrackable(w1) // true
+				trackable = tr.isTrackable(w1)
 				break
 			}
 		}
@@ -91,72 +59,82 @@ func (tr *Tracker) populateClients() {
 	}
 }
 
-// isTracked returns true if the window is already tracked.
-func (tr *Tracker) isTracked(w xproto.Window) bool {
-	_, ok := tr.Clients[w]
-	return ok
-}
+func (tr *Tracker) trackWindow(w xproto.Window) {
+	if tr.isTracked(w) {
+		return
+	}
 
-// isTrackable returns true if the window should be tracked.
-func (tr *Tracker) isTrackable(w xproto.Window) bool {
-	return !store.IsHidden(w) && !store.IsModal(w) && !store.IsIgnored(w) && store.IsInsideViewPort(w)
-}
+	// Add new client
+	c := store.CreateClient(w)
+	tr.Clients[c.Win.Id] = c
+	ws := tr.Workspaces[c.Desk]
+	ws.AddClient(c)
 
-// Handle new clients and viewport changes
-func (tr *Tracker) handleClientUpdates(X *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
-	aname, _ := xprop.AtomName(common.X, ev.Atom)
-	if aname == "_NET_CLIENT_LIST_STACKING" || aname == "_NET_DESKTOP_VIEWPORT" {
-		tr.populateClients()
+	// Wait with handler attachment, as some applications load geometry delayed
+	time.AfterFunc(1000*time.Millisecond, func() {
+		tr.attachHandlers(&c)
 		tr.Workspaces[common.CurrentDesk].Tile()
+	})
+}
+
+func (tr *Tracker) untrackWindow(w xproto.Window) {
+	if tr.isTracked(w) {
+		c := tr.Clients[w]
+		ws := tr.Workspaces[c.Desk]
+
+		// Remove client
+		ws.RemoveClient(c)
+		xevent.Detach(common.X, w)
+		delete(tr.Clients, w)
 	}
 }
 
 func (tr *Tracker) handleResizeClient(c *store.Client) {
 
-	// previous dimensions
+	// Previous dimensions
 	pGeom := c.CurrentProp.Geom
 	pw, ph := pGeom.Width(), pGeom.Height()
 
-	// current dimensions
+	// Current dimensions
 	cGeom, err := c.Win.DecorGeometry()
 	if err != nil {
 		return
 	}
 	cw, ch := cGeom.Width(), cGeom.Height()
 
-	// update dimensions
+	// Update dimensions
 	success := c.Update()
 	if !success {
 		return
 	}
 
-	// re-tile on width or height change
+	// Re-tile on width or height change
 	dw, dh := 0.0, 0.0
 	tile := (math.Abs(float64(cw-pw)) > dw || math.Abs(float64(ch-ph)) > dh)
 
-	// tile workspace
+	// Tile workspace
 	if tile {
 		ws := tr.Workspaces[c.Desk]
 		l := ws.ActiveLayout()
 		s := l.GetManager()
 
-		// ignore master only windows
+		// Ignore master only windows
 		if len(s.Slaves) == 0 {
 			return
 		}
 
-		// ignore fullscreen windows
+		// Ignore fullscreen windows
 		if store.IsMaximized(c.Win.Id) {
 			return
 		}
 
-		gap := common.Config.Gap
-		proportion := common.Config.Proportion
+		proportion := 0.0
+		gap := common.Config.WindowGap
 		isMaster := ws.IsMaster(*c)
 		layoutType := l.GetType()
 		_, _, dw, dh := common.DesktopDimensions()
 
-		// calculate proportion based on resized window width (TODO: LTR/RTL gap support)
+		// Calculate proportion based on resized window width (TODO: LTR/RTL gap support)
 		if layoutType == "vertical" {
 			proportion = float64(cw+gap) / float64(dw)
 			if isMaster {
@@ -164,7 +142,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 			}
 		}
 
-		// calculate proportion based on resized window height (TODO: LTR/RTL gap support)
+		// Calculate proportion based on resized window height (TODO: LTR/RTL gap support)
 		if layoutType == "horizontal" {
 			proportion = 1.0 - float64(ch+gap)/float64(dh)
 			if isMaster {
@@ -174,7 +152,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 		log.Debug("Proportion set to ", proportion, " [", c.Class, "]")
 
-		// set proportion based on resized window
+		// Set proportion based on resized window
 		l.SetProportion(proportion)
 		ws.Tile()
 	}
@@ -182,6 +160,8 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 	states, _ := ewmh.WmStateGet(common.X, c.Win.Id)
+
+	// Client maximized
 	for _, state := range states {
 		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
 			ws := tr.Workspaces[c.Desk]
@@ -197,6 +177,8 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 
 func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 	states, _ := ewmh.WmStateGet(common.X, c.Win.Id)
+
+	// Client minimized
 	for _, state := range states {
 		if state == "_NET_WM_STATE_HIDDEN" {
 			tr.Workspaces[c.Desk].RemoveClient(*c)
@@ -207,27 +189,35 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 }
 
 func (tr *Tracker) handleDesktopChange(c *store.Client) {
+	// Remove client from current workspace
 	tr.Workspaces[c.Desk].RemoveClient(*c)
-	if tr.Workspaces[c.Desk].IsTiling {
+	if tr.Workspaces[c.Desk].TilingEnabled {
 		tr.Workspaces[c.Desk].Tile()
 	}
 
-	success := c.Update()
-	if !success {
-		return
-	}
-
+	// Add client to new workspace
 	tr.Workspaces[c.Desk].AddClient(*c)
-	if tr.Workspaces[c.Desk].IsTiling {
+	if tr.Workspaces[c.Desk].TilingEnabled {
 		tr.Workspaces[c.Desk].Tile()
 	} else {
 		c.Restore()
 	}
 }
 
+func (tr *Tracker) handleClientUpdates(X *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
+	aname, _ := xprop.AtomName(common.X, ev.Atom)
+
+	// Client added or workspace changed
+	if aname == "_NET_CLIENT_LIST_STACKING" || aname == "_NET_DESKTOP_VIEWPORT" {
+		tr.populateClients()
+		tr.Workspaces[common.CurrentDesk].Tile()
+	}
+}
+
 func (tr *Tracker) attachHandlers(c *store.Client) {
 	c.Win.Listen(xproto.EventMaskStructureNotify | xproto.EventMaskPropertyChange)
 
+	// Attach resize events
 	xevent.ConfigureNotifyFun(func(x *xgbutil.XUtil, ev xevent.ConfigureNotifyEvent) {
 		log.Debug("Client configure event [", c.Class, "]")
 
@@ -238,6 +228,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 		}
 	}).Connect(common.X, c.Win.Id)
 
+	// Attach state events
 	xevent.PropertyNotifyFun(func(x *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
 		aname, _ := xprop.AtomName(common.X, ev.Atom)
 		log.Debug("Client property event ", aname, " [", c.Class, "]")
@@ -246,7 +237,6 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 			if aname == "_NET_WM_STATE" {
 				tr.handleMaximizedClient(c)
 				tr.handleMinimizedClient(c)
-
 			} else if aname == "_NET_WM_DESKTOP" {
 				tr.handleDesktopChange(c)
 			}
@@ -254,4 +244,13 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 			tr.untrackWindow(c.Win.Id)
 		}
 	}).Connect(common.X, c.Win.Id)
+}
+
+func (tr *Tracker) isTracked(w xproto.Window) bool {
+	_, ok := tr.Clients[w]
+	return ok
+}
+
+func (tr *Tracker) isTrackable(w xproto.Window) bool {
+	return !store.IsHidden(w) && !store.IsModal(w) && !store.IsIgnored(w) && store.IsInsideViewPort(w)
 }

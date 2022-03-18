@@ -9,20 +9,30 @@ import (
 )
 
 type Workspace struct {
-	Layouts         []Layout
-	IsTiling        bool
-	ActiveLayoutNum uint
+	Layouts         []Layout // List of vailable layouts
+	TilingEnabled   bool     // Tiling is enabled or not
+	ActiveLayoutNum uint     // Active layout index
 }
 
 func CreateWorkspaces() map[uint]*Workspace {
 	workspaces := make(map[uint]*Workspace)
 
 	for i := uint(0); i < common.DeskCount; i++ {
+
+		// Create layouts for each workspace
+		layouts := CreateLayouts(i)
 		ws := Workspace{
-			Layouts:         CreateLayouts(i),
-			IsTiling:        common.Config.StartupTiling,
-			ActiveLayoutNum: 0, // TODO: add to config
+			Layouts:       layouts,
+			TilingEnabled: common.Config.TilingEnabled,
 		}
+
+		// Activate default layout
+		for i, l := range layouts {
+			if l.GetType() == common.Config.TilingLayout {
+				ws.SetLayout(uint(i))
+			}
+		}
+
 		workspaces[i] = &ws
 	}
 
@@ -45,48 +55,48 @@ func (ws *Workspace) ActiveLayout() Layout {
 	return ws.Layouts[ws.ActiveLayoutNum]
 }
 
-// Cycle through the available layouts
 func (ws *Workspace) SwitchLayout() {
 	ws.ActiveLayoutNum = (ws.ActiveLayoutNum + 1) % uint(len(ws.Layouts))
 	ws.ActiveLayout().Do()
 }
 
-// Adds client to all the layouts in a workspace
 func (ws *Workspace) AddClient(c store.Client) {
 	log.Debug("Add client [", c.Class, "]")
+
+	// Add client to all layouts
 	for _, l := range ws.Layouts {
 		l.Add(c)
 	}
 }
 
-// Removes client from all the layouts in a workspace
 func (ws *Workspace) RemoveClient(c store.Client) {
 	log.Debug("Remove client [", c.Class, "]")
+
+	// Remove client from all layouts
 	for _, l := range ws.Layouts {
 		l.Remove(c)
 	}
 }
 
-// Check if client is master in active layout
 func (ws *Workspace) IsMaster(c store.Client) bool {
 	s := ws.ActiveLayout().GetManager()
+
+	// Check if window is master
 	for _, m := range s.Masters {
 		if c.Win.Id == m.Win.Id {
 			return true
 		}
 	}
+
 	return false
 }
 
-// Tiles the active layout in a workspace
 func (ws *Workspace) Tile() {
-	if ws.IsTiling {
+	if ws.TilingEnabled {
 		ws.ActiveLayout().Do()
 	}
 }
 
-// Untiles the active layout in a workspace.
 func (ws *Workspace) UnTile() {
-	ws.IsTiling = false
 	ws.ActiveLayout().Undo()
 }

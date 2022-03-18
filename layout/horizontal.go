@@ -10,23 +10,23 @@ import (
 )
 
 type HorizontalLayout struct {
-	*store.Manager
-	Proportion   float64
-	WorkspaceNum uint
-	Type         string
+	*store.Manager         // Layout store manager
+	Proportion     float64 // Master-slave proportion
+	WorkspaceNum   uint    // Active workspace index
+	Type           string  // Layout name
 }
 
 func CreateHorizontalLayout(workspaceNum uint) *HorizontalLayout {
 	return &HorizontalLayout{
 		Manager:      store.CreateManager(),
-		Proportion:   common.Config.Division, // TODO: LTR/RTL support
+		Proportion:   common.Config.Proportion, // TODO: LTR/RTL support
 		WorkspaceNum: workspaceNum,
 		Type:         "horizontal",
 	}
 }
 
 func (l *HorizontalLayout) Do() {
-	log.Info("Tile ", len(l.All()), " windows with ", l.GetType(), " layout")
+	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetType(), " layout")
 
 	dx, dy, dw, dh := common.DesktopDimensions()
 	msize := len(l.Masters)
@@ -36,15 +36,14 @@ func (l *HorizontalLayout) Do() {
 	mh := int(math.Round(float64(dh) * l.Proportion))
 	sy := my + mh
 	sh := dh - mh
-	gap := common.Config.Gap
+	gap := common.Config.WindowGap
 
-	asize := len(l.All())
+	asize := len(l.Clients())
 	fsize := l.AllowedMasters
 
-	// swap master-slave area for LTR/RTL support (TODO: add to config)
-	swap := false
+	ltr := false // TODO: Load from config
 
-	if swap && asize > fsize {
+	if ltr && asize > fsize {
 		mytmp := my
 		mhtmp := mh
 		sytmp := sy
@@ -63,7 +62,7 @@ func (l *HorizontalLayout) Do() {
 		}
 
 		for i, c := range l.Masters {
-			if common.Config.HideDecor {
+			if !common.Config.WindowDecoration {
 				c.UnDecorate()
 			}
 			c.MoveResize(gap+dx+i*(mw+gap), my+gap, mw, mh-2*gap)
@@ -77,7 +76,7 @@ func (l *HorizontalLayout) Do() {
 		}
 
 		for i, c := range l.Slaves {
-			if common.Config.HideDecor {
+			if !common.Config.WindowDecoration {
 				c.UnDecorate()
 			}
 			c.MoveResize(gap+dx+i*(sw+gap), sy, sw, sh-gap)
@@ -102,19 +101,19 @@ func (l *HorizontalLayout) PreviousClient() {
 }
 
 func (l *HorizontalLayout) IncrementProportion() {
-	precision := 1.0 / common.Config.Proportion
-	proportion := math.Round(l.Proportion*precision)/precision + common.Config.Proportion
+	precision := 1.0 / common.Config.ProportionStep
+	proportion := math.Round(l.Proportion*precision)/precision + common.Config.ProportionStep
 	l.SetProportion(proportion)
 }
 
 func (l *HorizontalLayout) DecrementProportion() {
-	precision := 1.0 / common.Config.Proportion
-	proportion := math.Round(l.Proportion*precision)/precision - common.Config.Proportion
+	precision := 1.0 / common.Config.ProportionStep
+	proportion := math.Round(l.Proportion*precision)/precision - common.Config.ProportionStep
 	l.SetProportion(proportion)
 }
 
 func (l *HorizontalLayout) SetProportion(p float64) {
-	l.Proportion = math.Min(math.Max(p, 0.1), 0.9)
+	l.Proportion = math.Min(math.Max(p, common.Config.ProportionMin), common.Config.ProportionMax)
 }
 
 func (l *HorizontalLayout) GetType() string {

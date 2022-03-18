@@ -37,7 +37,7 @@ func main() {
 	tracker := desktop.CreateTracker(workspaces)
 
 	// Tile on startup
-	if common.Config.StartupTiling {
+	if common.Config.TilingEnabled {
 		for _, ws := range workspaces {
 			ws.Tile()
 		}
