@@ -8,38 +8,35 @@ Tiling manager with hot corner support for Xfce, OpenBox and other [EWMH Complia
 - Resize of master/slave area.
 - Auto detection of panels.
 - Multi monitor support.
-- Customizable layouts.
 
 ## Install
 ### Requirements
-Install [go](https://go.dev/) with `apt`:
+Install [go](https://go.dev/) 1.17 with `apt`:
 ```bash
 sudo apt install golang
 ```
 
-Install [go](https://go.dev/) with `pacman`:
+Install [go](https://go.dev/) 1.17 with `pacman`:
 ```bash
 sudo pacman -S go
 ```
 
 ### Use remote source
-Install [cortile](https://github.com/leukipp/cortile) from GitHub:
+Install [cortile](https://github.com/leukipp/cortile) from GitHub `main` branch:
 ```bash
-go get -u github.com/leukipp/cortile
-go install github.com/leukipp/cortile
+go install github.com/leukipp/cortile@main
 ```
 
 ### Use local source
-Clone [cortile](https://github.com/leukipp/cortile) from GitHub:
+Clone [cortile](https://github.com/leukipp/cortile) from GitHub `main` branch:
 ```bash
-git clone https://github.com/leukipp/cortile.git
+git clone https://github.com/leukipp/cortile.git -b main
 cd cortile
 ```
 
 Once you have made local changes run:
 ```bash
-go build
-go install
+go build && go install
 ```
 
 ## Run
