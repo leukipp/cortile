@@ -195,6 +195,12 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 		tr.Workspaces[c.Desk].Tile()
 	}
 
+	// Update client desktop
+	success := c.Update()
+	if !success {
+		return
+	}
+
 	// Add client to new workspace
 	tr.Workspaces[c.Desk].AddClient(*c)
 	if tr.Workspaces[c.Desk].TilingEnabled {
