@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"os"
 	"syscall"
@@ -18,12 +19,12 @@ import (
 func main() {
 
 	// Allow only one instance
-	// lock, err := createLockFile("/var/lock/cortile.lock")
-	// if err != nil {
-	//	 fmt.Println("cortile already running")
-	//	 return
-	// }
-	// defer lock.Close()
+	lock, err := createLockFile("/run/lock/cortile.lock")
+	if err != nil {
+		fmt.Println(fmt.Errorf("cortile already running (%s)", err))
+		return
+	}
+	defer lock.Close()
 
 	// Init log
 	setLogLevel()
@@ -53,7 +54,8 @@ func main() {
 func createLockFile(filename string) (*os.File, error) {
 	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
-		return nil, err
+		fmt.Println(fmt.Errorf("lock error (%s)", err))
+		return nil, nil
 	}
 
 	err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
