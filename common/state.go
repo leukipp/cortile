@@ -151,6 +151,7 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 		Corners = CreateCorners()
 	} else if aname == "_NET_WORKAREA" {
 		ViewPorts, err = ViewPortsGet(X)
+		Corners = CreateCorners()
 	} else if aname == "_NET_CLIENT_LIST_STACKING" {
 		Stacking, err = ewmh.ClientListStackingGet(X)
 	} else if aname == "_NET_ACTIVE_WINDOW" {
