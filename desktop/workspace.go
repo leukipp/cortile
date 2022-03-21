@@ -60,7 +60,7 @@ func (ws *Workspace) SwitchLayout() {
 	ws.ActiveLayout().Do()
 }
 
-func (ws *Workspace) AddClient(c store.Client) {
+func (ws *Workspace) AddClient(c *store.Client) {
 	log.Debug("Add client [", c.Class, "]")
 
 	// Add client to all layouts
@@ -69,7 +69,7 @@ func (ws *Workspace) AddClient(c store.Client) {
 	}
 }
 
-func (ws *Workspace) RemoveClient(c store.Client) {
+func (ws *Workspace) RemoveClient(c *store.Client) {
 	log.Debug("Remove client [", c.Class, "]")
 
 	// Remove client from all layouts
@@ -78,7 +78,7 @@ func (ws *Workspace) RemoveClient(c store.Client) {
 	}
 }
 
-func (ws *Workspace) IsMaster(c store.Client) bool {
+func (ws *Workspace) IsMaster(c *store.Client) bool {
 	s := ws.ActiveLayout().GetManager()
 
 	// Check if window is master

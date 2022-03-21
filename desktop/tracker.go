@@ -18,13 +18,13 @@ import (
 )
 
 type Tracker struct {
-	Clients    map[xproto.Window]store.Client // List of clients that are being tracked
-	Workspaces map[uint]*Workspace            // List of workspaces used
+	Clients    map[xproto.Window]*store.Client // List of clients that are being tracked
+	Workspaces map[uint]*Workspace             // List of workspaces used
 }
 
 func CreateTracker(ws map[uint]*Workspace) *Tracker {
 	t := Tracker{
-		Clients:    make(map[xproto.Window]store.Client),
+		Clients:    make(map[xproto.Window]*store.Client),
 		Workspaces: ws,
 	}
 
@@ -66,9 +66,9 @@ func (tr *Tracker) trackWindow(w xproto.Window) {
 
 	// Add new client
 	c := store.CreateClient(w)
-	tr.Clients[c.Win.Id] = c
+	tr.Clients[c.Win.Id] = &c
 	ws := tr.Workspaces[c.Desk]
-	ws.AddClient(c)
+	ws.AddClient(&c)
 
 	// Wait with handler attachment, as some applications load geometry delayed
 	time.AfterFunc(1000*time.Millisecond, func() {
@@ -130,7 +130,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 		proportion := 0.0
 		gap := common.Config.WindowGap
-		isMaster := ws.IsMaster(*c)
+		isMaster := ws.IsMaster(c)
 		layoutType := l.GetType()
 		_, _, dw, dh := common.DesktopDimensions()
 
@@ -181,7 +181,7 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 	// Client minimized
 	for _, state := range states {
 		if state == "_NET_WM_STATE_HIDDEN" {
-			tr.Workspaces[c.Desk].RemoveClient(*c)
+			tr.Workspaces[c.Desk].RemoveClient(c)
 			tr.untrackWindow(c.Win.Id)
 			tr.Workspaces[c.Desk].Tile()
 		}
@@ -189,8 +189,9 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 }
 
 func (tr *Tracker) handleDesktopChange(c *store.Client) {
+
 	// Remove client from current workspace
-	tr.Workspaces[c.Desk].RemoveClient(*c)
+	tr.Workspaces[c.Desk].RemoveClient(c)
 	if tr.Workspaces[c.Desk].TilingEnabled {
 		tr.Workspaces[c.Desk].Tile()
 	}
@@ -202,7 +203,7 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 	}
 
 	// Add client to new workspace
-	tr.Workspaces[c.Desk].AddClient(*c)
+	tr.Workspaces[c.Desk].AddClient(c)
 	if tr.Workspaces[c.Desk].TilingEnabled {
 		tr.Workspaces[c.Desk].Tile()
 	} else {

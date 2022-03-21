@@ -5,9 +5,9 @@ import "github.com/leukipp/cortile/store"
 type Layout interface {
 	Do()
 	Undo()
-	Add(c store.Client)
-	Remove(c store.Client)
-	MakeMaster(c store.Client)
+	Add(c *store.Client)
+	Remove(c *store.Client)
+	MakeMaster(c *store.Client)
 	IncreaseMaster()
 	DecreaseMaster()
 	NextClient()

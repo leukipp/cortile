@@ -20,22 +20,23 @@ func CreateManager() *Manager {
 	}
 }
 
-func (st *Manager) Add(c Client) {
+func (st *Manager) Add(c *Client) {
+	log.Info("Add client [", c.Class, "]")
+
+	// Fill up master area then slave area
 	if len(st.Masters) < st.AllowedMasters {
-		// Fill up master area
 		st.Masters = addClient(st.Masters, c)
 	} else {
-		// Add remaining to slave area
 		st.Slaves = addClient(st.Slaves, c)
 	}
 }
 
-func (st *Manager) Remove(c Client) {
+func (st *Manager) Remove(c *Client) {
 	if c.Win == nil {
 		return
 	}
 
-	log.Info("Remove window [", c.Class, "]")
+	log.Info("Remove client [", c.Class, "]")
 
 	// Remove master window
 	mi := getIndex(st.Masters, c)
@@ -81,7 +82,7 @@ func (st *Manager) DecreaseMaster() {
 	log.Info("Decrease masters to ", st.AllowedMasters)
 }
 
-func (st *Manager) MakeMaster(c Client) {
+func (st *Manager) MakeMaster(c *Client) {
 	if c.Win == nil {
 		return
 	}
@@ -143,15 +144,15 @@ func (st *Manager) Clients() []Client {
 	return append(st.Masters, st.Slaves...)
 }
 
-func addClient(cs []Client, c Client) []Client {
-	return append([]Client{c}, cs...)
+func addClient(cs []Client, c *Client) []Client {
+	return append([]Client{*c}, cs...)
 }
 
 func removeClient(cs []Client, i int) []Client {
 	return append(cs[:i], cs[i+1:]...)
 }
 
-func getIndex(cs []Client, c Client) int {
+func getIndex(cs []Client, c *Client) int {
 	for i, m := range cs {
 		if m.Win.Id == c.Win.Id {
 			return i
