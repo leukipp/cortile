@@ -25,13 +25,13 @@ type Client struct {
 	Desk        uint            // Desktop the client is currently in
 	Name        string          // Client window title name
 	Class       string          // Client window application name
-	CurrentProp Prop            // Properties that the client has at the moment
-	SavedProp   Prop            // Properties that the client had before tiling
+	CurrentProp Property        // Properties that the client has at the moment
+	SavedProp   Property        // Properties that the client had before tiling
 }
 
-type Prop struct {
-	Geom       xrect.Rect // Client rectangle geometry
-	Decoration bool       // Decoration active or not
+type Property struct {
+	Geom xrect.Rect // Client rectangle geometry
+	Deco bool       // Decoration active or not
 }
 
 func CreateClient(w xproto.Window) (c Client) {
@@ -48,13 +48,13 @@ func CreateClient(w xproto.Window) (c Client) {
 		Desk:  desk,
 		Name:  name,
 		Class: class,
-		CurrentProp: Prop{
-			Geom:       savedGeom,
-			Decoration: HasDecoration(w),
+		CurrentProp: Property{
+			Geom: savedGeom,
+			Deco: HasDecoration(w),
 		},
-		SavedProp: Prop{
-			Geom:       savedGeom,
-			Decoration: HasDecoration(w),
+		SavedProp: Property{
+			Geom: savedGeom,
+			Deco: HasDecoration(w),
 		},
 	}
 
@@ -130,7 +130,7 @@ func (c Client) UnDecorate() {
 }
 
 func (c Client) Decorate() {
-	if !c.SavedProp.Decoration {
+	if !c.SavedProp.Deco {
 		return
 	}
 
@@ -182,7 +182,6 @@ func GetInfo(w xproto.Window) (class string, name string, desk uint, states []st
 
 	hints, err = motif.WmHintsGet(common.X, w)
 	if err != nil {
-		log.Trace(err, " [", class, "]")
 		hints = &motif.Hints{}
 	}
 
@@ -200,6 +199,7 @@ func IsMaximized(w xproto.Window) bool {
 		return false
 	}
 
+	// Check maximized windows
 	for _, state := range states {
 		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
 			log.Info("Ignore maximized window", " [", name, "]")
@@ -216,6 +216,7 @@ func IsHidden(w xproto.Window) bool {
 		return true
 	}
 
+	// Check hidden windows
 	for _, state := range states {
 		if state == "_NET_WM_STATE_HIDDEN" {
 			log.Info("Ignore hidden window", " [", name, "]")
@@ -232,6 +233,7 @@ func IsModal(w xproto.Window) bool {
 		return true
 	}
 
+	// Check model dialog windows
 	for _, state := range states {
 		if state == "_NET_WM_STATE_MODAL" {
 			log.Info("Ignore modal window", " [", name, "]")
@@ -248,6 +250,7 @@ func IsIgnored(w xproto.Window) bool {
 		return true
 	}
 
+	// Check ignored windows
 	for _, s := range common.Config.WindowIgnore {
 		conf_class := s[0]
 		conf_name := s[1]
@@ -288,20 +291,17 @@ func IsInsideViewPort(w xproto.Window) bool {
 		log.Warn(err)
 		return false
 	}
-	wx, wy, ww, wh := wGeom.X(), wGeom.Y(), wGeom.Width(), wGeom.Height()
-	wRect := xrect.New(wx, wy, ww, wh)
 
 	// Viewport dimensions
-	vx, vy, vw, vh := common.ScreenDimensions()
-	vRect := xrect.New(vx, vy, vw, vh)
+	vRect := xrect.New(common.ScreenDimensions())
 
 	// Substract viewport rectangle (r2) from window rectangle (r1)
-	sRects := xrect.Subtract(wRect, vRect)
+	sRects := xrect.Subtract(wGeom, vRect)
 
-	// If r1 does not overlap r2, then only one rectangle is returned and is equivalent to r1
+	// If r1 does not overlap r2, then only one rectangle is returned which is equivalent to r1
 	isOutsideViewport := false
 	if len(sRects) == 1 {
-		isOutsideViewport = reflect.DeepEqual(sRects[0], wRect)
+		isOutsideViewport = reflect.DeepEqual(sRects[0], wGeom)
 	}
 
 	if isOutsideViewport {

@@ -78,19 +78,6 @@ func (ws *Workspace) RemoveClient(c *store.Client) {
 	}
 }
 
-func (ws *Workspace) IsMaster(c *store.Client) bool {
-	s := ws.ActiveLayout().GetManager()
-
-	// Check if window is master
-	for _, m := range s.Masters {
-		if c.Win.Id == m.Win.Id {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (ws *Workspace) Tile() {
 	if ws.TilingEnabled {
 		ws.ActiveLayout().Do()

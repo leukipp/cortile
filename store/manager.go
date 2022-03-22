@@ -20,18 +20,18 @@ func CreateManager() *Manager {
 	}
 }
 
-func (st *Manager) Add(c *Client) {
+func (mg *Manager) Add(c *Client) {
 	log.Info("Add client [", c.Class, "]")
 
 	// Fill up master area then slave area
-	if len(st.Masters) < st.AllowedMasters {
-		st.Masters = addClient(st.Masters, c)
+	if len(mg.Masters) < mg.AllowedMasters {
+		mg.Masters = addClient(mg.Masters, c)
 	} else {
-		st.Slaves = addClient(st.Slaves, c)
+		mg.Slaves = addClient(mg.Slaves, c)
 	}
 }
 
-func (st *Manager) Remove(c *Client) {
+func (mg *Manager) Remove(c *Client) {
 	if c.Win == nil {
 		return
 	}
@@ -39,50 +39,50 @@ func (st *Manager) Remove(c *Client) {
 	log.Info("Remove client [", c.Class, "]")
 
 	// Remove master window
-	mi := getIndex(st.Masters, c)
+	mi := getIndex(mg.Masters, c)
 	if mi >= 0 {
-		if len(st.Slaves) > 0 {
-			st.Masters[mi] = st.Slaves[0]
-			st.Slaves = st.Slaves[1:]
+		if len(mg.Slaves) > 0 {
+			mg.Masters[mi] = mg.Slaves[0]
+			mg.Slaves = mg.Slaves[1:]
 		} else {
-			st.Masters = removeClient(st.Masters, mi)
+			mg.Masters = removeClient(mg.Masters, mi)
 		}
 		return
 	}
 
 	// Remove slave window
-	si := getIndex(st.Slaves, c)
+	si := getIndex(mg.Slaves, c)
 	if si >= 0 {
-		st.Slaves = removeClient(st.Slaves, si)
+		mg.Slaves = removeClient(mg.Slaves, si)
 		return
 	}
 }
 
-func (st *Manager) IncreaseMaster() {
+func (mg *Manager) IncreaseMaster() {
 
 	// Increase master area
-	if len(st.Slaves) > 1 {
-		st.AllowedMasters = st.AllowedMasters + 1
-		st.Masters = append(st.Masters, st.Slaves[0])
-		st.Slaves = st.Slaves[1:]
+	if len(mg.Slaves) > 1 {
+		mg.AllowedMasters = mg.AllowedMasters + 1
+		mg.Masters = append(mg.Masters, mg.Slaves[0])
+		mg.Slaves = mg.Slaves[1:]
 	}
 
-	log.Info("Increase masters to ", st.AllowedMasters)
+	log.Info("Increase masters to ", mg.AllowedMasters)
 }
 
-func (st *Manager) DecreaseMaster() {
+func (mg *Manager) DecreaseMaster() {
 
 	// Decrease master area
-	if len(st.Masters) > 1 {
-		st.AllowedMasters = st.AllowedMasters - 1
-		st.Slaves = append([]Client{st.Masters[len(st.Masters)-1]}, st.Slaves...)
-		st.Masters = st.Masters[:len(st.Masters)-1]
+	if len(mg.Masters) > 1 {
+		mg.AllowedMasters = mg.AllowedMasters - 1
+		mg.Slaves = append([]Client{mg.Masters[len(mg.Masters)-1]}, mg.Slaves...)
+		mg.Masters = mg.Masters[:len(mg.Masters)-1]
 	}
 
-	log.Info("Decrease masters to ", st.AllowedMasters)
+	log.Info("Decrease masters to ", mg.AllowedMasters)
 }
 
-func (st *Manager) MakeMaster(c *Client) {
+func (mg *Manager) MakeMaster(c *Client) {
 	if c.Win == nil {
 		return
 	}
@@ -90,22 +90,28 @@ func (st *Manager) MakeMaster(c *Client) {
 	log.Info("Make window master [", c.Class, "]")
 
 	// Swap master with master
-	mi := getIndex(st.Masters, c)
+	mi := getIndex(mg.Masters, c)
 	if mi >= 0 {
-		st.Masters[0], st.Masters[mi] = st.Masters[mi], st.Masters[0]
+		mg.Masters[0], mg.Masters[mi] = mg.Masters[mi], mg.Masters[0]
 		return
 	}
 
 	// Swap slave with master
-	si := getIndex(st.Slaves, c)
+	si := getIndex(mg.Slaves, c)
 	if si >= 0 {
-		st.Masters[0], st.Slaves[si] = st.Slaves[si], st.Masters[0]
+		mg.Masters[0], mg.Slaves[si] = mg.Slaves[si], mg.Masters[0]
 		return
 	}
 }
 
-func (st *Manager) Next() Client {
-	clients := st.Clients()
+func (mg *Manager) IsMaster(c *Client) bool {
+
+	// Check if window is master
+	return getIndex(mg.Masters, c) >= 0
+}
+
+func (mg *Manager) Next() Client {
+	clients := mg.Clients()
 	lastIndex := len(clients) - 1
 
 	// Get next window
@@ -122,8 +128,8 @@ func (st *Manager) Next() Client {
 	return Client{}
 }
 
-func (st *Manager) Previous() Client {
-	clients := st.Clients()
+func (mg *Manager) Previous() Client {
+	clients := mg.Clients()
 	lastIndex := len(clients) - 1
 
 	// Get previous window
@@ -140,8 +146,8 @@ func (st *Manager) Previous() Client {
 	return Client{}
 }
 
-func (st *Manager) Clients() []Client {
-	return append(st.Masters, st.Slaves...)
+func (mg *Manager) Clients() []Client {
+	return append(mg.Masters, mg.Slaves...)
 }
 
 func addClient(cs []Client, c *Client) []Client {

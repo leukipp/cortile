@@ -8,10 +8,10 @@ type Corner struct {
 }
 
 type Area struct {
-	X1 uint // Rectangle top left x position
-	Y1 uint // Rectangle top left y position
-	X2 uint // Rectangle bottom right x position
-	Y2 uint // Rectangle bottom right y position
+	X1 int // Rectangle top left x position
+	Y1 int // Rectangle top left y position
+	X2 int // Rectangle bottom right x position
+	Y2 int // Rectangle bottom right y position
 }
 
 func CreateCorner(name string, enabled bool, x1 int, y1 int, x2 int, y2 int) (c Corner) {
@@ -20,10 +20,10 @@ func CreateCorner(name string, enabled bool, x1 int, y1 int, x2 int, y2 int) (c 
 		Enabled: enabled,
 		Active:  false,
 		Area: Area{
-			X1: uint(x1),
-			Y1: uint(y1),
-			X2: uint(x2),
-			Y2: uint(y2),
+			X1: x1,
+			Y1: y1,
+			X2: x2,
+			Y2: y2,
 		},
 	}
 
@@ -51,7 +51,7 @@ func CreateCorners() []Corner {
 	return []Corner{tl, tc, tr, cr, br, bc, bl, cl}
 }
 
-func (c *Corner) IsActive(x uint, y uint) bool {
+func (c *Corner) IsActive(x int, y int) bool {
 	x1, y1, x2, y2 := c.Area.X1, c.Area.Y1, c.Area.X2, c.Area.Y2
 
 	// Check if enabled and inside rectangle
