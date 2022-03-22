@@ -89,6 +89,30 @@ func (tr *Tracker) untrackWindow(w xproto.Window) {
 	}
 }
 
+func (tr *Tracker) handleMoveClient(c *store.Client) {
+
+	// Previous position
+	pGeom := c.CurrentProp.Geom
+	px, py, _, _ := pGeom.Pieces()
+
+	// Current position
+	cGeom, err := c.Win.DecorGeometry()
+	if err != nil {
+		return
+	}
+	cx, cy, cw, ch := cGeom.Pieces()
+
+	// Check position change
+	dx, dy := 0.0, 0.0 // TODO: Load from config
+	moved := (math.Abs(float64(cx-px)) > dx || math.Abs(float64(cy-py)) > dy)
+
+	if moved {
+		// TODO: Implement window swap
+		log.Trace("Window at ", cx, cy, cw, ch, " [", c.Class, "]")
+		log.Trace("Pointer at ", common.Pointer)
+	}
+}
+
 func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 	// Previous dimensions
@@ -102,24 +126,23 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	}
 	cw, ch := cGeom.Width(), cGeom.Height()
 
-	// Update dimensions
-	success := c.Update()
-	if !success {
-		return
-	}
+	// Check width or height change
+	dw, dh := 0.0, 0.0 // TODO: Load from config
+	resized := (math.Abs(float64(cw-pw)) > dw || math.Abs(float64(ch-ph)) > dh)
 
-	// Re-tile on width or height change
-	dw, dh := 0.0, 0.0
-	tile := (math.Abs(float64(cw-pw)) > dw || math.Abs(float64(ch-ph)) > dh)
-
-	// Tile workspace
-	if tile {
+	if resized {
 		ws := tr.Workspaces[c.Desk]
-		l := ws.ActiveLayout()
-		s := l.GetManager()
+		al := ws.ActiveLayout()
+		mg := al.GetManager()
+
+		// Update dimensions
+		success := c.Update()
+		if !success {
+			return
+		}
 
 		// Ignore master only windows
-		if len(s.Slaves) == 0 {
+		if len(mg.Slaves) == 0 {
 			return
 		}
 
@@ -130,21 +153,21 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 		proportion := 0.0
 		gap := common.Config.WindowGap
-		isMaster := ws.IsMaster(c)
-		layoutType := l.GetType()
+		isMaster := mg.IsMaster(c)
+		layoutType := al.GetType()
 		_, _, dw, dh := common.DesktopDimensions()
 
 		// Calculate proportion based on resized window width (TODO: LTR/RTL gap support)
 		if layoutType == "vertical" {
 			proportion = float64(cw+gap) / float64(dw)
 			if isMaster {
-				proportion = 1.0 - float64(cw+2*gap)/float64(dw)
+				proportion = 1.0 - (float64(cw+2*gap) / float64(dw))
 			}
 		}
 
 		// Calculate proportion based on resized window height (TODO: LTR/RTL gap support)
 		if layoutType == "horizontal" {
-			proportion = 1.0 - float64(ch+gap)/float64(dh)
+			proportion = 1.0 - (float64(ch+gap) / float64(dh))
 			if isMaster {
 				proportion = float64(ch+2*gap) / float64(dh)
 			}
@@ -153,7 +176,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		log.Debug("Proportion set to ", proportion, " [", c.Class, "]")
 
 		// Set proportion based on resized window
-		l.SetProportion(proportion)
+		al.SetProportion(proportion)
 		ws.Tile()
 	}
 }
@@ -224,18 +247,19 @@ func (tr *Tracker) handleClientUpdates(X *xgbutil.XUtil, ev xevent.PropertyNotif
 func (tr *Tracker) attachHandlers(c *store.Client) {
 	c.Win.Listen(xproto.EventMaskStructureNotify | xproto.EventMaskPropertyChange)
 
-	// Attach resize events
+	// Attach structure events
 	xevent.ConfigureNotifyFun(func(x *xgbutil.XUtil, ev xevent.ConfigureNotifyEvent) {
-		log.Debug("Client configure event [", c.Class, "]")
+		log.Debug("Client structure event [", c.Class, "]")
 
 		if tr.isTrackable(c.Win.Id) {
+			tr.handleMoveClient(c)
 			tr.handleResizeClient(c)
 		} else {
 			tr.untrackWindow(c.Win.Id)
 		}
 	}).Connect(common.X, c.Win.Id)
 
-	// Attach state events
+	// Attach property events
 	xevent.PropertyNotifyFun(func(x *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
 		aname, _ := xprop.AtomName(common.X, ev.Atom)
 		log.Debug("Client property event ", aname, " [", c.Class, "]")
