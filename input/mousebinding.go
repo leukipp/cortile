@@ -14,15 +14,20 @@ import (
 
 func BindMouse(t *desktop.Tracker) {
 	backgroundTask(common.X, 100, func() {
-		pointer, _ := xproto.QueryPointer(common.X.Conn(), common.X.RootWin()).Reply()
-		x, y := pointer.RootX, pointer.RootY
+
+		// Update pointer position
+		p, _ := xproto.QueryPointer(common.X.Conn(), common.X.RootWin()).Reply()
+		common.Pointer = common.Position{
+			X: int(p.RootX),
+			Y: int(p.RootY),
+		}
 
 		// Check corner states
 		for i := range common.Corners {
 			hc := &common.Corners[i]
 
 			wasActive := hc.Active
-			isActive := hc.IsActive(uint(x), uint(y))
+			isActive := hc.IsActive(common.Pointer.X, common.Pointer.Y)
 
 			if !wasActive && isActive {
 				log.Debug("Corner at position ", hc.Area, " is hot [", hc.Name, "]")

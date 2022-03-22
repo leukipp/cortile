@@ -22,11 +22,17 @@ var (
 	Stacking    []xproto.Window // List of client windows
 	ActiveWin   xproto.Window   // Current active window
 	Corners     []Corner        // Corners for pointer events
+	Pointer     Position        // Pointer position
 )
 
 type Head struct {
 	Screens  xinerama.Heads // Screen size (full monitor size)
 	Desktops xinerama.Heads // Desktop size (workarea without panels)
+}
+
+type Position struct {
+	X int // X position
+	Y int // Y position
 }
 
 func Init() {
@@ -106,13 +112,11 @@ func ViewPortsGet(X *xgbutil.XUtil) (Head, error) {
 
 func DesktopDimensions() (x, y, w, h int) {
 	for _, d := range ViewPorts.Desktops {
-		hx, hy := d.X(), d.Y()
-		hw, hh := int(d.Width()), int(d.Height())
+		hx, hy, hw, hh := d.Pieces()
 
 		// Use biggest head (monitor) as desktop area
 		if hw*hh > w*h {
-			x, y = hx, hy
-			w, h = hw, hh
+			x, y, w, h = hx, hy, hw, hh
 		}
 	}
 
@@ -121,13 +125,11 @@ func DesktopDimensions() (x, y, w, h int) {
 
 func ScreenDimensions() (x, y, w, h int) {
 	for _, s := range ViewPorts.Screens {
-		hx, hy := s.X(), s.Y()
-		hw, hh := int(s.Width()), int(s.Height())
+		hx, hy, hw, hh := s.Pieces()
 
 		// Use biggest head (monitor) as screen area
 		if hw*hh > w*h {
-			x, y = hx, hy
-			w, h = hw, hh
+			x, y, w, h = hx, hy, hw, hh
 		}
 	}
 
