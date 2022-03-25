@@ -34,7 +34,7 @@ func BindMouse(t *desktop.Tracker) {
 			hc := &common.Corners[i]
 
 			wasActive := hc.Active
-			isActive := hc.IsActive(common.Pointer.X, common.Pointer.Y)
+			isActive := hc.IsActive(common.Pointer)
 
 			if !wasActive && isActive {
 				log.Debug("Corner at position ", hc.Area, " is hot [", hc.Name, "]")

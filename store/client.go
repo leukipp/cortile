@@ -34,7 +34,7 @@ type Property struct {
 	Deco bool       // Decoration active or not
 }
 
-func CreateClient(w xproto.Window) (c Client) {
+func CreateClient(w xproto.Window) (c *Client) {
 	win := xwindow.New(common.X, w)
 	class, name, desk, _, _ := GetInfo(w)
 
@@ -43,7 +43,7 @@ func CreateClient(w xproto.Window) (c Client) {
 		log.Info(err)
 	}
 
-	c = Client{
+	return &Client{
 		Win:   win,
 		Desk:  desk,
 		Name:  name,
@@ -57,8 +57,6 @@ func CreateClient(w xproto.Window) (c Client) {
 			Deco: HasDecoration(w),
 		},
 	}
-
-	return c
 }
 
 func (c *Client) MoveResize(x, y, w, h int) {
@@ -66,21 +64,26 @@ func (c *Client) MoveResize(x, y, w, h int) {
 
 	dw, dh := c.DecorDimensions()
 
+	// Move window
 	err := c.Win.WMMoveResize(x, y, w-dw, h-dh)
 	if err != nil {
 		log.Warn("Error when moving window [", c.Class, "]")
 	}
 
+	// Update stored dimensions
 	c.Update()
 }
 
 func (c *Client) DecorDimensions() (w int, h int) {
+
+	// Inner dimension
 	cGeom, err1 := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
 	if err1 != nil {
 		log.Warn(err1)
 		return
 	}
 
+	// Outer dimension
 	pGeom, err2 := c.Win.DecorGeometry()
 	if err2 != nil {
 		log.Warn(err2)
@@ -98,10 +101,12 @@ func (c *Client) Update() (success bool) {
 		return false
 	}
 
+	// Set client properties
 	c.Class = class
 	c.Name = name
 	c.Desk = desk
 
+	// Update client geometry
 	pGeom, err := c.Win.DecorGeometry()
 	if err != nil {
 		log.Warn(err)
@@ -144,6 +149,7 @@ func (c Client) Decorate() {
 func (c Client) Restore() {
 	c.Decorate()
 
+	// Move window to stored position
 	geom := c.SavedProp.Geom
 	c.MoveResize(geom.X(), geom.Y(), geom.Width(), geom.Height())
 
@@ -154,6 +160,7 @@ func GetInfo(w xproto.Window) (class string, name string, desk uint, states []st
 	var err error
 	var wmClass *icccm.WmClass
 
+	// Class name
 	wmClass, err = icccm.WmClassGet(common.X, w)
 	if err != nil {
 		log.Trace(err)
@@ -162,24 +169,28 @@ func GetInfo(w xproto.Window) (class string, name string, desk uint, states []st
 		class = wmClass.Class
 	}
 
+	// Windows title
 	name, err = icccm.WmNameGet(common.X, w)
 	if err != nil {
 		log.Trace(err, " [", class, "]")
 		name = UNKNOWN
 	}
 
+	// Window desktop
 	desk, err = ewmh.WmDesktopGet(common.X, w)
 	if err != nil {
 		log.Trace(err, " [", class, "]")
 		desk = math.MaxUint
 	}
 
+	// Window states
 	states, err = ewmh.WmStateGet(common.X, w)
 	if err != nil {
 		log.Trace(err, " [", class, "]")
 		states = []string{}
 	}
 
+	// Window hints
 	hints, err = motif.WmHintsGet(common.X, w)
 	if err != nil {
 		hints = &motif.Hints{}

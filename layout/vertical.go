@@ -92,14 +92,6 @@ func (l *VerticalLayout) Undo() {
 	}
 }
 
-func (l *VerticalLayout) NextClient() {
-	l.Next().Activate()
-}
-
-func (l *VerticalLayout) PreviousClient() {
-	l.Previous().Activate()
-}
-
 func (l *VerticalLayout) IncrementProportion() {
 	precision := 1.0 / common.Config.ProportionStep
 	proportion := math.Round(l.Proportion*precision)/precision + common.Config.ProportionStep

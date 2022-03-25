@@ -66,13 +66,13 @@ func (tr *Tracker) trackWindow(w xproto.Window) {
 
 	// Add new client
 	c := store.CreateClient(w)
-	tr.Clients[c.Win.Id] = &c
+	tr.Clients[c.Win.Id] = c
 	ws := tr.Workspaces[c.Desk]
-	ws.AddClient(&c)
+	ws.AddClient(c)
 
 	// Wait with handler attachment, as some applications load geometry delayed
 	time.AfterFunc(1000*time.Millisecond, func() {
-		tr.attachHandlers(&c)
+		tr.attachHandlers(c)
 		tr.Workspaces[common.CurrentDesk].Tile()
 	})
 }
@@ -86,30 +86,6 @@ func (tr *Tracker) untrackWindow(w xproto.Window) {
 		ws.RemoveClient(c)
 		xevent.Detach(common.X, w)
 		delete(tr.Clients, w)
-	}
-}
-
-func (tr *Tracker) handleMoveClient(c *store.Client) {
-
-	// Previous position
-	pGeom := c.CurrentProp.Geom
-	px, py, _, _ := pGeom.Pieces()
-
-	// Current position
-	cGeom, err := c.Win.DecorGeometry()
-	if err != nil {
-		return
-	}
-	cx, cy, cw, ch := cGeom.Pieces()
-
-	// Check position change
-	dx, dy := 0.0, 0.0 // TODO: Load from config
-	moved := (math.Abs(float64(cx-px)) > dx || math.Abs(float64(cy-py)) > dy)
-
-	if moved {
-		// TODO: Implement window swap
-		log.Trace("Window at ", cx, cy, cw, ch, " [", c.Class, "]")
-		log.Trace("Pointer at ", common.Pointer)
 	}
 }
 
@@ -135,7 +111,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		al := ws.ActiveLayout()
 		mg := al.GetManager()
 
-		// Update dimensions
+		// Update client dimensions
 		success := c.Update()
 		if !success {
 			return
@@ -153,14 +129,13 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 		proportion := 0.0
 		gap := common.Config.WindowGap
-		isMaster := mg.IsMaster(c)
 		layoutType := al.GetType()
 		_, _, dw, dh := common.DesktopDimensions()
 
 		// Calculate proportion based on resized window width (TODO: LTR/RTL gap support)
 		if layoutType == "vertical" {
 			proportion = float64(cw+gap) / float64(dw)
-			if isMaster {
+			if mg.IsMaster(c) {
 				proportion = 1.0 - (float64(cw+2*gap) / float64(dw))
 			}
 		}
@@ -168,15 +143,61 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		// Calculate proportion based on resized window height (TODO: LTR/RTL gap support)
 		if layoutType == "horizontal" {
 			proportion = 1.0 - (float64(ch+gap) / float64(dh))
-			if isMaster {
+			if mg.IsMaster(c) {
 				proportion = float64(ch+2*gap) / float64(dh)
 			}
 		}
 
-		log.Debug("Proportion set to ", proportion, " [", c.Class, "]")
-
 		// Set proportion based on resized window
+		log.Info("Proportion set to ", math.Round(proportion*100)/100, " [", c.Class, "]")
 		al.SetProportion(proportion)
+		ws.Tile()
+	}
+}
+
+func (tr *Tracker) handleMoveClient(c *store.Client) {
+
+	// Previous position
+	pGeom := c.CurrentProp.Geom
+	px, py, _, _ := pGeom.Pieces()
+
+	// Current position
+	cGeom, err := c.Win.DecorGeometry()
+	if err != nil {
+		return
+	}
+	cx, cy, _, _ := cGeom.Pieces()
+
+	// Check position change
+	dx, dy := 0.0, 0.0 // TODO: Load from config
+	moved := (math.Abs(float64(cx-px)) > dx || math.Abs(float64(cy-py)) > dy)
+
+	if moved {
+		ws := tr.Workspaces[c.Desk]
+		al := ws.ActiveLayout()
+		mg := al.GetManager()
+
+		// Check if pointer hovers other clients
+		clients := mg.Clients()
+		for _, co := range clients {
+			if c.Win.Id == co.Win.Id {
+				continue
+			}
+
+			// Update client dimensions
+			success := co.Update()
+			if !success {
+				return
+			}
+
+			// Swap moved client with hovered client
+			isHovered := common.IsInsideRect(common.Pointer, co.CurrentProp.Geom)
+			if isHovered {
+				log.Info("Swap clients [", c.Class, " - ", co.Class, "]")
+				mg.SwapClient(c, co)
+				break
+			}
+		}
 		ws.Tile()
 	}
 }
@@ -252,7 +273,6 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 		log.Debug("Client structure event [", c.Class, "]")
 
 		if tr.isTrackable(c.Win.Id) {
-			tr.handleMoveClient(c)
 			tr.handleResizeClient(c)
 		} else {
 			tr.untrackWindow(c.Win.Id)
@@ -268,6 +288,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 			if aname == "_NET_WM_STATE" {
 				tr.handleMaximizedClient(c)
 				tr.handleMinimizedClient(c)
+				tr.handleMoveClient(c)
 			} else if aname == "_NET_WM_DESKTOP" {
 				tr.handleDesktopChange(c)
 			}

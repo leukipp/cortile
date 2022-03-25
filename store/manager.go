@@ -7,20 +7,20 @@ import (
 )
 
 type Manager struct {
-	Masters        []Client // List of master window clients
-	Slaves         []Client // List of slave window clients
-	AllowedMasters int      // Number of maximal allowed masters
+	Masters        []*Client // List of master window clients
+	Slaves         []*Client // List of slave window clients
+	AllowedMasters int       // Number of maximal allowed masters
 }
 
 func CreateManager() *Manager {
 	return &Manager{
-		Masters:        make([]Client, 0),
-		Slaves:         make([]Client, 0),
+		Masters:        make([]*Client, 0),
+		Slaves:         make([]*Client, 0),
 		AllowedMasters: 1,
 	}
 }
 
-func (mg *Manager) Add(c *Client) {
+func (mg *Manager) AddClient(c *Client) {
 	if c == nil {
 		return
 	}
@@ -35,7 +35,7 @@ func (mg *Manager) Add(c *Client) {
 	}
 }
 
-func (mg *Manager) Remove(c *Client) {
+func (mg *Manager) RemoveClient(c *Client) {
 	if c == nil {
 		return
 	}
@@ -62,6 +62,85 @@ func (mg *Manager) Remove(c *Client) {
 	}
 }
 
+func (mg *Manager) MakeMaster(c *Client) {
+	if c == nil {
+		return
+	}
+
+	log.Info("Make window master [", c.Class, "]")
+
+	// Swap window with first master
+	if len(mg.Masters) > 0 {
+		mg.SwapClient(c, mg.Masters[0])
+	}
+}
+
+func (mg *Manager) SwapClient(c1 *Client, c2 *Client) {
+	mIndex1 := getIndex(mg.Masters, c1)
+	sIndex1 := getIndex(mg.Slaves, c1)
+
+	mIndex2 := getIndex(mg.Masters, c2)
+	sIndex2 := getIndex(mg.Slaves, c2)
+
+	// Swap master with master
+	if mIndex1 >= 0 && mIndex2 >= 0 {
+		mg.Masters[mIndex2], mg.Masters[mIndex1] = mg.Masters[mIndex1], mg.Masters[mIndex2]
+		return
+	}
+
+	// Swap master with slave
+	if mIndex1 >= 0 && sIndex2 >= 0 {
+		mg.Slaves[sIndex2], mg.Masters[mIndex1] = mg.Masters[mIndex1], mg.Slaves[sIndex2]
+		return
+	}
+
+	// Swap slave with master
+	if sIndex1 >= 0 && mIndex2 >= 0 {
+		mg.Masters[mIndex2], mg.Slaves[sIndex1] = mg.Slaves[sIndex1], mg.Masters[mIndex2]
+		return
+	}
+
+	// Swap slave with slave
+	if sIndex1 >= 0 && sIndex2 >= 0 {
+		mg.Slaves[sIndex2], mg.Slaves[sIndex1] = mg.Slaves[sIndex1], mg.Slaves[sIndex2]
+		return
+	}
+}
+
+func (mg *Manager) NextClient() {
+	clients := mg.Clients()
+	lastIndex := len(clients) - 1
+
+	// Get next window
+	for i, c := range clients {
+		if c.Win.Id == common.ActiveWin {
+			next := i + 1
+			if next > lastIndex {
+				next = 0
+			}
+			clients[next].Activate()
+			break
+		}
+	}
+}
+
+func (mg *Manager) PreviousClient() {
+	clients := mg.Clients()
+	lastIndex := len(clients) - 1
+
+	// Get previous window
+	for i, c := range clients {
+		if c.Win.Id == common.ActiveWin {
+			prev := i - 1
+			if prev < 0 {
+				prev = lastIndex
+			}
+			clients[prev].Activate()
+			break
+		}
+	}
+}
+
 func (mg *Manager) IncreaseMaster() {
 
 	// Increase master area
@@ -79,33 +158,11 @@ func (mg *Manager) DecreaseMaster() {
 	// Decrease master area
 	if len(mg.Masters) > 1 {
 		mg.AllowedMasters = mg.AllowedMasters - 1
-		mg.Slaves = append([]Client{mg.Masters[len(mg.Masters)-1]}, mg.Slaves...)
+		mg.Slaves = append([]*Client{mg.Masters[len(mg.Masters)-1]}, mg.Slaves...)
 		mg.Masters = mg.Masters[:len(mg.Masters)-1]
 	}
 
 	log.Info("Decrease masters to ", mg.AllowedMasters)
-}
-
-func (mg *Manager) MakeMaster(c *Client) {
-	if c == nil {
-		return
-	}
-
-	log.Info("Make window master [", c.Class, "]")
-
-	// Swap master with master
-	mi := getIndex(mg.Masters, c)
-	if mi >= 0 {
-		mg.Masters[0], mg.Masters[mi] = mg.Masters[mi], mg.Masters[0]
-		return
-	}
-
-	// Swap slave with master
-	si := getIndex(mg.Slaves, c)
-	if si >= 0 {
-		mg.Masters[0], mg.Slaves[si] = mg.Slaves[si], mg.Masters[0]
-		return
-	}
 }
 
 func (mg *Manager) IsMaster(c *Client) bool {
@@ -117,55 +174,19 @@ func (mg *Manager) IsMaster(c *Client) bool {
 	return getIndex(mg.Masters, c) >= 0
 }
 
-func (mg *Manager) Next() Client {
-	clients := mg.Clients()
-	lastIndex := len(clients) - 1
-
-	// Get next window
-	for i, c := range clients {
-		if c.Win.Id == common.ActiveWin {
-			next := i + 1
-			if next > lastIndex {
-				next = 0
-			}
-			return clients[next]
-		}
-	}
-
-	return Client{}
-}
-
-func (mg *Manager) Previous() Client {
-	clients := mg.Clients()
-	lastIndex := len(clients) - 1
-
-	// Get previous window
-	for i, c := range clients {
-		if c.Win.Id == common.ActiveWin {
-			prev := i - 1
-			if prev < 0 {
-				prev = lastIndex
-			}
-			return clients[prev]
-		}
-	}
-
-	return Client{}
-}
-
-func (mg *Manager) Clients() []Client {
+func (mg *Manager) Clients() []*Client {
 	return append(mg.Masters, mg.Slaves...)
 }
 
-func addClient(cs []Client, c *Client) []Client {
-	return append([]Client{*c}, cs...)
+func addClient(cs []*Client, c *Client) []*Client {
+	return append([]*Client{c}, cs...)
 }
 
-func removeClient(cs []Client, i int) []Client {
+func removeClient(cs []*Client, i int) []*Client {
 	return append(cs[:i], cs[i+1:]...)
 }
 
-func getIndex(cs []Client, c *Client) int {
+func getIndex(cs []*Client, c *Client) int {
 	for i, m := range cs {
 		if m.Win.Id == c.Win.Id {
 			return i

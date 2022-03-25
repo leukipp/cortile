@@ -37,6 +37,20 @@ func BindKeys(t *desktop.Tracker) {
 		ws.ActiveLayout().MakeMaster(c)
 		ws.Tile()
 	})
+	k.bind("next_window", func() {
+		ws := t.Workspaces[common.CurrentDesk]
+		if !ws.TilingEnabled {
+			return
+		}
+		ws.ActiveLayout().NextClient()
+	})
+	k.bind("previous_window", func() {
+		ws := t.Workspaces[common.CurrentDesk]
+		if !ws.TilingEnabled {
+			return
+		}
+		ws.ActiveLayout().PreviousClient()
+	})
 	k.bind("switch_layout", func() {
 		ws := t.Workspaces[common.CurrentDesk]
 		if !ws.TilingEnabled {
@@ -59,20 +73,6 @@ func BindKeys(t *desktop.Tracker) {
 		}
 		ws.ActiveLayout().DecreaseMaster()
 		ws.Tile()
-	})
-	k.bind("next_window", func() {
-		ws := t.Workspaces[common.CurrentDesk]
-		if !ws.TilingEnabled {
-			return
-		}
-		ws.ActiveLayout().NextClient()
-	})
-	k.bind("previous_window", func() {
-		ws := t.Workspaces[common.CurrentDesk]
-		if !ws.TilingEnabled {
-			return
-		}
-		ws.ActiveLayout().PreviousClient()
 	})
 	k.bind("increment_master", func() {
 		ws := t.Workspaces[common.CurrentDesk]

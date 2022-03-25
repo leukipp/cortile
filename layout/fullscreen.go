@@ -37,14 +37,6 @@ func (l *FullscreenLayout) Undo() {
 	}
 }
 
-func (l *FullscreenLayout) NextClient() {
-	l.Next().Activate()
-}
-
-func (l *FullscreenLayout) PreviousClient() {
-	l.Previous().Activate()
-}
-
 func (l *FullscreenLayout) IncrementProportion() {
 }
 

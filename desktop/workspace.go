@@ -21,7 +21,7 @@ func CreateWorkspaces() map[uint]*Workspace {
 
 		// Create layouts for each workspace
 		layouts := CreateLayouts(i)
-		ws := Workspace{
+		ws := &Workspace{
 			Layouts:       layouts,
 			TilingEnabled: common.Config.TilingEnabled,
 		}
@@ -33,7 +33,7 @@ func CreateWorkspaces() map[uint]*Workspace {
 			}
 		}
 
-		workspaces[i] = &ws
+		workspaces[i] = ws
 	}
 
 	return workspaces
@@ -79,7 +79,7 @@ func (ws *Workspace) AddClient(c *store.Client) {
 
 	// Add client to all layouts
 	for _, l := range ws.Layouts {
-		l.Add(c)
+		l.AddClient(c)
 	}
 }
 
@@ -88,6 +88,6 @@ func (ws *Workspace) RemoveClient(c *store.Client) {
 
 	// Remove client from all layouts
 	for _, l := range ws.Layouts {
-		l.Remove(c)
+		l.RemoveClient(c)
 	}
 }
