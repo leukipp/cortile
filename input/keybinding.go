@@ -14,55 +14,79 @@ import (
 type KeyMapper struct{}
 
 func BindKeys(t *desktop.Tracker) {
-	workspaces := t.Workspaces
 	keybind.Initialize(common.X)
 	k := KeyMapper{}
 
 	// Bind keyboard shortcuts
 	k.bind("tile", func() {
-		ws := workspaces[common.CurrentDesk]
+		ws := t.Workspaces[common.CurrentDesk]
 		ws.TilingEnabled = true
 		ws.Tile()
 	})
 	k.bind("untile", func() {
-		ws := workspaces[common.CurrentDesk]
+		ws := t.Workspaces[common.CurrentDesk]
 		ws.TilingEnabled = false
 		ws.UnTile()
 	})
 	k.bind("make_active_window_master", func() {
 		c := t.Clients[common.ActiveWin]
-		ws := workspaces[common.CurrentDesk]
+		ws := t.Workspaces[common.CurrentDesk]
+		if !ws.TilingEnabled {
+			return
+		}
 		ws.ActiveLayout().MakeMaster(c)
 		ws.Tile()
 	})
 	k.bind("switch_layout", func() {
-		workspaces[common.CurrentDesk].SwitchLayout()
+		ws := t.Workspaces[common.CurrentDesk]
+		if !ws.TilingEnabled {
+			return
+		}
+		ws.SwitchLayout()
 	})
 	k.bind("increase_master", func() {
-		ws := workspaces[common.CurrentDesk]
+		ws := t.Workspaces[common.CurrentDesk]
+		if !ws.TilingEnabled {
+			return
+		}
 		ws.ActiveLayout().IncreaseMaster()
 		ws.Tile()
 	})
 	k.bind("decrease_master", func() {
-		ws := workspaces[common.CurrentDesk]
+		ws := t.Workspaces[common.CurrentDesk]
+		if !ws.TilingEnabled {
+			return
+		}
 		ws.ActiveLayout().DecreaseMaster()
 		ws.Tile()
 	})
 	k.bind("next_window", func() {
-		ws := workspaces[common.CurrentDesk]
+		ws := t.Workspaces[common.CurrentDesk]
+		if !ws.TilingEnabled {
+			return
+		}
 		ws.ActiveLayout().NextClient()
 	})
 	k.bind("previous_window", func() {
-		ws := workspaces[common.CurrentDesk]
+		ws := t.Workspaces[common.CurrentDesk]
+		if !ws.TilingEnabled {
+			return
+		}
 		ws.ActiveLayout().PreviousClient()
 	})
 	k.bind("increment_master", func() {
-		ws := workspaces[common.CurrentDesk]
+		ws := t.Workspaces[common.CurrentDesk]
+		if !ws.TilingEnabled {
+			return
+		}
 		ws.ActiveLayout().IncrementProportion()
 		ws.Tile()
 	})
 	k.bind("decrement_master", func() {
-		ws := workspaces[common.CurrentDesk]
+		ws := t.Workspaces[common.CurrentDesk]
+		if !ws.TilingEnabled {
+			return
+		}
 		ws.ActiveLayout().DecrementProportion()
 		ws.Tile()
 	})

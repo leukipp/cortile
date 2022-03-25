@@ -22,6 +22,13 @@ func BindMouse(t *desktop.Tracker) {
 			Y: int(p.RootY),
 		}
 
+		// Get active client and workspace
+		c := t.Clients[common.ActiveWin]
+		ws := t.Workspaces[common.CurrentDesk]
+		if !ws.TilingEnabled {
+			return
+		}
+
 		// Check corner states
 		for i := range common.Corners {
 			hc := &common.Corners[i]
@@ -31,10 +38,6 @@ func BindMouse(t *desktop.Tracker) {
 
 			if !wasActive && isActive {
 				log.Debug("Corner at position ", hc.Area, " is hot [", hc.Name, "]")
-
-				// Get active clients and workspace
-				c := t.Clients[common.ActiveWin]
-				ws := t.Workspaces[common.CurrentDesk]
 
 				// TODO: Load from config
 				switch hc.Name {

@@ -56,8 +56,22 @@ func (ws *Workspace) ActiveLayout() Layout {
 }
 
 func (ws *Workspace) SwitchLayout() {
+	if !ws.TilingEnabled {
+		return
+	}
 	ws.ActiveLayoutNum = (ws.ActiveLayoutNum + 1) % uint(len(ws.Layouts))
 	ws.ActiveLayout().Do()
+}
+
+func (ws *Workspace) Tile() {
+	if !ws.TilingEnabled {
+		return
+	}
+	ws.ActiveLayout().Do()
+}
+
+func (ws *Workspace) UnTile() {
+	ws.ActiveLayout().Undo()
 }
 
 func (ws *Workspace) AddClient(c *store.Client) {
@@ -76,14 +90,4 @@ func (ws *Workspace) RemoveClient(c *store.Client) {
 	for _, l := range ws.Layouts {
 		l.Remove(c)
 	}
-}
-
-func (ws *Workspace) Tile() {
-	if ws.TilingEnabled {
-		ws.ActiveLayout().Do()
-	}
-}
-
-func (ws *Workspace) UnTile() {
-	ws.ActiveLayout().Undo()
 }
