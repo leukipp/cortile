@@ -22,7 +22,7 @@ func CreateFullscreenLayout(workspaceNum uint) *FullscreenLayout {
 }
 
 func (l *FullscreenLayout) Do() {
-	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetType(), " layout")
+	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetType(), " layout [workspace-", l.WorkspaceNum, "]")
 
 	gap := common.Config.WindowGap
 	for _, c := range l.Clients() {

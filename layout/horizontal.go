@@ -26,7 +26,7 @@ func CreateHorizontalLayout(workspaceNum uint) *HorizontalLayout {
 }
 
 func (l *HorizontalLayout) Do() {
-	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetType(), " layout")
+	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetType(), " layout [workspace-", l.WorkspaceNum, "]")
 
 	dx, dy, dw, dh := common.DesktopDimensions()
 	msize := len(l.Masters)
