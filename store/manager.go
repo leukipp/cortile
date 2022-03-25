@@ -21,6 +21,10 @@ func CreateManager() *Manager {
 }
 
 func (mg *Manager) Add(c *Client) {
+	if c == nil {
+		return
+	}
+
 	log.Info("Add client [", c.Class, "]")
 
 	// Fill up master area then slave area
@@ -32,7 +36,7 @@ func (mg *Manager) Add(c *Client) {
 }
 
 func (mg *Manager) Remove(c *Client) {
-	if c.Win == nil {
+	if c == nil {
 		return
 	}
 
@@ -83,7 +87,7 @@ func (mg *Manager) DecreaseMaster() {
 }
 
 func (mg *Manager) MakeMaster(c *Client) {
-	if c.Win == nil {
+	if c == nil {
 		return
 	}
 
@@ -105,6 +109,9 @@ func (mg *Manager) MakeMaster(c *Client) {
 }
 
 func (mg *Manager) IsMaster(c *Client) bool {
+	if c == nil {
+		return false
+	}
 
 	// Check if window is master
 	return getIndex(mg.Masters, c) >= 0
