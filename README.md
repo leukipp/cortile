@@ -62,13 +62,13 @@ The config file is located at `~/.config/cortile/config.toml`.
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>t</kbd> | Tile current workspace            |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>u</kbd> | Untile current workspace          |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>m</kbd> | Make the active window master     |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>i</kbd> | Increase number of master windows |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd> | Decrease number of master windows |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>s</kbd> | Cycle through layouts             |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>n</kbd> | Goto next window                  |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>p</kbd> | Goto previous window              |
-| <kbd>Ctrl</kbd>+<kbd>]</kbd>                  | Increase size of master windows   |
-| <kbd>Ctrl</kbd>+<kbd>[</kbd>                  | Decrease size of master windows   |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>s</kbd> | Cycle through layouts             |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>i</kbd> | Increase number of master windows |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd> | Decrease number of master windows |
+| <kbd>Ctrl</kbd>+<kbd>]</kbd>                  | Increment size of master windows  |
+| <kbd>Ctrl</kbd>+<kbd>[</kbd>                  | Decrement size of master windows  |
 
 ## WIP
 - Configurable hot corners (current: hardcoded corner events).
