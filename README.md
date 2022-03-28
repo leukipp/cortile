@@ -1,5 +1,7 @@
 # Cortile [WIP]
-Tiling manager with hot corner support for Xfce and other [EWMH Compliant Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints). Simply stick to your current window manager and install [cortile](https://github.com/leukipp/cortile) on top. Once enabled, the tiling manager takes care of resizing and positioning of existing and new windows.
+Tiling manager with hot corner support for Xfce and other [EWMH Compliant Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints).  
+Simply keep your current window manager and install [cortile](https://github.com/leukipp/cortile) on top of it.
+Once enabled, the tiling manager will handle resizing and positioning of existing and new windows.
 
 ## Features
 - Workspace based tiling.
@@ -11,25 +13,46 @@ Tiling manager with hot corner support for Xfce and other [EWMH Compliant Window
 - Multi monitor support.
 
 ## Install
+You need [go](https://go.dev/) >= 1.17 to run [cortile](https://github.com/leukipp/cortile).
+
 ### Requirements
-Install [go](https://go.dev/) 1.17 with `apt`:
+Install go via `archive`:
+```bash
+cd /tmp && wget https://dl.google.com/go/go1.17.linux-amd64.tar.gz
+sudo tar -xvf go1.17.linux-amd64.tar.gz
+sudo mv -fi go /usr/local
+```
+
+```bash
+echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.profile
+echo "export GOPATH=~/.go" >> ~/.profile
+source ~/.profile
+```
+
+Install go via `apt`:
 ```bash
 sudo apt install golang
 ```
 
-Install [go](https://go.dev/) 1.17 with `pacman`:
+Install go via `pacman`:
 ```bash
 sudo pacman -S go
 ```
 
-### Use remote source
-Install [cortile](https://github.com/leukipp/cortile) from GitHub `main` branch:
+### Cortile
+Check your go version:
+```bash
+go version
+```
+
+#### Use remote source
+Install cortile from GitHub `main` branch:
 ```bash
 go install github.com/leukipp/cortile@main
 ```
 
-### Use local source
-Clone [cortile](https://github.com/leukipp/cortile) from GitHub `main` branch:
+#### Use local source
+Clone cortile from GitHub `main` branch:
 ```bash
 git clone https://github.com/leukipp/cortile.git -b main
 cd cortile
@@ -43,8 +66,10 @@ go build && go install
 ## Usage
 Start in verbose mode:
 ```bash
-cortile -v
+~/.go/bin/cortile -v
 ```
+
+In case of warnings during startup, check if [config.toml](https://github.com/leukipp/cortile/blob/main/config.toml) is properly configured.
 
 ### Xfce
 Useful shortcuts for Xfce environments:
