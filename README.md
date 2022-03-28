@@ -1,11 +1,12 @@
 # Cortile [WIP]
-Tiling manager with hot corner support for Xfce, OpenBox and other [EWMH Compliant Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints).
+Tiling manager with hot corner support for Xfce and other [EWMH Compliant Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints). Simply stick to your current window manager and install [cortile](https://github.com/leukipp/cortile) on top. Once enabled, the tiling manager takes care of resizing and positioning of existing and new windows.
 
 ## Features
 - Workspace based tiling.
 - Keyboard and hot corner events.
-- Vertical and horizontal tiling.
-- Resize of master/slave area.
+- Vertical, horizontal and fullscreen mode.
+- Resize of master / slave area.
+- Drag and drop window swap.
 - Auto detection of panels.
 - Multi monitor support.
 
@@ -39,23 +40,27 @@ Once you have made local changes run:
 go build && go install
 ```
 
-## Run
+## Usage
 Start in verbose mode:
 ```bash
 cortile -v
 ```
 
-Window resizing can be done with <kbd>Alt</kbd>+<kbd>Right-Click</kbd> on Xfce.
+### Xfce
+Useful shortcuts for Xfce environments:
+- Move window: <kbd>Alt</kbd>+<kbd>Left-Click</kbd>.
+- Resize window: <kbd>Alt</kbd>+<kbd>Right-Click</kbd>.
+- Maximize window: <kbd>Alt</kbd>+<kbd>Double-Click</kbd>.
 
 ## Config
 The config file is located at `~/.config/cortile/config.toml`.
 
 | Corner events                      | Description                       |
 | ---------------------------------- | --------------------------------- |
-| <kbd>top</kbd>-<kbd>left</kbd>     | Cycle through layouts             |
-| <kbd>top</kbd>-<kbd>right</kbd>    | Make the active window master     |
-| <kbd>bottom</kbd>-<kbd>right</kbd> | Increase number of master windows |
-| <kbd>bottom</kbd>-<kbd>left</kbd>  | Decrease number of master windows |
+| <kbd>Top</kbd>-<kbd>Left</kbd>     | Cycle through layouts             |
+| <kbd>Top</kbd>-<kbd>Right</kbd>    | Make the active window master     |
+| <kbd>Bottom</kbd>-<kbd>Right</kbd> | Increase number of master windows |
+| <kbd>Bottom</kbd>-<kbd>Left</kbd>  | Decrease number of master windows |
 
 | Key events                                    | Description                       |
 | --------------------------------------------- | --------------------------------- |
