@@ -22,11 +22,17 @@ var UNKNOWN = "<UNKNOWN>"
 
 type Client struct {
 	Win         *xwindow.Window // X window object
-	Desk        uint            // Desktop the client is currently in
-	Name        string          // Client window title name
-	Class       string          // Client window application name
-	CurrentProp Property        // Properties that the client has at the moment
-	SavedProp   Property        // Properties that the client had before tiling
+	Info        Info
+	CurrentProp Property // Properties that the client has at the moment
+	SavedProp   Property // Properties that the client had before tiling
+}
+
+type Info struct {
+	Class  string       // Client window application name
+	Name   string       // Client window title name
+	Desk   uint         // Desktop the client is currently in
+	States []string     // Client window states
+	Hints  *motif.Hints // Client window hints
 }
 
 type Property struct {
@@ -36,7 +42,7 @@ type Property struct {
 
 func CreateClient(w xproto.Window) (c *Client) {
 	win := xwindow.New(common.X, w)
-	class, name, desk, _, _ := GetInfo(w)
+	info := GetInfo(w)
 
 	savedGeom, err := win.DecorGeometry()
 	if err != nil {
@@ -44,10 +50,8 @@ func CreateClient(w xproto.Window) (c *Client) {
 	}
 
 	return &Client{
-		Win:   win,
-		Desk:  desk,
-		Name:  name,
-		Class: class,
+		Win:  win,
+		Info: info,
 		CurrentProp: Property{
 			Geom: savedGeom,
 			Deco: HasDecoration(w),
@@ -67,7 +71,7 @@ func (c *Client) MoveResize(x, y, w, h int) {
 	// Move window
 	err := c.Win.WMMoveResize(x, y, w-dw, h-dh)
 	if err != nil {
-		log.Warn("Error when moving window [", c.Class, "]")
+		log.Warn("Error when moving window [", c.Info.Class, "]")
 	}
 
 	// Update stored dimensions
@@ -96,15 +100,13 @@ func (c *Client) DecorDimensions() (w int, h int) {
 }
 
 func (c *Client) Update() (success bool) {
-	class, name, desk, _, _ := GetInfo(c.Win.Id)
-	if class == UNKNOWN {
+	info := GetInfo(c.Win.Id)
+	if info.Class == UNKNOWN {
 		return false
 	}
 
-	// Set client properties
-	c.Class = class
-	c.Name = name
-	c.Desk = desk
+	// Set client infos
+	c.Info = info
 
 	// Update client geometry
 	pGeom, err := c.Win.DecorGeometry()
@@ -153,12 +155,18 @@ func (c Client) Restore() {
 	geom := c.SavedProp.Geom
 	c.MoveResize(geom.X(), geom.Y(), geom.Width(), geom.Height())
 
-	log.Info("Restoring window position x=", geom.X(), ", y=", geom.Y(), " [", c.Class, "]")
+	log.Info("Restoring window position x=", geom.X(), ", y=", geom.Y(), " [", c.Info.Class, "]")
 }
 
-func GetInfo(w xproto.Window) (class string, name string, desk uint, states []string, hints *motif.Hints) {
+func GetInfo(w xproto.Window) (info Info) {
 	var err error
 	var wmClass *icccm.WmClass
+
+	var class string
+	var name string
+	var desk uint
+	var states []string
+	var hints *motif.Hints
 
 	// Class name
 	wmClass, err = icccm.WmClassGet(common.X, w)
@@ -196,24 +204,30 @@ func GetInfo(w xproto.Window) (class string, name string, desk uint, states []st
 		hints = &motif.Hints{}
 	}
 
-	return class, name, desk, states, hints
+	return Info{
+		Class:  class,
+		Name:   name,
+		Desk:   desk,
+		States: states,
+		Hints:  hints,
+	}
 }
 
 func HasDecoration(w xproto.Window) bool {
-	_, _, _, _, hints := GetInfo(w)
-	return motif.Decor(hints)
+	info := GetInfo(w)
+	return motif.Decor(info.Hints)
 }
 
 func IsMaximized(w xproto.Window) bool {
-	class, name, _, states, _ := GetInfo(w)
-	if class == UNKNOWN {
+	info := GetInfo(w)
+	if info.Class == UNKNOWN {
 		return false
 	}
 
 	// Check maximized windows
-	for _, state := range states {
+	for _, state := range info.States {
 		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
-			log.Info("Ignore maximized window", " [", name, "]")
+			log.Info("Ignore maximized window", " [", info.Name, "]")
 			return true
 		}
 	}
@@ -222,15 +236,15 @@ func IsMaximized(w xproto.Window) bool {
 }
 
 func IsHidden(w xproto.Window) bool {
-	class, name, _, states, _ := GetInfo(w)
-	if class == UNKNOWN {
+	info := GetInfo(w)
+	if info.Class == UNKNOWN {
 		return true
 	}
 
 	// Check hidden windows
-	for _, state := range states {
+	for _, state := range info.States {
 		if state == "_NET_WM_STATE_HIDDEN" {
-			log.Info("Ignore hidden window", " [", name, "]")
+			log.Info("Ignore hidden window", " [", info.Name, "]")
 			return true
 		}
 	}
@@ -239,15 +253,15 @@ func IsHidden(w xproto.Window) bool {
 }
 
 func IsModal(w xproto.Window) bool {
-	class, name, _, states, _ := GetInfo(w)
-	if class == UNKNOWN {
+	info := GetInfo(w)
+	if info.Class == UNKNOWN {
 		return true
 	}
 
 	// Check model dialog windows
-	for _, state := range states {
+	for _, state := range info.States {
 		if state == "_NET_WM_STATE_MODAL" {
-			log.Info("Ignore modal window", " [", name, "]")
+			log.Info("Ignore modal window", " [", info.Name, "]")
 			return true
 		}
 	}
@@ -256,8 +270,8 @@ func IsModal(w xproto.Window) bool {
 }
 
 func IsIgnored(w xproto.Window) bool {
-	class, name, _, _, _ := GetInfo(w)
-	if class == UNKNOWN {
+	info := GetInfo(w)
+	if info.Class == UNKNOWN {
 		return true
 	}
 
@@ -270,13 +284,13 @@ func IsIgnored(w xproto.Window) bool {
 		reg_name := regexp.MustCompile(strings.ToLower(conf_name))
 
 		// Ignore all windows with this class
-		class_match := reg_class.MatchString(strings.ToLower(class))
+		class_match := reg_class.MatchString(strings.ToLower(info.Class))
 
 		// But allow the window with a special name
-		name_match := conf_name != "" && reg_name.MatchString(strings.ToLower(name))
+		name_match := conf_name != "" && reg_name.MatchString(strings.ToLower(info.Name))
 
 		if class_match && !name_match {
-			log.Info("Ignore window with ", strings.TrimSpace(strings.Join(s, " ")), " from config [", name, "]")
+			log.Info("Ignore window with ", strings.TrimSpace(strings.Join(s, " ")), " from config [", info.Name, "]")
 			return true
 		}
 	}
@@ -285,14 +299,14 @@ func IsIgnored(w xproto.Window) bool {
 }
 
 func IsInsideViewPort(w xproto.Window) bool {
-	class, _, desk, _, _ := GetInfo(w)
-	if class == UNKNOWN {
-		return false
+	info := GetInfo(w)
+	if info.Class == UNKNOWN {
+		return true
 	}
 
 	// Ignore pinned windows
-	if desk > common.DeskCount {
-		log.Info("Ignore pinned window [", class, "]")
+	if info.Desk > common.DeskCount {
+		log.Info("Ignore pinned window [", info.Class, "]")
 		return false
 	}
 
@@ -316,7 +330,7 @@ func IsInsideViewPort(w xproto.Window) bool {
 	}
 
 	if isOutsideViewport {
-		log.Info("Ignore window outside viewport [", class, "]")
+		log.Info("Ignore window outside viewport [", info.Class, "]")
 	}
 
 	return !isOutsideViewport

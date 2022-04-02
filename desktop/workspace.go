@@ -75,7 +75,7 @@ func (ws *Workspace) UnTile() {
 }
 
 func (ws *Workspace) AddClient(c *store.Client) {
-	log.Debug("Add client [", c.Class, "]")
+	log.Debug("Add client [", c.Info.Class, "]")
 
 	// Add client to all layouts
 	for _, l := range ws.Layouts {
@@ -84,7 +84,7 @@ func (ws *Workspace) AddClient(c *store.Client) {
 }
 
 func (ws *Workspace) RemoveClient(c *store.Client) {
-	log.Debug("Remove client [", c.Class, "]")
+	log.Debug("Remove client [", c.Info.Class, "]")
 
 	// Remove client from all layouts
 	for _, l := range ws.Layouts {
