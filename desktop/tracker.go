@@ -304,5 +304,12 @@ func (tr *Tracker) isTracked(w xproto.Window) bool {
 }
 
 func (tr *Tracker) isTrackable(w xproto.Window) bool {
-	return !store.IsHidden(w) && !store.IsModal(w) && !store.IsIgnored(w) && store.IsInsideViewPort(w)
+	info := store.GetInfo(w)
+	if info.Class == store.UNKNOWN {
+		return false
+	}
+
+	// Check if window is allowed and inside viewport
+	isAllowed := !store.IsModal(info) && !store.IsHidden(info) && !store.IsFloating(info) && !store.IsPinned(info) && !store.IsIgnored(info)
+	return isAllowed && store.IsInsideViewPort(w)
 }

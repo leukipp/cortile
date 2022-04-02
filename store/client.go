@@ -235,78 +235,9 @@ func IsMaximized(w xproto.Window) bool {
 	return false
 }
 
-func IsHidden(w xproto.Window) bool {
-	info := GetInfo(w)
-	if info.Class == UNKNOWN {
-		return true
-	}
-
-	// Check hidden windows
-	for _, state := range info.States {
-		if state == "_NET_WM_STATE_HIDDEN" {
-			log.Info("Ignore hidden window", " [", info.Name, "]")
-			return true
-		}
-	}
-
-	return false
-}
-
-func IsModal(w xproto.Window) bool {
-	info := GetInfo(w)
-	if info.Class == UNKNOWN {
-		return true
-	}
-
-	// Check model dialog windows
-	for _, state := range info.States {
-		if state == "_NET_WM_STATE_MODAL" {
-			log.Info("Ignore modal window", " [", info.Name, "]")
-			return true
-		}
-	}
-
-	return false
-}
-
-func IsIgnored(w xproto.Window) bool {
-	info := GetInfo(w)
-	if info.Class == UNKNOWN {
-		return true
-	}
-
-	// Check ignored windows
-	for _, s := range common.Config.WindowIgnore {
-		conf_class := s[0]
-		conf_name := s[1]
-
-		reg_class := regexp.MustCompile(strings.ToLower(conf_class))
-		reg_name := regexp.MustCompile(strings.ToLower(conf_name))
-
-		// Ignore all windows with this class
-		class_match := reg_class.MatchString(strings.ToLower(info.Class))
-
-		// But allow the window with a special name
-		name_match := conf_name != "" && reg_name.MatchString(strings.ToLower(info.Name))
-
-		if class_match && !name_match {
-			log.Info("Ignore window with ", strings.TrimSpace(strings.Join(s, " ")), " from config [", info.Name, "]")
-			return true
-		}
-	}
-
-	return false
-}
-
 func IsInsideViewPort(w xproto.Window) bool {
 	info := GetInfo(w)
 	if info.Class == UNKNOWN {
-		return true
-	}
-
-	// Ignore pinned windows
-	if info.Desk > common.DeskCount {
-		log.Info("Ignore pinned window [", info.Class, "]")
 		return false
 	}
 
@@ -334,4 +265,79 @@ func IsInsideViewPort(w xproto.Window) bool {
 	}
 
 	return !isOutsideViewport
+}
+
+func IsModal(info Info) bool {
+
+	// Check model dialog windows
+	for _, state := range info.States {
+		if state == "_NET_WM_STATE_MODAL" {
+			log.Info("Ignore modal window", " [", info.Name, "]")
+			return true
+		}
+	}
+
+	return false
+}
+
+func IsHidden(info Info) bool {
+
+	// Check hidden windows
+	for _, state := range info.States {
+		if state == "_NET_WM_STATE_HIDDEN" {
+			log.Info("Ignore hidden window", " [", info.Name, "]")
+			return true
+		}
+	}
+
+	return false
+}
+
+func IsFloating(info Info) bool {
+
+	// Check floating state
+	for _, state := range info.States {
+		if state == "_NET_WM_STATE_ABOVE" {
+			log.Info("Ignore floating window", " [", info.Name, "]")
+			return true
+		}
+	}
+
+	return false
+}
+
+func IsPinned(info Info) bool {
+
+	// Check pinned windows
+	if info.Desk > common.DeskCount {
+		log.Info("Ignore pinned window [", info.Class, "]")
+		return true
+	}
+
+	return false
+}
+
+func IsIgnored(info Info) bool {
+
+	// Check ignored windows
+	for _, s := range common.Config.WindowIgnore {
+		conf_class := s[0]
+		conf_name := s[1]
+
+		reg_class := regexp.MustCompile(strings.ToLower(conf_class))
+		reg_name := regexp.MustCompile(strings.ToLower(conf_name))
+
+		// Ignore all windows with this class
+		class_match := reg_class.MatchString(strings.ToLower(info.Class))
+
+		// But allow the window with a special name
+		name_match := conf_name != "" && reg_name.MatchString(strings.ToLower(info.Name))
+
+		if class_match && !name_match {
+			log.Info("Ignore window with ", strings.TrimSpace(strings.Join(s, " ")), " from config [", info.Name, "]")
+			return true
+		}
+	}
+
+	return false
 }
