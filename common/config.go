@@ -9,8 +9,6 @@ import (
 	"github.com/BurntSushi/toml"
 
 	"github.com/mitchellh/go-homedir"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var Config ConfigMapper
@@ -41,11 +39,7 @@ func writeDefaultConfig() {
 
 	// Write default config
 	if _, err := os.Stat(configFilePath()); os.IsNotExist(err) {
-		defaultConfig, err := ioutil.ReadFile("config.toml")
-		if err != nil {
-			log.Error(err)
-		}
-		ioutil.WriteFile(configFilePath(), defaultConfig, 0644)
+		ioutil.WriteFile(configFilePath(), []byte(defaultConfig), 0644)
 	}
 }
 
@@ -70,3 +64,76 @@ func configFolderPath() string {
 func configFilePath() string {
 	return filepath.Join(configFolderPath(), "config.toml")
 }
+
+var defaultConfig = `# Tiling will be enabled on application start if set to true.
+tiling_enabled = true
+
+# Initial tiling layout ('vertical', 'horizontal', 'fullscreen')
+tiling_layout = "vertical"
+
+# Initial division of master-slave area.
+proportion = 0.6
+
+# Minimum division of master-slave area.
+proportion_min = 0.1
+
+# Maximum division of master-slave area.
+proportion_max = 0.9
+
+# How much to increment/decrement master-slave area.
+proportion_step = 0.05
+
+# How much space should be left between windows.
+window_gap = 4
+
+# Window decorations will be removed if set to false.
+window_decoration = true
+
+# Perl regex to ignore windows (['WM_CLASS', 'WM_NAME'] = ['ignore all windows with this class', 'but allow those with this name']).
+# The WM_CLASS string name can be found by running 'xprop WM_CLASS'.
+window_ignore = [
+    ['xf.*', ''],
+    ['nm.*', ''],
+    ['gcr.*', ''],
+    ['polkit.*', ''],
+    ['wrapper.*', ''],
+    ['lightdm.*', ''],
+    ['blueman.*', ''],
+    ['pavucontrol.*', ''],
+    ['engrampa.*', ''],
+    ['firefox.*', '.*Mozilla Firefox'],
+]
+
+[keys]
+# You can view which keys activate which modifier using the 'xmodmap' program.
+# Key symbols can be found by pressing keys using the 'xev' program.
+
+# Tile the current workspace.
+tile = "Control-Shift-t"
+
+# Untile the current workspace.
+untile = "Control-Shift-u"
+
+# Make the active window as master.
+make_active_window_master = "Control-Shift-m"
+
+# Increase the number of masters.
+increase_master = "Control-Shift-i"
+
+# Decrease the number of masters.
+decrease_master = "Control-Shift-d"
+
+# Cycles through the available layouts.
+switch_layout = "Control-Shift-s"
+
+# Moves focus to the next window.
+next_window = "Control-Shift-n"
+
+# Moves focus to the previous window.
+previous_window = "Control-Shift-p"
+
+# Increases the size of the master windows.
+increment_master = "Control-bracketright"
+
+# Decreases the size of the master windows.
+decrement_master = "Control-bracketleft"`
