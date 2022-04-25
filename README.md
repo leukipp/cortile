@@ -1,5 +1,5 @@
 # Cortile [WIP]
-Tiling manager with hot corner support for Xfce and other [EWMH Compliant Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints).  
+Tiling manager with hot corner support for Xfce and other [EWMH Compliant Window Managers](https://en.m.wikipedia.org/wiki/Extended_Window_Manager_Hints).
 Simply keep your current window manager and install [cortile](https://github.com/leukipp/cortile) on top of it.
 Once enabled, the tiling manager will handle resizing and positioning of existing and new windows.
 
@@ -7,6 +7,7 @@ Once enabled, the tiling manager will handle resizing and positioning of existin
 - Workspace based tiling.
 - Keyboard and hot corner events.
 - Vertical, horizontal and fullscreen mode.
+- Floating windows via "Always on Top".
 - Resize of master / slave area.
 - Drag and drop window swap.
 - Auto detection of panels.
@@ -16,7 +17,17 @@ Once enabled, the tiling manager will handle resizing and positioning of existin
 You need [go](https://go.dev/) >= 1.17 to run [cortile](https://github.com/leukipp/cortile).
 
 ### Requirements
-Install go via `archive`:
+Install go via `apt`:
+```bash
+sudo apt install golang
+```
+
+Install go via `pacman`:
+```bash
+sudo pacman -S go
+```
+
+Install go via `wget`:
 ```bash
 cd /tmp && wget https://dl.google.com/go/go1.17.linux-amd64.tar.gz
 sudo tar -xvf go1.17.linux-amd64.tar.gz
@@ -29,18 +40,8 @@ echo "export GOPATH=~/.go" >> ~/.profile
 source ~/.profile
 ```
 
-Install go via `apt`:
-```bash
-sudo apt install golang
-```
-
-Install go via `pacman`:
-```bash
-sudo pacman -S go
-```
-
 ### Cortile
-Check your go version:
+Verify your go version >= 1.17:
 ```bash
 go version
 ```
