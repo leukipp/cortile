@@ -22,10 +22,9 @@ window_gap = 4
 # Window decorations will be removed if set to false.
 window_decoration = true
 
-# Perl regex to ignore windows (['WM_CLASS', 'WM_NAME'] = ['ignore all windows with this class', 'but allow those with this name']).
+# Regex in RE2 syntax for ignoring windows (['WM_CLASS', 'WM_NAME'] = ['ignore all windows with this class', 'but allow those with this name']).
 # The WM_CLASS string name can be found by running 'xprop WM_CLASS'.
 window_ignore = [
-    ['xf.*', ''],
     ['nm.*', ''],
     ['gcr.*', ''],
     ['polkit.*', ''],
@@ -33,7 +32,7 @@ window_ignore = [
     ['lightdm.*', ''],
     ['blueman.*', ''],
     ['pavucontrol.*', ''],
-    ['engrampa.*', ''],
+    ['xfce4-display-settings.*', ''],
     ['firefox.*', '.*Mozilla Firefox'],
 ]
 
