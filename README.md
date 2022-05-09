@@ -106,6 +106,7 @@ The config file is located at `~/.config/cortile/config.toml`.
 - Configurable LTR/RTL support (current: master is on the right side).
 - Proper dual monitor support (current: only biggest monitor is tiled).
 - Resizable windows (current: only master/slave proportion can be changed).
+- Max windows count (current: more windows always subdivide slave area).
 
 ## Credits
 Based on [zentile](https://github.com/blrsn/zentile) from [Berin Larson](https://github.com/blrsn/).
