@@ -1,6 +1,8 @@
 package common
 
 import (
+	_ "embed"
+
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -9,8 +11,6 @@ import (
 	"github.com/BurntSushi/toml"
 
 	"github.com/mitchellh/go-homedir"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var Config ConfigMapper
@@ -28,12 +28,12 @@ type ConfigMapper struct {
 	Keys             map[string]string `toml:"keys"`              // Key bindings for shortcuts
 }
 
-func init() {
-	writeDefaultConfig()
+func InitConfig(defaultConfig []byte) {
+	writeDefaultConfig(defaultConfig)
 	toml.DecodeFile(configFilePath(), &Config)
 }
 
-func writeDefaultConfig() {
+func writeDefaultConfig(defaultConfig []byte) {
 	// Create config folder
 	if _, err := os.Stat(configFolderPath()); os.IsNotExist(err) {
 		os.MkdirAll(configFolderPath(), 0700)
@@ -41,10 +41,6 @@ func writeDefaultConfig() {
 
 	// Write default config
 	if _, err := os.Stat(configFilePath()); os.IsNotExist(err) {
-		defaultConfig, err := ioutil.ReadFile("config.toml")
-		if err != nil {
-			log.Error(err)
-		}
 		ioutil.WriteFile(configFilePath(), defaultConfig, 0644)
 	}
 }

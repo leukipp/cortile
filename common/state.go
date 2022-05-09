@@ -35,7 +35,7 @@ type Position struct {
 	Y int // Y position
 }
 
-func Init() {
+func InitState() {
 	var err error
 
 	X, err = xgbutil.NewConn()

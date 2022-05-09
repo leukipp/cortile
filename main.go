@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"flag"
 	"fmt"
 	"io"
@@ -16,6 +17,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//go:embed config.toml
+var defaultConfig []byte
+
 func main() {
 
 	// Allow only one instance
@@ -29,8 +33,11 @@ func main() {
 	// Init log
 	setLogLevel()
 
+	// Init config
+	common.InitConfig(defaultConfig)
+
 	// Init state
-	common.Init()
+	common.InitState()
 
 	// Init workspace and tracker
 	workspaces := desktop.CreateWorkspaces()
