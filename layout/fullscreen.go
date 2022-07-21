@@ -37,10 +37,10 @@ func (l *FullscreenLayout) Undo() {
 	}
 }
 
-func (l *FullscreenLayout) IncrementProportion() {
+func (l *FullscreenLayout) IncreaseProportion() {
 }
 
-func (l *FullscreenLayout) DecrementProportion() {
+func (l *FullscreenLayout) DecreaseProportion() {
 }
 
 func (l *FullscreenLayout) SetProportion(p float64) {

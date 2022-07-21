@@ -92,13 +92,13 @@ func (l *VerticalLayout) Undo() {
 	}
 }
 
-func (l *VerticalLayout) IncrementProportion() {
+func (l *VerticalLayout) IncreaseProportion() {
 	precision := 1.0 / common.Config.ProportionStep
 	proportion := math.Round(l.Proportion*precision)/precision + common.Config.ProportionStep
 	l.SetProportion(proportion)
 }
 
-func (l *VerticalLayout) DecrementProportion() {
+func (l *VerticalLayout) DecreaseProportion() {
 	precision := 1.0 / common.Config.ProportionStep
 	proportion := math.Round(l.Proportion*precision)/precision - common.Config.ProportionStep
 	l.SetProportion(proportion)

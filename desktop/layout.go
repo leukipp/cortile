@@ -13,8 +13,8 @@ type Layout interface {
 	PreviousClient()
 	IncreaseMaster()
 	DecreaseMaster()
-	IncrementProportion()
-	DecrementProportion()
+	IncreaseProportion()
+	DecreaseProportion()
 	SetProportion(p float64)
 	GetType() string
 	GetManager() *store.Manager
