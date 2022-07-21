@@ -81,25 +81,33 @@ Useful shortcuts for Xfce environments:
 ## Config
 The config file is located at `~/.config/cortile/config.toml`.
 
-| Corner events                      | Description                       |
-| ---------------------------------- | --------------------------------- |
-| <kbd>Top</kbd>-<kbd>Left</kbd>     | Cycle through layouts             |
-| <kbd>Top</kbd>-<kbd>Right</kbd>    | Make the active window master     |
-| <kbd>Bottom</kbd>-<kbd>Right</kbd> | Increase number of master windows |
-| <kbd>Bottom</kbd>-<kbd>Left</kbd>  | Decrease number of master windows |
+| Key events                                        | Description                       |
+| ------------------------------------------------- | --------------------------------- |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>t</kbd>     | Tile current workspace            |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>u</kbd>     | Untile current workspace          |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>c</kbd>     | Cycle through layouts             |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>v</kbd>     | Activate vertical layout          |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>h</kbd>     | Activate horizontal layout        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>f</kbd>     | Activate fullscreen layout        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>m</kbd>     | Make the active window master     |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>i</kbd>     | Increase number of master windows |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd>     | Decrease number of master windows |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>plus</kbd>  | Increase size of master area      |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>minus</kbd> | Decrease size of master area      |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>right</kbd> | Focus next window                 |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>left</kbd>  | Focus previous window             |
 
-| Key events                                    | Description                       |
-| --------------------------------------------- | --------------------------------- |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>t</kbd> | Tile current workspace            |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>u</kbd> | Untile current workspace          |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>m</kbd> | Make the active window master     |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>n</kbd> | Goto next window                  |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>p</kbd> | Goto previous window              |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>s</kbd> | Cycle through layouts             |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>i</kbd> | Increase number of master windows |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd> | Decrease number of master windows |
-| <kbd>Ctrl</kbd>+<kbd>]</kbd>                  | Increment size of master windows  |
-| <kbd>Ctrl</kbd>+<kbd>[</kbd>                  | Decrement size of master windows  |
+| Corner events                       | Description                       |
+| ----------------------------------- | --------------------------------- |
+| <kbd>Top</kbd>-<kbd>Left</kbd>      | Cycle through layouts             |
+| <kbd>Top</kbd>-<kbd>Center</kbd>    | Tile current workspace            |
+| <kbd>Top</kbd>-<kbd>Right</kbd>     | Make the active window master     |
+| <kbd>Center</kbd>-<kbd>Right</kbd>  | Increase size of master area      |
+| <kbd>Bottom</kbd>-<kbd>Right</kbd>  | Increase number of master windows |
+| <kbd>Bottom</kbd>-<kbd>Center</kbd> | Untile current workspace          |
+| <kbd>Bottom</kbd>-<kbd>Left</kbd>   | Decrease number of master windows |
+| <kbd>Center</kbd>-<kbd>Left</kbd>   | Decrease size of master area      |
+
 
 ## WIP
 - Configurable LTR/RTL support (current: master is on the right side).

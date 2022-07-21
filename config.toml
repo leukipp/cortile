@@ -41,9 +41,9 @@ window_ignore = [
 ]
 
 
-#####################################################
-[keys] # Key symbols can be found by running 'xev'. #
-#####################################################
+############################################################
+[keys]        # Key symbols can be found by running 'xev'. #
+############################################################
 
 # Tile the current workspace.
 tile = "control-shift-t"
@@ -79,15 +79,15 @@ proportion_increase = "control-shift-plus"
 proportion_decrease = "control-shift-minus"
 
 # Moves focus to the next window.
-window_next = "control-shift-n"
+window_next = "control-shift-right"
 
 # Moves focus to the previous window.
-window_previous = "control-shift-p"
+window_previous = "control-shift-left"
 
 
-####################################################
-[corners] # Strings can also be external commands. #
-####################################################
+############################################################
+[corners]  # Action strings can also be external commands. #
+############################################################
 
 # Corner at top left
 top_left = "layout_cycle"
