@@ -13,7 +13,7 @@ import (
 )
 
 func BindMouse(t *desktop.Tracker) {
-	backgroundTask(common.X, 100, func() {
+	poll(common.X, 50, func() {
 
 		// Update pointer position
 		p, _ := xproto.QueryPointer(common.X.Conn(), common.X.RootWin()).Reply()
@@ -22,14 +22,7 @@ func BindMouse(t *desktop.Tracker) {
 			Y: int(p.RootY),
 		}
 
-		// Get active client and workspace
-		c := t.Clients[common.ActiveWin]
-		ws := t.Workspaces[common.CurrentDesk]
-		if !ws.TilingEnabled {
-			return
-		}
-
-		// Check corner states
+		// Evaluate corner states
 		for i := range common.Corners {
 			hc := &common.Corners[i]
 
@@ -38,29 +31,7 @@ func BindMouse(t *desktop.Tracker) {
 
 			if !wasActive && isActive {
 				log.Debug("Corner at position ", hc.Area, " is hot [", hc.Name, "]")
-
-				// TODO: Load from config
-				switch hc.Name {
-				case "top_left":
-					ws.SwitchLayout()
-				case "top_center":
-					// TODO: Add top-center
-				case "top_right":
-					ws.ActiveLayout().MakeMaster(c)
-					ws.Tile()
-				case "center_right":
-					// TODO: Add center-right
-				case "bottom_right":
-					ws.ActiveLayout().IncreaseMaster()
-					ws.Tile()
-				case "bottom_center":
-					// TODO: Add bottom-center
-				case "bottom_left":
-					ws.ActiveLayout().DecreaseMaster()
-					ws.Tile()
-				case "center_left":
-					// TODO: Add center-left
-				}
+				Execute(common.Config.Corners[hc.Name], t)
 			} else if wasActive && !isActive {
 				log.Debug("Corner at position ", hc.Area, " is cold [", hc.Name, "]")
 			}
@@ -68,15 +39,13 @@ func BindMouse(t *desktop.Tracker) {
 	})
 }
 
-func backgroundTask(X *xgbutil.XUtil, t time.Duration, f func()) {
+func poll(X *xgbutil.XUtil, t time.Duration, f func()) {
 	go func() {
-		// Poll X events in background
 		for range time.Tick(t * time.Millisecond) {
 			_, err := X.Conn().PollForEvent()
 			if err != nil {
 				continue
 			}
-			// Callback
 			f()
 		}
 	}()

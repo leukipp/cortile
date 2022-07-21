@@ -15,90 +15,28 @@ type KeyMapper struct{}
 
 func BindKeys(t *desktop.Tracker) {
 	keybind.Initialize(common.X)
-	k := KeyMapper{}
 
 	// Bind keyboard shortcuts
-	k.bind("tile", func() {
-		ws := t.Workspaces[common.CurrentDesk]
-		ws.TilingEnabled = true
-		ws.Tile()
-	})
-	k.bind("untile", func() {
-		ws := t.Workspaces[common.CurrentDesk]
-		ws.TilingEnabled = false
-		ws.UnTile()
-	})
-	k.bind("make_active_window_master", func() {
-		c := t.Clients[common.ActiveWin]
-		ws := t.Workspaces[common.CurrentDesk]
-		if !ws.TilingEnabled {
-			return
-		}
-		ws.ActiveLayout().MakeMaster(c)
-		ws.Tile()
-	})
-	k.bind("next_window", func() {
-		ws := t.Workspaces[common.CurrentDesk]
-		if !ws.TilingEnabled {
-			return
-		}
-		ws.ActiveLayout().NextClient()
-	})
-	k.bind("previous_window", func() {
-		ws := t.Workspaces[common.CurrentDesk]
-		if !ws.TilingEnabled {
-			return
-		}
-		ws.ActiveLayout().PreviousClient()
-	})
-	k.bind("switch_layout", func() {
-		ws := t.Workspaces[common.CurrentDesk]
-		if !ws.TilingEnabled {
-			return
-		}
-		ws.SwitchLayout()
-	})
-	k.bind("increase_master", func() {
-		ws := t.Workspaces[common.CurrentDesk]
-		if !ws.TilingEnabled {
-			return
-		}
-		ws.ActiveLayout().IncreaseMaster()
-		ws.Tile()
-	})
-	k.bind("decrease_master", func() {
-		ws := t.Workspaces[common.CurrentDesk]
-		if !ws.TilingEnabled {
-			return
-		}
-		ws.ActiveLayout().DecreaseMaster()
-		ws.Tile()
-	})
-	k.bind("increment_master", func() {
-		ws := t.Workspaces[common.CurrentDesk]
-		if !ws.TilingEnabled {
-			return
-		}
-		ws.ActiveLayout().IncrementProportion()
-		ws.Tile()
-	})
-	k.bind("decrement_master", func() {
-		ws := t.Workspaces[common.CurrentDesk]
-		if !ws.TilingEnabled {
-			return
-		}
-		ws.ActiveLayout().DecrementProportion()
-		ws.Tile()
-	})
+	k := KeyMapper{}
+	k.bind("tile", t)
+	k.bind("untile", t)
+	k.bind("layout_cycle", t)
+	k.bind("layout_vertical", t)
+	k.bind("layout_horizontal", t)
+	k.bind("layout_fullscreen", t)
+	k.bind("master_make", t)
+	k.bind("master_increase", t)
+	k.bind("master_decrease", t)
+	k.bind("proportion_increase", t)
+	k.bind("proportion_decrease", t)
+	k.bind("window_next", t)
+	k.bind("window_previous", t)
 }
 
-func (k KeyMapper) bind(action string, f func()) {
-	err := keybind.KeyPressFun(
-		func(X *xgbutil.XUtil, ev xevent.KeyPressEvent) {
-			// Callback
-			f()
-		}).Connect(common.X, common.X.RootWin(), common.Config.Keys[action], true)
-
+func (k KeyMapper) bind(a string, t *desktop.Tracker) {
+	err := keybind.KeyPressFun(func(X *xgbutil.XUtil, ev xevent.KeyPressEvent) {
+		Execute(a, t)
+	}).Connect(common.X, common.X.RootWin(), common.Config.Keys[a], true)
 	if err != nil {
 		log.Warn(err)
 	}

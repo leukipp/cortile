@@ -25,7 +25,8 @@ type ConfigMapper struct {
 	WindowGap        int               `toml:"window_gap"`        // Gap size between windows
 	WindowDecoration bool              `toml:"window_decoration"` // Show window decorations
 	WindowIgnore     [][]string        `toml:"window_ignore"`     // Regex to ignore windows
-	Keys             map[string]string `toml:"keys"`              // Key bindings for shortcuts
+	Keys             map[string]string `toml:"keys"`              // Event bindings for keyboard shortcuts
+	Corners          map[string]string `toml:"corners"`           // Event bindings for hot-corners
 }
 
 func InitConfig(defaultConfig []byte) {

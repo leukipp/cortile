@@ -102,7 +102,6 @@ The config file is located at `~/.config/cortile/config.toml`.
 | <kbd>Ctrl</kbd>+<kbd>[</kbd>                  | Decrement size of master windows  |
 
 ## WIP
-- Configurable hot corners (current: hardcoded corner events).
 - Configurable LTR/RTL support (current: master is on the right side).
 - Proper dual monitor support (current: only biggest monitor is tiled).
 - Resizable windows (current: only master/slave proportion can be changed).
