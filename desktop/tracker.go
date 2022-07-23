@@ -103,7 +103,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	cw, ch := cGeom.Width(), cGeom.Height()
 
 	// Check width or height change
-	dw, dh := 0.0, 0.0 // TODO: Load from config
+	dw, dh := 0.0, 0.0
 	resized := (math.Abs(float64(cw-pw)) > dw || math.Abs(float64(ch-ph)) > dh)
 
 	if resized {
@@ -169,7 +169,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 	cx, cy, _, _ := cGeom.Pieces()
 
 	// Check position change
-	dx, dy := 0.0, 0.0 // TODO: Load from config
+	dx, dy := 0.0, 0.0
 	moved := (math.Abs(float64(cx-px)) > dx || math.Abs(float64(cy-py)) > dy)
 
 	if moved {

@@ -21,9 +21,9 @@ func CreateCorner(name string, x int, y int, w int, h int) (c Corner) {
 func CreateCorners() []Corner {
 	xw, yw, ww, hw := ScreenDimensions()
 
-	// TODO: Load from config
-	wcs, hcs := 10, 10
-	wcl, hcl := 100, 100
+	// Corner dimensions
+	wcs, hcs := Config.EdgeCornerSize, Config.EdgeCornerSize
+	wcl, hcl := Config.EdgeCenterSize, Config.EdgeCenterSize
 
 	// Define corners and positions
 	tl := CreateCorner("top_left", xw, yw, wcs, hcs)
