@@ -8,17 +8,15 @@ type Corner struct {
 	Area   xrect.Rect // Rectangle area of the corner section
 }
 
-func CreateCorner(name string, x int, y int, w int, h int) (c Corner) {
-	c = Corner{
+func CreateCorner(name string, x int, y int, w int, h int) *Corner {
+	return &Corner{
 		Name:   name,
 		Active: false,
 		Area:   xrect.New(x, y, w, h),
 	}
-
-	return c
 }
 
-func CreateCorners() []Corner {
+func CreateCorners() []*Corner {
 	xw, yw, ww, hw := ScreenDimensions()
 
 	// Corner dimensions
@@ -35,7 +33,7 @@ func CreateCorners() []Corner {
 	bl := CreateCorner("bottom_left", xw, yw+hw-hcs, wcs, hcs)
 	cl := CreateCorner("center_left", xw, (yw+hw)/2-hcl/2, wcs, hcl)
 
-	return []Corner{tl, tc, tr, cr, br, bc, bl, cl}
+	return []*Corner{tl, tc, tr, cr, br, bc, bl, cl}
 }
 
 func (c *Corner) IsActive(p Position) bool {

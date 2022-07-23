@@ -21,7 +21,7 @@ var (
 	ViewPorts   Head            // Physical monitors
 	Stacking    []xproto.Window // List of client windows
 	ActiveWin   xproto.Window   // Current active window
-	Corners     []Corner        // Corners for pointer events
+	Corners     []*Corner       // Corners for pointer events
 	Pointer     Position        // Pointer position
 )
 
