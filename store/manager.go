@@ -156,7 +156,7 @@ func (mg *Manager) IncreaseMaster() {
 func (mg *Manager) DecreaseMaster() {
 
 	// Decrease master area
-	if len(mg.Masters) > 1 {
+	if len(mg.Masters) > 0 {
 		mg.AllowedMasters = mg.AllowedMasters - 1
 		mg.Slaves = append([]*Client{mg.Masters[len(mg.Masters)-1]}, mg.Slaves...)
 		mg.Masters = mg.Masters[:len(mg.Masters)-1]
