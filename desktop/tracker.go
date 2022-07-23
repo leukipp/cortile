@@ -129,11 +129,11 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 		proportion := 0.0
 		gap := common.Config.WindowGap
-		layoutType := al.GetType()
+		layoutName := al.GetName()
 		_, _, dw, dh := common.DesktopDimensions()
 
 		// Calculate proportion based on resized window width (TODO: LTR/RTL gap support)
-		if layoutType == "vertical" {
+		if layoutName == "vertical" {
 			proportion = float64(cw+gap) / float64(dw)
 			if mg.IsMaster(c) {
 				proportion = 1.0 - (float64(cw+2*gap) / float64(dw))
@@ -141,7 +141,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		}
 
 		// Calculate proportion based on resized window height (TODO: LTR/RTL gap support)
-		if layoutType == "horizontal" {
+		if layoutName == "horizontal" {
 			proportion = 1.0 - (float64(ch+gap) / float64(dh))
 			if mg.IsMaster(c) {
 				proportion = float64(ch+2*gap) / float64(dh)
@@ -210,7 +210,7 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
 			ws := tr.Workspaces[c.Info.Desk]
 			for i, l := range ws.Layouts {
-				if l.GetType() == "fullscreen" {
+				if l.GetName() == "fullscreen" {
 					ws.SetLayout(uint(i))
 				}
 			}

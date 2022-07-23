@@ -28,7 +28,7 @@ func CreateWorkspaces() map[uint]*Workspace {
 
 		// Activate default layout
 		for i, l := range layouts {
-			if l.GetType() == common.Config.TilingLayout {
+			if l.GetName() == common.Config.TilingLayout {
 				ws.SetLayout(uint(i))
 			}
 		}

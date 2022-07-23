@@ -81,7 +81,7 @@ func VerticalLayout(t *desktop.Tracker) {
 		return
 	}
 	for i, l := range ws.Layouts {
-		if l.GetType() == "vertical" {
+		if l.GetName() == "vertical" {
 			ws.SetLayout(uint(i))
 		}
 	}
@@ -94,7 +94,7 @@ func HorizontalLayout(t *desktop.Tracker) {
 		return
 	}
 	for i, l := range ws.Layouts {
-		if l.GetType() == "horizontal" {
+		if l.GetName() == "horizontal" {
 			ws.SetLayout(uint(i))
 		}
 	}
@@ -107,7 +107,7 @@ func FullscreenLayout(t *desktop.Tracker) {
 		return
 	}
 	for i, l := range ws.Layouts {
-		if l.GetType() == "fullscreen" {
+		if l.GetName() == "fullscreen" {
 			ws.SetLayout(uint(i))
 		}
 	}

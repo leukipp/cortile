@@ -13,7 +13,7 @@ type VerticalLayout struct {
 	*store.Manager         // Layout store manager
 	Proportion     float64 // Master-slave proportion
 	WorkspaceNum   uint    // Active workspace index
-	Type           string  // Layout name
+	Name           string  // Layout name
 }
 
 func CreateVerticalLayout(workspaceNum uint) *VerticalLayout {
@@ -21,12 +21,12 @@ func CreateVerticalLayout(workspaceNum uint) *VerticalLayout {
 		Manager:      store.CreateManager(),
 		Proportion:   1.0 - common.Config.Proportion, // TODO: LTR/RTL support
 		WorkspaceNum: workspaceNum,
-		Type:         "vertical",
+		Name:         "vertical",
 	}
 }
 
 func (l *VerticalLayout) Do() {
-	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetType(), " layout [workspace-", l.WorkspaceNum, "]")
+	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetName(), " layout [workspace-", l.WorkspaceNum, "]")
 
 	dx, dy, dw, dh := common.DesktopDimensions()
 	msize := len(l.Masters)
@@ -108,8 +108,8 @@ func (l *VerticalLayout) SetProportion(p float64) {
 	l.Proportion = math.Min(math.Max(p, common.Config.ProportionMin), common.Config.ProportionMax)
 }
 
-func (l *VerticalLayout) GetType() string {
-	return l.Type
+func (l *VerticalLayout) GetName() string {
+	return l.Name
 }
 
 func (l *VerticalLayout) GetManager() *store.Manager {
