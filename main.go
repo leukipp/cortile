@@ -75,12 +75,12 @@ func createLockFile(filename string) (*os.File, error) {
 }
 
 func setLogLevel() {
-	var logfile string
+	var l string
 	var vvv bool
 	var vv bool
 	var v bool
 
-	flag.StringVar(&logfile, "logfile", "/tmp/cortile.log", "logfile path")
+	flag.StringVar(&l, "l", "/tmp/cortile.log", "log path")
 	flag.BoolVar(&vvv, "vvv", false, "very very verbose mode")
 	flag.BoolVar(&vv, "vv", false, "very verbose mode")
 	flag.BoolVar(&v, "v", false, "verbose mode")
@@ -97,7 +97,7 @@ func setLogLevel() {
 	}
 	log.SetFormatter(&log.TextFormatter{ForceColors: true, FullTimestamp: true})
 
-	file, err := os.OpenFile(logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(l, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if file == nil {
 		log.Error(err)
 		return
