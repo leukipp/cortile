@@ -81,39 +81,40 @@ Useful shortcuts for Xfce environments:
 ## Config
 The config file is located at `~/.config/cortile/config.toml`.
 
-| Key events                                         | Description                       |
-| -------------------------------------------------- | --------------------------------- |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>t</kbd>      | Tile current workspace            |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>u</kbd>      | Untile current workspace          |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>c</kbd>      | Cycle through layouts             |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>space</kbd>  | Activate fullscreen layout        |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>left</kbd>   | Activate vertical-left layout     |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>right</kbd>  | Activate vertical-right layout    |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>top</kbd>    | Activate horizontal-top layout    |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>bottom</kbd> | Activate horizontal-bottom layout |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>m</kbd>      | Make the active window master     |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>i</kbd>      | Increase number of master windows |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>d</kbd>      | Decrease number of master windows |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>plus</kbd>   | Increase size of master area      |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>minus</kbd>  | Decrease size of master area      |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>n</kbd>      | Focus next window                 |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>p</kbd>      | Focus previous window             |
+| Key events                                              | Description                              |
+| ------------------------------------------------------- | ---------------------------------------- |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>           | Tile current workspace                   |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd>           | Untile current workspace                 |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>           | Cycle through layouts                    |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>       | Activate fullscreen layout               |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Left</kbd>        | Activate vertical-left layout            |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Right</kbd>       | Activate vertical-right layout           |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Top</kbd>         | Activate horizontal-top layout           |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Bottom</kbd>      | Activate horizontal-bottom layout        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>           | Make the active window master            |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Plus</kbd>        | Increase number of master windows        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Minus</kbd>       | Decrease number of master windows        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_Add</kbd>      | Increase number of maximum slave windows |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_Subtract</kbd> | Decrease number of maximum slave windows |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_6</kbd>        | Increase proportion of master-slave area |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_4</kbd>        | Decrease proportion of master-slave area |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_2</kbd>        | Focus next window                        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_8</kbd>        | Focus previous window                    |
 
-| Corner events                       | Description                       |
-| ----------------------------------- | --------------------------------- |
-| <kbd>Top</kbd>-<kbd>Left</kbd>      | Cycle through layouts             |
-| <kbd>Top</kbd>-<kbd>Center</kbd>    | Tile current workspace            |
-| <kbd>Top</kbd>-<kbd>Right</kbd>     | Make the active window master     |
-| <kbd>Center</kbd>-<kbd>Right</kbd>  | Increase size of master area      |
-| <kbd>Bottom</kbd>-<kbd>Right</kbd>  | Increase number of master windows |
-| <kbd>Bottom</kbd>-<kbd>Center</kbd> | Untile current workspace          |
-| <kbd>Bottom</kbd>-<kbd>Left</kbd>   | Decrease number of master windows |
-| <kbd>Center</kbd>-<kbd>Left</kbd>   | Decrease size of master area      |
+| Corner events                       | Description                              |
+| ----------------------------------- | ---------------------------------------- |
+| <kbd>Top</kbd>-<kbd>Left</kbd>      | Cycle through layouts                    |
+| <kbd>Top</kbd>-<kbd>Center</kbd>    | Tile current workspace                   |
+| <kbd>Top</kbd>-<kbd>Right</kbd>     | Make the active window master            |
+| <kbd>Center</kbd>-<kbd>Right</kbd>  | Increase proportion of master-slave area |
+| <kbd>Bottom</kbd>-<kbd>Right</kbd>  | Increase number of master windows        |
+| <kbd>Bottom</kbd>-<kbd>Center</kbd> | Untile current workspace                 |
+| <kbd>Bottom</kbd>-<kbd>Left</kbd>   | Decrease number of master windows        |
+| <kbd>Center</kbd>-<kbd>Left</kbd>   | Decrease proportion of master-slave area |
 
 ## WIP
 - Proper dual monitor support (current: only biggest monitor is tiled).
 - Resizable windows (current: only master/slave proportion can be changed).
-- Max windows count (current: more windows always subdivide slave area).
 
 ## Credits
 Based on [zentile](https://github.com/blrsn/zentile) from [Berin Larson](https://github.com/blrsn/).

@@ -13,6 +13,8 @@ type Layout interface {
 	PreviousClient()
 	IncreaseMaster()
 	DecreaseMaster()
+	IncreaseSlave()
+	DecreaseSlave()
 	IncreaseProportion()
 	DecreaseProportion()
 	SetProportion(p float64)

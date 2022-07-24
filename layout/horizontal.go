@@ -41,19 +41,20 @@ func (l *HorizontalLayout) Do() {
 	dx, dy, dw, dh := common.DesktopDimensions()
 	msize := len(l.Masters)
 	ssize := len(l.Slaves)
+	csize := len(l.Clients())
 
 	my := dy
 	mh := int(math.Round(float64(dh) * l.Proportion))
 	sy := my + mh
 	sh := dh - mh
-	gap := common.Config.WindowGapSize
 
-	csize := len(l.Clients())
-	fsize := l.AllowedMasters
+	mallowed := l.AllowedMasters
+	sallowed := l.AllowedSlaves
+	gap := common.Config.WindowGapSize
 
 	// Master on bottom
 	mbottom := strings.Contains(l.Name, "bottom")
-	if mbottom && csize > fsize {
+	if mbottom && csize > mallowed {
 		mytmp := my
 		mhtmp := mh
 		sytmp := sy
@@ -82,6 +83,7 @@ func (l *HorizontalLayout) Do() {
 
 	// Slave area layout
 	if ssize > 0 {
+		ssize = int(math.Min(float64(ssize), float64(sallowed)))
 		sw := (dw - (ssize+1)*gap) / ssize
 		if msize == 0 {
 			sy, sh = dy, dh
@@ -91,7 +93,7 @@ func (l *HorizontalLayout) Do() {
 			if !common.Config.WindowDecoration {
 				c.UnDecorate()
 			}
-			c.MoveResize(gap+dx+i*(sw+gap), sy, sw, sh-gap)
+			c.MoveResize(gap+dx+(i%sallowed)*(sw+gap), sy, sw, sh-gap)
 		}
 	}
 

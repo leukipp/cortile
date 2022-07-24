@@ -41,19 +41,20 @@ func (l *VerticalLayout) Do() {
 	dx, dy, dw, dh := common.DesktopDimensions()
 	msize := len(l.Masters)
 	ssize := len(l.Slaves)
+	csize := len(l.Clients())
 
 	mx := dx
 	mw := int(math.Round(float64(dw) * l.Proportion))
 	sx := mx + mw
 	sw := dw - mw
-	gap := common.Config.WindowGapSize
 
-	csize := len(l.Clients())
-	fsize := l.AllowedMasters
+	mallowed := l.AllowedMasters
+	sallowed := l.AllowedSlaves
+	gap := common.Config.WindowGapSize
 
 	// Master on right
 	mright := strings.Contains(l.Name, "right")
-	if mright && csize > fsize {
+	if mright && csize > mallowed {
 		mxtmp := mx
 		mwtmp := mw
 		sxtmp := sx
@@ -82,6 +83,7 @@ func (l *VerticalLayout) Do() {
 
 	// Slave area layout
 	if ssize > 0 {
+		ssize = int(math.Min(float64(ssize), float64(sallowed)))
 		sh := (dh - (ssize+1)*gap) / ssize
 		if msize == 0 {
 			sx, sw = dx, dw
@@ -91,7 +93,7 @@ func (l *VerticalLayout) Do() {
 			if !common.Config.WindowDecoration {
 				c.UnDecorate()
 			}
-			c.MoveResize(sx, gap+dy+i*(sh+gap), sw-gap, sh)
+			c.MoveResize(sx, gap+dy+(i%sallowed)*(sh+gap), sw-gap, sh)
 		}
 	}
 

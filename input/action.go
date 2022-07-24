@@ -39,6 +39,10 @@ func Execute(a string, t *desktop.Tracker) {
 		IncreaseMaster(t)
 	case "master_decrease":
 		DecreaseMaster(t)
+	case "slave_increase":
+		IncreaseSlave(t)
+	case "slave_decrease":
+		DecreaseSlave(t)
 	case "proportion_increase":
 		IncreaseProportion(t)
 	case "proportion_decrease":
@@ -169,6 +173,24 @@ func DecreaseMaster(t *desktop.Tracker) {
 		return
 	}
 	ws.ActiveLayout().DecreaseMaster()
+	ws.Tile()
+}
+
+func IncreaseSlave(t *desktop.Tracker) {
+	ws := t.Workspaces[common.CurrentDesk]
+	if !ws.TilingEnabled {
+		return
+	}
+	ws.ActiveLayout().IncreaseSlave()
+	ws.Tile()
+}
+
+func DecreaseSlave(t *desktop.Tracker) {
+	ws := t.Workspaces[common.CurrentDesk]
+	if !ws.TilingEnabled {
+		return
+	}
+	ws.ActiveLayout().DecreaseSlave()
 	ws.Tile()
 }
 

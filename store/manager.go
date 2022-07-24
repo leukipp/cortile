@@ -9,7 +9,9 @@ import (
 type Manager struct {
 	Masters        []*Client // List of master window clients
 	Slaves         []*Client // List of slave window clients
-	AllowedMasters int       // Number of maximal allowed masters
+	AllowedMasters int       // Number of current maximal allowed masters
+	AllowedSlaves  int       // Number of current maximal allowed slaves
+
 }
 
 func CreateManager() *Manager {
@@ -17,6 +19,7 @@ func CreateManager() *Manager {
 		Masters:        make([]*Client, 0),
 		Slaves:         make([]*Client, 0),
 		AllowedMasters: 1,
+		AllowedSlaves:  common.Config.WindowSlavesMax,
 	}
 }
 
@@ -144,8 +147,8 @@ func (mg *Manager) PreviousClient() {
 func (mg *Manager) IncreaseMaster() {
 
 	// Increase master area
-	if len(mg.Slaves) > 1 {
-		mg.AllowedMasters = mg.AllowedMasters + 1
+	if len(mg.Slaves) > 1 && mg.AllowedMasters < common.Config.WindowMastersMax {
+		mg.AllowedMasters += 1
 		mg.Masters = append(mg.Masters, mg.Slaves[0])
 		mg.Slaves = mg.Slaves[1:]
 	}
@@ -157,12 +160,32 @@ func (mg *Manager) DecreaseMaster() {
 
 	// Decrease master area
 	if len(mg.Masters) > 0 {
-		mg.AllowedMasters = mg.AllowedMasters - 1
+		mg.AllowedMasters -= 1
 		mg.Slaves = append([]*Client{mg.Masters[len(mg.Masters)-1]}, mg.Slaves...)
 		mg.Masters = mg.Masters[:len(mg.Masters)-1]
 	}
 
 	log.Info("Decrease masters to ", mg.AllowedMasters)
+}
+
+func (mg *Manager) IncreaseSlave() {
+
+	// Increase slave area
+	if mg.AllowedSlaves < common.Config.WindowSlavesMax {
+		mg.AllowedSlaves += 1
+	}
+
+	log.Info("Increase slaves to ", mg.AllowedSlaves)
+}
+
+func (mg *Manager) DecreaseSlave() {
+
+	// Decrease slave area
+	if mg.AllowedSlaves > 1 {
+		mg.AllowedSlaves -= 1
+	}
+
+	log.Info("Decrease slaves to ", mg.AllowedSlaves)
 }
 
 func (mg *Manager) IsMaster(c *Client) bool {

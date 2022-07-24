@@ -29,6 +29,8 @@ func BindKeys(t *desktop.Tracker) {
 	k.bind("master_make", t)
 	k.bind("master_increase", t)
 	k.bind("master_decrease", t)
+	k.bind("slave_increase", t)
+	k.bind("slave_decrease", t)
 	k.bind("proportion_increase", t)
 	k.bind("proportion_decrease", t)
 	k.bind("window_next", t)
@@ -40,6 +42,6 @@ func (k KeyMapper) bind(a string, t *desktop.Tracker) {
 		Execute(a, t)
 	}).Connect(common.X, common.X.RootWin(), common.Config.Keys[a], true)
 	if err != nil {
-		log.Warn(err)
+		log.Warn("Action for ", a, ": ", err)
 	}
 }

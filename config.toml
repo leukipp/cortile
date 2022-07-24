@@ -29,6 +29,12 @@ edge_corner_size = 10
 # Width or height of a hot-corner area within the edge centers (0 - 100).
 edge_center_size = 100
 
+# Maximum number of allowed master windows (0 - 10)
+window_masters_max = 5
+
+# Maximum number of allowed slave windows (1 - 10)
+window_slaves_max = 5
+
 # How much space should be left between windows (0 - 100).
 window_gap_size = 4
 
@@ -54,49 +60,55 @@ window_ignore = [
 ############################################################
 
 # Tile the current workspace.
-tile = "control-shift-t"
+tile = "Control-Shift-T"
 
 # Untile the current workspace.
-untile = "control-shift-u"
+untile = "Control-Shift-U"
 
 # Cycles through the available layouts.
-layout_cycle = "control-shift-c"
+layout_cycle = "Control-Shift-C"
 
 # Activates the fullscreen layout.
-layout_fullscreen = "control-shift-space"
+layout_fullscreen = "Control-Shift-Space"
 
 # Activates the vertical-left layout.
-layout_vertical_left = "control-shift-left"
+layout_vertical_left = "Control-Shift-Left"
 
 # Activates the vertical-right layout.
-layout_vertical_right = "control-shift-right"
+layout_vertical_right = "Control-Shift-Right"
 
 # Activates the horizontal-top layout.
-layout_horizontal_top = "control-shift-up"
+layout_horizontal_top = "Control-Shift-Up"
 
 # Activates the horizontal-bottom layout.
-layout_horizontal_bottom = "control-shift-down"
+layout_horizontal_bottom = "Control-Shift-Down"
 
 # Make the active window as master.
-master_make = "control-shift-m"
+master_make = "Control-Shift-M"
 
 # Increase the number of masters.
-master_increase = "control-shift-i"
+master_increase = "Control-Shift-Plus"
 
 # Decrease the number of masters.
-master_decrease = "control-shift-d"
+master_decrease = "Control-Shift-Minus"
 
-# Increases the size of the master windows.
-proportion_increase = "control-shift-plus"
+# Increase the number of slaves.
+slave_increase = "Control-Shift-KP_Add"
 
-# Decreases the size of the master windows.
-proportion_decrease = "control-shift-minus"
+# Decrease the number of slaves.
+slave_decrease = "Control-Shift-KP_Subtract"
+
+# Increase the proportion of master-slave area.
+proportion_increase = "Control-Shift-KP_6"
+
+# Decrease the proportion of master-slave area.
+proportion_decrease = "Control-Shift-KP_4"
 
 # Moves focus to the next window.
-window_next = "control-shift-n"
+window_next = "Control-Shift-KP_2"
 
 # Moves focus to the previous window.
-window_previous = "control-shift-p"
+window_previous = "Control-Shift-KP_8"
 
 ############################################################
 [corners]  # Action strings can also be external commands. #
