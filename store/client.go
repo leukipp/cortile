@@ -249,7 +249,7 @@ func IsInsideViewPort(w xproto.Window) bool {
 	}
 
 	// Viewport dimensions
-	vRect := xrect.New(common.ScreenDimensions())
+	vRect := xrect.New(common.DesktopDimensions())
 
 	// Substract viewport rectangle (r2) from window rectangle (r1)
 	sRects := xrect.Subtract(wGeom, vRect)

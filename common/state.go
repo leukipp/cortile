@@ -120,6 +120,12 @@ func DesktopDimensions() (x, y, w, h int) {
 		}
 	}
 
+	// Add desktop margin
+	x += Config.EdgeMargin[3]
+	y += Config.EdgeMargin[0]
+	w -= Config.EdgeMargin[1] + Config.EdgeMargin[3]
+	h -= Config.EdgeMargin[2] + Config.EdgeMargin[0]
+
 	return
 }
 

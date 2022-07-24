@@ -20,6 +20,9 @@ proportion_max = 0.9
 # How much to increment/decrement master-slave area (0.0 - 1.0).
 proportion_step = 0.05
 
+# Additional margin of the tiling area ([top, right, bottom, left])
+edge_margin = [0, 532, 0, 0]
+
 # Width and height of a hot-corner area within the edge corners (0 - 100).
 edge_corner_size = 10
 
@@ -45,7 +48,6 @@ window_ignore = [
     ['xfce4-display-settings.*', ''],
     ['firefox.*', '.*Mozilla Firefox'],
 ]
-
 
 ############################################################
 [keys]        # Key symbols can be found by running 'xev'. #
@@ -89,7 +91,6 @@ window_next = "control-shift-right"
 
 # Moves focus to the previous window.
 window_previous = "control-shift-left"
-
 
 ############################################################
 [corners]  # Action strings can also be external commands. #

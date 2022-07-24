@@ -22,6 +22,7 @@ type ConfigMapper struct {
 	ProportionMin    float64           `toml:"proportion_min"`    // Master-slave area minimum proportion
 	ProportionMax    float64           `toml:"proportion_max"`    // Master-slave area maximum proportion
 	ProportionStep   float64           `toml:"proportion_step"`   // Master-slave area step size proportion
+	EdgeMargin       []int             `toml:"edge_margin"`       // Margin values of tiling area
 	EdgeCornerSize   int               `toml:"edge_corner_size"`  // Size of square defining edge corners
 	EdgeCenterSize   int               `toml:"edge_center_size"`  // Length of rectangle defining edge centers
 	WindowGap        int               `toml:"window_gap"`        // Gap size between windows
