@@ -25,7 +25,7 @@ type ConfigMapper struct {
 	EdgeMargin       []int             `toml:"edge_margin"`       // Margin values of tiling area
 	EdgeCornerSize   int               `toml:"edge_corner_size"`  // Size of square defining edge corners
 	EdgeCenterSize   int               `toml:"edge_center_size"`  // Length of rectangle defining edge centers
-	WindowGap        int               `toml:"window_gap"`        // Gap size between windows
+	WindowGapSize    int               `toml:"window_gap_size"`   // Gap size between windows
 	WindowDecoration bool              `toml:"window_decoration"` // Show window decorations
 	WindowIgnore     [][]string        `toml:"window_ignore"`     // Regex to ignore windows
 	Keys             map[string]string `toml:"keys"`              // Event bindings for keyboard shortcuts

@@ -46,7 +46,7 @@ func (l *VerticalLayout) Do() {
 	mw := int(math.Round(float64(dw) * l.Proportion))
 	sx := mx + mw
 	sw := dw - mw
-	gap := common.Config.WindowGap
+	gap := common.Config.WindowGapSize
 
 	csize := len(l.Clients())
 	fsize := l.AllowedMasters

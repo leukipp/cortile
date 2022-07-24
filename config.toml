@@ -21,7 +21,7 @@ proportion_max = 0.9
 proportion_step = 0.05
 
 # Additional margin of the tiling area ([top, right, bottom, left])
-edge_margin = [0, 532, 0, 0]
+edge_margin = [0, 0, 0, 0]
 
 # Width and height of a hot-corner area within the edge corners (0 - 100).
 edge_corner_size = 10
@@ -30,7 +30,7 @@ edge_corner_size = 10
 edge_center_size = 100
 
 # How much space should be left between windows (0 - 100).
-window_gap = 4
+window_gap_size = 4
 
 # Window decorations will be removed if set to false (true | false).
 window_decoration = true

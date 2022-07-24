@@ -107,7 +107,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 	if resized {
 		proportion := 0.0
-		gap := common.Config.WindowGap
+		gap := common.Config.WindowGapSize
 		ws := tr.Workspaces[c.Info.Desk]
 		al := ws.ActiveLayout()
 		mg := al.GetManager()

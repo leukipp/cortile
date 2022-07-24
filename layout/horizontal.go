@@ -46,7 +46,7 @@ func (l *HorizontalLayout) Do() {
 	mh := int(math.Round(float64(dh) * l.Proportion))
 	sy := my + mh
 	sh := dh - mh
-	gap := common.Config.WindowGap
+	gap := common.Config.WindowGapSize
 
 	csize := len(l.Clients())
 	fsize := l.AllowedMasters
