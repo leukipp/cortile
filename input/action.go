@@ -23,12 +23,16 @@ func Execute(a string, t *desktop.Tracker) {
 		UnTile(t)
 	case "layout_cycle":
 		SwitchLayout(t)
-	case "layout_vertical":
-		VerticalLayout(t)
-	case "layout_horizontal":
-		HorizontalLayout(t)
 	case "layout_fullscreen":
 		FullscreenLayout(t)
+	case "layout_vertical_left":
+		VerticalLeftLayout(t)
+	case "layout_vertical_right":
+		VerticalRightLayout(t)
+	case "layout_horizontal_top":
+		HorizontalTopLayout(t)
+	case "layout_horizontal_bottom":
+		HorizontalBottomLayout(t)
 	case "master_make":
 		MakeMaster(t)
 	case "master_increase":
@@ -75,32 +79,6 @@ func SwitchLayout(t *desktop.Tracker) {
 	ws.SwitchLayout()
 }
 
-func VerticalLayout(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
-		return
-	}
-	for i, l := range ws.Layouts {
-		if l.GetName() == "vertical" {
-			ws.SetLayout(uint(i))
-		}
-	}
-	ws.Tile()
-}
-
-func HorizontalLayout(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
-		return
-	}
-	for i, l := range ws.Layouts {
-		if l.GetName() == "horizontal" {
-			ws.SetLayout(uint(i))
-		}
-	}
-	ws.Tile()
-}
-
 func FullscreenLayout(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
 	if !ws.TilingEnabled {
@@ -108,6 +86,58 @@ func FullscreenLayout(t *desktop.Tracker) {
 	}
 	for i, l := range ws.Layouts {
 		if l.GetName() == "fullscreen" {
+			ws.SetLayout(uint(i))
+		}
+	}
+	ws.Tile()
+}
+
+func VerticalLeftLayout(t *desktop.Tracker) {
+	ws := t.Workspaces[common.CurrentDesk]
+	if !ws.TilingEnabled {
+		return
+	}
+	for i, l := range ws.Layouts {
+		if l.GetName() == "vertical-left" {
+			ws.SetLayout(uint(i))
+		}
+	}
+	ws.Tile()
+}
+
+func VerticalRightLayout(t *desktop.Tracker) {
+	ws := t.Workspaces[common.CurrentDesk]
+	if !ws.TilingEnabled {
+		return
+	}
+	for i, l := range ws.Layouts {
+		if l.GetName() == "vertical-right" {
+			ws.SetLayout(uint(i))
+		}
+	}
+	ws.Tile()
+}
+
+func HorizontalTopLayout(t *desktop.Tracker) {
+	ws := t.Workspaces[common.CurrentDesk]
+	if !ws.TilingEnabled {
+		return
+	}
+	for i, l := range ws.Layouts {
+		if l.GetName() == "horizontal-top" {
+			ws.SetLayout(uint(i))
+		}
+	}
+	ws.Tile()
+}
+
+func HorizontalBottomLayout(t *desktop.Tracker) {
+	ws := t.Workspaces[common.CurrentDesk]
+	if !ws.TilingEnabled {
+		return
+	}
+	for i, l := range ws.Layouts {
+		if l.GetName() == "horizontal-bottom" {
 			ws.SetLayout(uint(i))
 		}
 	}

@@ -41,11 +41,11 @@ func CreateWorkspaces() map[uint]*Workspace {
 
 func CreateLayouts(workspaceNum uint) []Layout {
 	return []Layout{
+		layout.CreateFullscreenLayout(workspaceNum),
 		layout.CreateVerticalLeftLayout(workspaceNum),
 		layout.CreateVerticalRightLayout(workspaceNum),
 		layout.CreateHorizontalTopLayout(workspaceNum),
 		layout.CreateHorizontalBottomLayout(workspaceNum),
-		layout.CreateFullscreenLayout(workspaceNum),
 	}
 }
 
