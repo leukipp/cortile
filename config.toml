@@ -5,8 +5,8 @@
 # Tiling will be enabled on application start if set to true (true | false).
 tiling_enabled = true
 
-# Initial tiling layout ("vertical" | "horizontal" | "fullscreen").
-tiling_layout = "vertical"
+# Initial tiling layout ("vertical-left" | "vertical-right" | "horizontal-top" | "horizontal-bottom" | "fullscreen").
+tiling_layout = "vertical-right"
 
 # Initial division of master-slave area (0.0 - 1.0).
 proportion = 0.6

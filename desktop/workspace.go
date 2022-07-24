@@ -9,7 +9,7 @@ import (
 )
 
 type Workspace struct {
-	Layouts         []Layout // List of vailable layouts
+	Layouts         []Layout // List of available layouts
 	TilingEnabled   bool     // Tiling is enabled or not
 	ActiveLayoutNum uint     // Active layout index
 }
@@ -41,8 +41,10 @@ func CreateWorkspaces() map[uint]*Workspace {
 
 func CreateLayouts(workspaceNum uint) []Layout {
 	return []Layout{
-		layout.CreateVerticalLayout(workspaceNum),
-		layout.CreateHorizontalLayout(workspaceNum),
+		layout.CreateVerticalLeftLayout(workspaceNum),
+		layout.CreateVerticalRightLayout(workspaceNum),
+		layout.CreateHorizontalTopLayout(workspaceNum),
+		layout.CreateHorizontalBottomLayout(workspaceNum),
 		layout.CreateFullscreenLayout(workspaceNum),
 	}
 }

@@ -103,10 +103,11 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	cw, ch := cGeom.Width(), cGeom.Height()
 
 	// Check width or height change
-	dw, dh := 0.0, 0.0
-	resized := (math.Abs(float64(cw-pw)) > dw || math.Abs(float64(ch-ph)) > dh)
+	resized := math.Abs(float64(cw-pw)) > 0.0 || math.Abs(float64(ch-ph)) > 0.0
 
 	if resized {
+		proportion := 0.0
+		gap := common.Config.WindowGap
 		ws := tr.Workspaces[c.Info.Desk]
 		al := ws.ActiveLayout()
 		mg := al.GetManager()
@@ -117,34 +118,38 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 			return
 		}
 
-		// Ignore master only windows
-		if len(mg.Slaves) == 0 {
-			return
-		}
-
-		// Ignore fullscreen windows
+		// Ignore fullscreen layouts
 		if store.IsMaximized(c.Win.Id) {
 			return
 		}
 
-		proportion := 0.0
-		gap := common.Config.WindowGap
-		layoutName := al.GetName()
-		_, _, dw, dh := common.DesktopDimensions()
+		// Ignore master or slave only layouts
+		if len(mg.Masters) == 0 || len(mg.Slaves) == 0 {
+			return
+		}
 
-		// Calculate proportion based on resized window width (TODO: LTR/RTL gap support)
-		if layoutName == "vertical" {
+		// Calculate proportion based on resized window size
+		_, _, dw, dh := common.DesktopDimensions()
+		switch al.GetName() {
+		case "vertical-left":
+			proportion = 1.0 - (float64(cw+gap) / float64(dw))
+			if mg.IsMaster(c) {
+				proportion = float64(cw+2*gap) / float64(dw)
+			}
+		case "vertical-right":
 			proportion = float64(cw+gap) / float64(dw)
 			if mg.IsMaster(c) {
 				proportion = 1.0 - (float64(cw+2*gap) / float64(dw))
 			}
-		}
-
-		// Calculate proportion based on resized window height (TODO: LTR/RTL gap support)
-		if layoutName == "horizontal" {
+		case "horizontal-top":
 			proportion = 1.0 - (float64(ch+gap) / float64(dh))
 			if mg.IsMaster(c) {
 				proportion = float64(ch+2*gap) / float64(dh)
+			}
+		case "horizontal-bottom":
+			proportion = float64(ch+gap) / float64(dh)
+			if mg.IsMaster(c) {
+				proportion = 1.0 - (float64(ch+2*gap) / float64(dh))
 			}
 		}
 
@@ -169,8 +174,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 	cx, cy, _, _ := cGeom.Pieces()
 
 	// Check position change
-	dx, dy := 0.0, 0.0
-	moved := (math.Abs(float64(cx-px)) > dx || math.Abs(float64(cy-py)) > dy)
+	moved := math.Abs(float64(cx-px)) > 0.0 || math.Abs(float64(cy-py)) > 0.0
 
 	if moved {
 		ws := tr.Workspaces[c.Info.Desk]

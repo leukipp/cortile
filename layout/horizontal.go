@@ -2,6 +2,7 @@ package layout
 
 import (
 	"math"
+	"strings"
 
 	"github.com/leukipp/cortile/common"
 	"github.com/leukipp/cortile/store"
@@ -16,12 +17,21 @@ type HorizontalLayout struct {
 	Name           string  // Layout name
 }
 
-func CreateHorizontalLayout(workspaceNum uint) *HorizontalLayout {
+func CreateHorizontalTopLayout(workspaceNum uint) *HorizontalLayout {
 	return &HorizontalLayout{
 		Manager:      store.CreateManager(),
-		Proportion:   common.Config.Proportion, // TODO: LTR/RTL support
+		Proportion:   common.Config.Proportion,
 		WorkspaceNum: workspaceNum,
-		Name:         "horizontal",
+		Name:         "horizontal-top",
+	}
+}
+
+func CreateHorizontalBottomLayout(workspaceNum uint) *HorizontalLayout {
+	return &HorizontalLayout{
+		Manager:      store.CreateManager(),
+		Proportion:   1.0 - common.Config.Proportion,
+		WorkspaceNum: workspaceNum,
+		Name:         "horizontal-bottom",
 	}
 }
 
@@ -38,12 +48,12 @@ func (l *HorizontalLayout) Do() {
 	sh := dh - mh
 	gap := common.Config.WindowGap
 
-	asize := len(l.Clients())
+	csize := len(l.Clients())
 	fsize := l.AllowedMasters
 
-	ltr := false // TODO: Load from config
-
-	if ltr && asize > fsize {
+	// Master on bottom
+	mbottom := strings.Contains(l.Name, "bottom")
+	if mbottom && csize > fsize {
 		mytmp := my
 		mhtmp := mh
 		sytmp := sy
@@ -55,6 +65,7 @@ func (l *HorizontalLayout) Do() {
 		sh = mhtmp
 	}
 
+	// Master area layout
 	if msize > 0 {
 		mw := (dw - (msize+1)*gap) / msize
 		if ssize == 0 {
@@ -69,6 +80,7 @@ func (l *HorizontalLayout) Do() {
 		}
 	}
 
+	// Slave area layout
 	if ssize > 0 {
 		sw := (dw - (ssize+1)*gap) / ssize
 		if msize == 0 {

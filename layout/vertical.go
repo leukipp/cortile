@@ -2,6 +2,7 @@ package layout
 
 import (
 	"math"
+	"strings"
 
 	"github.com/leukipp/cortile/common"
 	"github.com/leukipp/cortile/store"
@@ -16,12 +17,21 @@ type VerticalLayout struct {
 	Name           string  // Layout name
 }
 
-func CreateVerticalLayout(workspaceNum uint) *VerticalLayout {
+func CreateVerticalLeftLayout(workspaceNum uint) *VerticalLayout {
 	return &VerticalLayout{
 		Manager:      store.CreateManager(),
-		Proportion:   1.0 - common.Config.Proportion, // TODO: LTR/RTL support
+		Proportion:   common.Config.Proportion,
 		WorkspaceNum: workspaceNum,
-		Name:         "vertical",
+		Name:         "vertical-left",
+	}
+}
+
+func CreateVerticalRightLayout(workspaceNum uint) *VerticalLayout {
+	return &VerticalLayout{
+		Manager:      store.CreateManager(),
+		Proportion:   1.0 - common.Config.Proportion,
+		WorkspaceNum: workspaceNum,
+		Name:         "vertical-right",
 	}
 }
 
@@ -38,12 +48,12 @@ func (l *VerticalLayout) Do() {
 	sw := dw - mw
 	gap := common.Config.WindowGap
 
-	asize := len(l.Clients())
+	csize := len(l.Clients())
 	fsize := l.AllowedMasters
 
-	ltr := true // TODO: Load from config
-
-	if ltr && asize > fsize {
+	// Master on right
+	mright := strings.Contains(l.Name, "right")
+	if mright && csize > fsize {
 		mxtmp := mx
 		mwtmp := mw
 		sxtmp := sx
@@ -55,6 +65,7 @@ func (l *VerticalLayout) Do() {
 		sw = mwtmp
 	}
 
+	// Master area layout
 	if msize > 0 {
 		mh := (dh - (msize+1)*gap) / msize
 		if ssize == 0 {
@@ -69,6 +80,7 @@ func (l *VerticalLayout) Do() {
 		}
 	}
 
+	// Slave area layout
 	if ssize > 0 {
 		sh := (dh - (ssize+1)*gap) / ssize
 		if msize == 0 {

@@ -25,6 +25,8 @@ func (l *FullscreenLayout) Do() {
 	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetName(), " layout [workspace-", l.WorkspaceNum, "]")
 
 	gap := common.Config.WindowGap
+
+	// Main area layout
 	for _, c := range l.Clients() {
 		dx, dy, dw, dh := common.DesktopDimensions()
 		c.MoveResize(dx+gap, dy+gap, dw-2*gap, dh-2*gap)
