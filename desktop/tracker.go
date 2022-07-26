@@ -70,9 +70,12 @@ func (tr *Tracker) trackWindow(w xproto.Window) {
 	ws := tr.Workspaces[c.Info.Desk]
 	ws.AddClient(c)
 
-	// Wait with handler attachment, as some applications load geometry delayed
+	// Attach handlers and tile
+	tr.attachHandlers(c)
+	tr.Workspaces[common.CurrentDesk].Tile()
+
+	// Tile again as some applications load geometry delayed
 	time.AfterFunc(1000*time.Millisecond, func() {
-		tr.attachHandlers(c)
 		tr.Workspaces[common.CurrentDesk].Tile()
 	})
 }
