@@ -1,5 +1,5 @@
 # Cortile
-<img src="assets/logo.png" style="width:80px;margin:0px 10px 0px 0px;" align="left"/>
+<img src="https://raw.githubusercontent.com/leukipp/cortile/main/assets/logo.png" style="width:80px;margin:0px 10px 0px 0px;" align="left"/>
 
 Tiling manager with _hot corner support_ for Xfce and other [EWMH Compliant Window Managers](https://en.wikipedia.org/wiki/Extended_Window_Manager_Hints).
 Simply _keep your current window manager_ and **install [cortile](https://github.com/leukipp/cortile) on top** of it.
@@ -21,7 +21,7 @@ Once enabled, the tiling manager will _handle resizing and positioning_ of exist
 
 Support for **keyboard and mouse navigation** sets cortile apart from other tiling solutions. The _go_ implementation ensures a fast and responsive system, where _multiple layouts_, _keyboard shortcuts_, _drag & drop_ and _hot corner_ events simplify and speed up your daily work.
 
-[![demo](assets/demo.gif)](https://github.com/leukipp/cortile)
+[![demo](https://raw.githubusercontent.com/leukipp/cortile/main/assets/demo.gif)](https://github.com/leukipp/cortile)
 
 ## Install [![github](https://img.shields.io/github/go-mod/go-version/leukipp/cortile)](#Install)
 You need [go >= 1.17](https://go.dev/dl/) to run cortile.
@@ -68,19 +68,19 @@ go env | grep "GOPATH\|GOVERSION"
 
 <details><summary>Install - cortile</summary><div>
 
-### Option 1: Install cortile using release files
+### Option 1: Install cortile via release files
 Download [binary files](https://github.com/leukipp/cortile/releases) from `GitHub releases`:
 ```bash
 # coming soon
 ```
 
-### Option 2: Install cortile using remote source
+### Option 2: Install cortile via remote source
 Install `directly from GitHub` main branch:
 ```bash
 go install github.com/leukipp/cortile@main
 ```
 
-### Option 3: Install cortile using local source
+### Option 3: Install cortile via local source
 Clone `source code from GitHub` main branch:
 ```bash
 git clone https://github.com/leukipp/cortile.git -b main
@@ -103,7 +103,7 @@ $GOPATH/bin/cortile -v
 The configuration file resides under `~/.config/cortile/config.toml` and is created on the first launch using the default values.
 Further information's about those values can be found in the comments of the [config.toml](https://github.com/leukipp/cortile/blob/main/config.toml) file.
 
-[![config](assets/config.gif)](https://github.com/leukipp/cortile)
+[![config](https://raw.githubusercontent.com/leukipp/cortile/main/assets/config.gif)](https://github.com/leukipp/cortile)
 
 ### Shortcuts
 It may be that some of the keyboard shortcuts are already used by your system. In that case, update the values under the `[keys]` section of the configuration file. 
