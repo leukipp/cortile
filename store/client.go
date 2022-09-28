@@ -10,6 +10,7 @@ import (
 	"github.com/BurntSushi/xgbutil/ewmh"
 	"github.com/BurntSushi/xgbutil/icccm"
 	"github.com/BurntSushi/xgbutil/motif"
+	"github.com/BurntSushi/xgbutil/xprop"
 	"github.com/BurntSushi/xgbutil/xrect"
 	"github.com/BurntSushi/xgbutil/xwindow"
 
@@ -28,11 +29,12 @@ type Client struct {
 }
 
 type Info struct {
-	Class  string       // Client window application name
-	Name   string       // Client window title name
-	Desk   uint         // Desktop the client is currently in
-	States []string     // Client window states
-	Hints  *motif.Hints // Client window hints
+	Class    string       // Client window application name
+	Name     string       // Client window title name
+	Desk     uint         // Desktop the client is currently in
+	States   []string     // Client window states
+	Hints    *motif.Hints // Client window hints
+	IsGtkCSD bool
 }
 
 type Property struct {
@@ -64,9 +66,17 @@ func CreateClient(w xproto.Window) (c *Client) {
 }
 
 func (c *Client) MoveResize(x, y, w, h int) {
+	c.MoveResizeForTiler(x, y, w, h, true)
+}
+
+func (c *Client) MoveResizeForTiler(x, y, w, h int, isForTiling bool) {
 	c.Unmaximize()
 
 	dw, dh := c.DecorDimensions()
+
+	if isForTiling && c.Info.IsGtkCSD {
+		x, y, w, h = AdjustGtkWindowSizeForCSD(x, y, w, h, c.Win.Id)
+	}
 
 	// Move window
 	err := c.Win.WMMoveResize(x, y, w-dw, h-dh)
@@ -76,6 +86,20 @@ func (c *Client) MoveResize(x, y, w, h int) {
 
 	// Update stored dimensions
 	c.Update()
+}
+
+func AdjustGtkWindowSizeForCSD(x, y, w, h int, win xproto.Window) (new_x, new_y, new_w, new_h int) {
+	// Pre-Adjust the requested positioning and dimensions if the Window is a Gtk app with Client side decorations.
+	extents, err := xprop.PropValNums(xprop.GetProperty(common.X, win, "_GTK_FRAME_EXTENTS"))
+	if err == nil && len(extents) == 4 {
+		new_x = x - int(extents[0])
+		new_y = y - int(extents[2])
+		new_w = w + int(extents[0]) + int(extents[1])
+		new_h = h + (int(extents[2]) + int(extents[3]))
+	} else {
+		new_x, new_y, new_w, new_h = x, y, w, h
+	}
+	return
 }
 
 func (c *Client) DecorDimensions() (w int, h int) {
@@ -153,7 +177,7 @@ func (c Client) Restore() {
 
 	// Move window to stored position
 	geom := c.SavedProp.Geom
-	c.MoveResize(geom.X(), geom.Y(), geom.Width(), geom.Height())
+	c.MoveResizeForTiler(geom.X(), geom.Y(), geom.Width(), geom.Height(), false)
 
 	log.Info("Restoring window position x=", geom.X(), ", y=", geom.Y(), " [", c.Info.Class, "]")
 }
@@ -167,6 +191,7 @@ func GetInfo(w xproto.Window) (info Info) {
 	var desk uint
 	var states []string
 	var hints *motif.Hints
+	isGTKCSD := false
 
 	// Class name
 	wmClass, err = icccm.WmClassGet(common.X, w)
@@ -204,13 +229,28 @@ func GetInfo(w xproto.Window) (info Info) {
 		hints = &motif.Hints{}
 	}
 
+	isGTKCSD = HasGtkFrameExtents(w)
+
 	return Info{
-		Class:  class,
-		Name:   name,
-		Desk:   desk,
-		States: states,
-		Hints:  hints,
+		Class:    class,
+		Name:     name,
+		Desk:     desk,
+		States:   states,
+		Hints:    hints,
+		IsGtkCSD: isGTKCSD,
 	}
+}
+
+/*
+_GTK_FRAME_EXTENTS is apparently the window property which tells you if a GTK app
+is drawing it's own shadows and how big they are on each border
+*/
+func HasGtkFrameExtents(w xproto.Window) bool {
+	extents, err := xprop.GetProperty(common.X, w, "_GTK_FRAME_EXTENTS")
+	if err == nil && extents.Length == 4 {
+		return true
+	}
+	return false
 }
 
 func HasDecoration(w xproto.Window) bool {
