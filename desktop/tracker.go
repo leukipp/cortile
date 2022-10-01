@@ -29,7 +29,7 @@ func CreateTracker(ws map[uint]*Workspace) *Tracker {
 	}
 
 	// Init clients
-	xevent.PropertyNotifyFun(t.handleClientUpdates).Connect(common.X, common.X.RootWin())
+	xevent.PropertyNotifyFun(t.handleWorkspaceUpdates).Connect(common.X, common.X.RootWin())
 	t.populateClients()
 
 	return &t
@@ -262,11 +262,13 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 	}
 }
 
-func (tr *Tracker) handleClientUpdates(X *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
+func (tr *Tracker) handleWorkspaceUpdates(X *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
 	aname, _ := xprop.AtomName(common.X, ev.Atom)
 
+	log.Debug("Workspace update event ", aname)
+
 	// Client added or workspace changed
-	if aname == "_NET_CLIENT_LIST_STACKING" || aname == "_NET_DESKTOP_VIEWPORT" {
+	if aname == "_NET_CLIENT_LIST_STACKING" || aname == "_NET_DESKTOP_VIEWPORT" || aname == "_NET_WORKAREA" {
 		tr.populateClients()
 		tr.Workspaces[common.CurrentDesk].Tile()
 	}
