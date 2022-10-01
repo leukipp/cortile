@@ -19,7 +19,8 @@ Once enabled, the tiling manager will _handle resizing and positioning_ of exist
 - [x] Selective tiling areas.
 - [x] Multi monitor support.
 
-Support for **keyboard and mouse navigation** sets cortile apart from other tiling solutions. The _go_ implementation ensures a fast and responsive system, where _multiple layouts_, _keyboard shortcuts_, _drag & drop_ and _hot corner_ events simplify and speed up your daily work.
+Support for **keyboard and mouse navigation** sets cortile apart from other tiling solutions.
+The _go_ implementation ensures a fast and responsive system, where _multiple layouts_, _keyboard shortcuts_, _drag & drop_ and _hot corner_ events simplify and speed up your daily work.
 
 [![demo](https://raw.githubusercontent.com/leukipp/cortile/main/assets/demo.gif)](https://github.com/leukipp/cortile)
 
@@ -100,13 +101,14 @@ $GOPATH/bin/cortile -v
 ```
 
 ## Configuration [![github](https://img.shields.io/github/v/tag/leukipp/cortile)](#Configuration)
-The configuration file resides under `~/.config/cortile/config.toml` and is created on the first launch using the default values.
-Further information's about those values can be found in the comments of the [config.toml](https://github.com/leukipp/cortile/blob/main/config.toml) file.
+The configuration file is located at `~/.config/cortile/config.toml` and is created with default values during the first startup.
+Additional information about individual entries can be found in the comments section of the [config.toml](https://github.com/leukipp/cortile/blob/main/config.toml) file.
 
 [![config](https://raw.githubusercontent.com/leukipp/cortile/main/assets/config.gif)](https://github.com/leukipp/cortile)
 
 ### Shortcuts
-It may be that some of the keyboard shortcuts are already used by your system. In that case, update the values under the `[keys]` section of the configuration file. 
+The default keyboard shortcuts are assigned as shown below.
+If some of them are already in use by your system, update the default values in the `[keys]` section of the configuration file:
 | Keys                                                    | Description                              |
 | ------------------------------------------------------- | ---------------------------------------- |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>           | Tile current workspace                   |
@@ -145,19 +147,22 @@ Other useful shortcuts on Xfce environments:
 - Maximize window: <kbd>Alt</kbd>+<kbd>Double-Click</kbd>.
 
 ## Additional [![github](https://img.shields.io/github/issues-pr-closed/leukipp/cortile)](#Additional)
-Additional features of cortile:
+Special settings of cortile:
 - Use the `edge_margin` property to account for additional spaces.
   - e.g. panels (deskbar), desktop infographics (conky).
 - Use the `edge_margin` property to enable tiling only for parts of the monitor. 
-  - e.g. use a left/right margin that is half the resolution of a large display to tile only windows that are moved inside a certain area. 
+  - e.g. use a left/right margin that is half the resolution of a large display to tile only windows that are moved inside a certain area.
 - Use the `window_slaves_max` property to limit the number of windows.
   - e.g. with one active master and `window_slaves_max = 2` the fourth and the following windows are stacked (behind the two slaves).
-- Use the hot `[corners]` properties to execute any external command.
-  - e.g. use `bottom_center = "firefox"` to open a browser window.
+
+Hot corners of cortile:
+- Use `tiling_enabled = false` if you prefer to utilize only the hot corner functionalities.
+- Use the hot `[corners]` properties to execute any external command available on your system.
+  - e.g. use `bottom_center = "firefox"` to open a web browser window.
 
 Companion tools for cortile:
-- Simply add `cortile` to your startup applications to run it after login.
-- You can install some [minimal-gtk](https://www.xfce-look.org/p/1016504) theme and leave `window_decoration = true`.
+- You can install a [minimal-gtk](https://www.xfce-look.org/p/1016504) theme and leave `window_decoration = true`.
+- Simply add cortile to your `startup applications` to run it after login.
 
 ## Known Issues [![github](https://img.shields.io/github/issues-closed/leukipp/cortile)](#Known_Issues)
 Known issues and limitations of cortile:
