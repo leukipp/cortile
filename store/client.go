@@ -10,6 +10,7 @@ import (
 	"github.com/BurntSushi/xgbutil/ewmh"
 	"github.com/BurntSushi/xgbutil/icccm"
 	"github.com/BurntSushi/xgbutil/motif"
+	"github.com/BurntSushi/xgbutil/xprop"
 	"github.com/BurntSushi/xgbutil/xrect"
 	"github.com/BurntSushi/xgbutil/xwindow"
 
@@ -28,11 +29,12 @@ type Client struct {
 }
 
 type Info struct {
-	Class  string       // Client window application name
-	Name   string       // Client window title name
-	Desk   uint         // Desktop the client is currently in
-	States []string     // Client window states
-	Hints  *motif.Hints // Client window hints
+	Class   string       // Client window application name
+	Name    string       // Client window title name
+	Desk    uint         // Desktop the client is currently in
+	States  []string     // Client window states
+	Hints   *motif.Hints // Client window hints
+	Extents []uint       // Client window extents
 }
 
 type Property struct {
@@ -66,10 +68,11 @@ func CreateClient(w xproto.Window) (c *Client) {
 func (c *Client) MoveResize(x, y, w, h int) {
 	c.Unmaximize()
 
-	dw, dh := c.DecorDimensions()
+	// Decoration offsets
+	dx, dy, dw, dh := c.DecorDimensions()
 
-	// Move window
-	err := c.Win.WMMoveResize(x, y, w-dw, h-dh)
+	// Move and resize window
+	err := c.Win.WMMoveResize(x+dx, y+dy, w+dw, h+dh)
 	if err != nil {
 		log.Warn("Error when moving window [", c.Info.Class, "]")
 	}
@@ -78,23 +81,32 @@ func (c *Client) MoveResize(x, y, w, h int) {
 	c.Update()
 }
 
-func (c *Client) DecorDimensions() (w int, h int) {
+func (c *Client) DecorDimensions() (x int, y int, w int, h int) {
 
-	// Inner dimension
+	// Inner window dimensions
 	cGeom, err1 := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
 	if err1 != nil {
 		log.Warn(err1)
 		return
 	}
 
-	// Outer dimension
+	// Outer window dimensions
 	pGeom, err2 := c.Win.DecorGeometry()
 	if err2 != nil {
 		log.Warn(err2)
 		return
 	}
 
-	w, h = pGeom.Width()-cGeom.Width(), pGeom.Height()-cGeom.Height()
+	// Remove server decoration borders
+	w, h = cGeom.Width()-pGeom.Width(), cGeom.Height()-pGeom.Height()
+
+	// Add client decoration borders
+	if len(c.Info.Extents) == 4 {
+		x = cGeom.X() - int(c.Info.Extents[0])
+		y = cGeom.Y() - int(c.Info.Extents[2])
+		w += int(c.Info.Extents[0]) + int(c.Info.Extents[1])
+		h += int(c.Info.Extents[2]) + int(c.Info.Extents[3])
+	}
 
 	return
 }
@@ -167,8 +179,9 @@ func GetInfo(w xproto.Window) (info Info) {
 	var desk uint
 	var states []string
 	var hints *motif.Hints
+	var extents []uint
 
-	// Class name
+	// Window class (internal class name of the window)
 	wmClass, err = icccm.WmClassGet(common.X, w)
 	if err != nil {
 		log.Trace(err)
@@ -177,39 +190,46 @@ func GetInfo(w xproto.Window) (info Info) {
 		class = wmClass.Class
 	}
 
-	// Windows title
+	// Window name (title on top of the window)
 	name, err = icccm.WmNameGet(common.X, w)
 	if err != nil {
 		log.Trace(err, " [", class, "]")
 		name = UNKNOWN
 	}
 
-	// Window desktop
+	// Window desktop (desktop workspace where the window is visible)
 	desk, err = ewmh.WmDesktopGet(common.X, w)
 	if err != nil {
 		log.Trace(err, " [", class, "]")
 		desk = math.MaxUint
 	}
 
-	// Window states
+	// Window states (visualization states of the window)
 	states, err = ewmh.WmStateGet(common.X, w)
 	if err != nil {
 		log.Trace(err, " [", class, "]")
 		states = []string{}
 	}
 
-	// Window hints
+	// Window hints (server decorations of the window)
 	hints, err = motif.WmHintsGet(common.X, w)
 	if err != nil {
 		hints = &motif.Hints{}
 	}
 
+	// Window extents (client decorations of the window)
+	extents, err = xprop.PropValNums(xprop.GetProperty(common.X, w, "_GTK_FRAME_EXTENTS"))
+	if err != nil {
+		extents = []uint{}
+	}
+
 	return Info{
-		Class:  class,
-		Name:   name,
-		Desk:   desk,
-		States: states,
-		Hints:  hints,
+		Class:   class,
+		Name:    name,
+		Desk:    desk,
+		States:  states,
+		Hints:   hints,
+		Extents: extents,
 	}
 }
 
