@@ -69,10 +69,10 @@ func (c *Client) MoveResize(x, y, w, h int) {
 	c.Unmaximize()
 
 	// Decoration offsets
-	dx, dy, dw, dh := c.DecorDimensions()
+	dx, dy, dw, dh := c.DecorOffsets(x, y, w, h)
 
 	// Move and resize window
-	err := c.Win.WMMoveResize(x+dx, y+dy, w+dw, h+dh)
+	err := c.Win.WMMoveResize(dx, dy, dw, dh)
 	if err != nil {
 		log.Warn("Error when moving window [", c.Info.Class, "]")
 	}
@@ -81,7 +81,36 @@ func (c *Client) MoveResize(x, y, w, h int) {
 	c.Update()
 }
 
-func (c *Client) DecorDimensions() (x int, y int, w int, h int) {
+func (c *Client) DecorGeometry() (cGeom xrect.Rect) {
+
+	// Inner window dimensions
+	rGeom, err1 := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
+	if err1 != nil {
+		log.Warn(err1)
+		return
+	}
+
+	// Decoration dimensions
+	dx, dy, dw, dh := c.DecorDimensions()
+
+	// Decoration geometry
+	cGeom = xrect.New(rGeom.X()+dx, rGeom.Y()+dy, rGeom.Width()+dw, rGeom.Height()+dh)
+
+	return
+}
+
+func (c *Client) DecorOffsets(x, y, w, h int) (dx, dy, dw, dh int) {
+
+	// Decoration dimensions
+	dx, dy, dw, dh = c.DecorDimensions()
+
+	// Decoration offsets
+	dx, dy, dw, dh = x+dx, y+dy, w+dw, h+dh
+
+	return
+}
+
+func (c *Client) DecorDimensions() (dx, dy, dw, dh int) {
 
 	// Inner window dimensions
 	cGeom, err1 := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
@@ -98,14 +127,14 @@ func (c *Client) DecorDimensions() (x int, y int, w int, h int) {
 	}
 
 	// Remove server decoration borders
-	w, h = cGeom.Width()-pGeom.Width(), cGeom.Height()-pGeom.Height()
+	dw, dh = cGeom.Width()-pGeom.Width(), cGeom.Height()-pGeom.Height()
 
 	// Add client decoration borders
 	if len(c.Info.Extents) == 4 {
-		x = cGeom.X() - int(c.Info.Extents[0])
-		y = cGeom.Y() - int(c.Info.Extents[2])
-		w += int(c.Info.Extents[0]) + int(c.Info.Extents[1])
-		h += int(c.Info.Extents[2]) + int(c.Info.Extents[3])
+		dx = cGeom.X() - int(c.Info.Extents[0])
+		dy = cGeom.Y() - int(c.Info.Extents[2])
+		dw += int(c.Info.Extents[0]) + int(c.Info.Extents[1])
+		dh += int(c.Info.Extents[2]) + int(c.Info.Extents[3])
 	}
 
 	return
