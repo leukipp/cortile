@@ -23,18 +23,18 @@ var UNKNOWN = "<UNKNOWN>"
 
 type Client struct {
 	Win      *xwindow.Window // X window object
-	Latest   Info            // Client latest window information
-	Original Info            // Client original window information
+	Latest   Info            // Latest client window information
+	Original Info            // Original client window information
 }
 
 type Info struct {
-	Class    string       // Client window application name
-	Name     string       // Client window title name
-	Desk     uint         // Desktop the client is currently in
-	States   []string     // Client window states
-	Hints    *motif.Hints // Client window hints
-	Extents  []uint       // Client window extents
-	Geometry xrect.Rect   // Client window geometry
+	Class    string            // Client window application name
+	Name     string            // Client window title name
+	Desk     uint              // Client window desktop
+	States   []string          // Client window states
+	Hints    motif.Hints       // Client window hints
+	Extents  ewmh.FrameExtents // Client window extents
+	Geometry xrect.Rect        // Client window geometry
 }
 
 func CreateClient(w xproto.Window) (c *Client) {
@@ -49,15 +49,15 @@ func CreateClient(w xproto.Window) (c *Client) {
 func (c *Client) MoveResize(x, y, w, h int) {
 	c.Unmaximize()
 
-	// Decoration margins
-	l, r, t, b := c.DecorMargin()
+	// Decoration extents
+	extents := c.Latest.Extents
 
 	// Calculate dimensions offsets
 	dx, dy := 0, 0
 	if c.Latest.Hints.Flags&motif.HintDecorations > 0 {
-		dx, dy = l, t
+		dx, dy = extents.Left, extents.Top
 	}
-	dw, dh := l+r, t+b
+	dw, dh := extents.Left+extents.Right, extents.Top+extents.Bottom
 
 	// Move and resize window
 	err := ewmh.MoveresizeWindow(c.Win.X, c.Win.Id, x+dx, y+dy, w-dw, h-dh)
@@ -67,39 +67,6 @@ func (c *Client) MoveResize(x, y, w, h int) {
 
 	// Update stored dimensions
 	c.Update()
-}
-
-func (c *Client) DecorMargin() (l, r, t, b int) {
-
-	// Outer window dimensions (x/y relative to workspace)
-	oGeom, err2 := c.Win.DecorGeometry()
-	if err2 != nil {
-		log.Warn(err2)
-		return
-	}
-
-	// Inner window dimensions (x/y relative to outer window)
-	iGeom, err1 := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
-	if err1 != nil {
-		log.Warn(err1)
-		return
-	}
-
-	// Server decoration borders (w/h offset caused by window margin)
-	l = iGeom.X()
-	r = oGeom.Width() - iGeom.Width() - l
-	t = iGeom.Y()
-	b = oGeom.Height() - iGeom.Height() - t
-
-	// Client decoration borders (w/h offset caused by client padding)
-	if len(c.Latest.Extents) == 4 {
-		l -= int(c.Latest.Extents[0])
-		r -= int(c.Latest.Extents[1])
-		t -= int(c.Latest.Extents[2])
-		b -= int(c.Latest.Extents[3])
-	}
-
-	return
 }
 
 func (c *Client) OuterGeometry() (x, y, w, h int) {
@@ -118,11 +85,12 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 		return
 	}
 
-	// Decoration margins (l/r/t/b relative to outer window dimensions)
-	l, r, t, b := c.DecorMargin()
+	// Decoration extents (l/r/t/b relative to outer window dimensions)
+	extents := c.Latest.Extents
+	dx, dy, dw, dh := extents.Left, extents.Top, extents.Left+extents.Right, extents.Top+extents.Bottom
 
 	// Calculate outer geometry (including server and client decorations)
-	x, y, w, h = oGeom.X()+iGeom.X()-l, oGeom.Y()+iGeom.Y()-t, iGeom.Width()+l+r, iGeom.Height()+t+b
+	x, y, w, h = oGeom.X()+iGeom.X()-dx, oGeom.Y()+iGeom.Y()-dy, iGeom.Width()+dw, iGeom.Height()+dh
 
 	return
 }
@@ -157,7 +125,7 @@ func (c Client) UnDecorate() {
 }
 
 func (c Client) Decorate() {
-	if !motif.Decor(c.Original.Hints) {
+	if !motif.Decor(&c.Original.Hints) {
 		return
 	}
 
@@ -191,7 +159,8 @@ func GetInfo(w xproto.Window) (info Info) {
 	var desk uint
 	var states []string
 	var hints *motif.Hints
-	var extents []uint
+	var extents *ewmh.FrameExtents
+	var geometry xrect.Rect
 
 	// Window class (internal class name of the window)
 	wmClass, err := icccm.WmClassGet(common.X, w)
@@ -229,14 +198,23 @@ func GetInfo(w xproto.Window) (info Info) {
 		hints = &motif.Hints{}
 	}
 
-	// Window extents (client decorations of the window)
-	extents, err = xprop.PropValNums(xprop.GetProperty(common.X, w, "_GTK_FRAME_EXTENTS"))
+	// Window extents (server decorations of the window)
+	extents, err = ewmh.FrameExtentsGet(common.X, w)
 	if err != nil {
-		extents = []uint{}
+		extents = &ewmh.FrameExtents{}
+	}
+
+	// Window extents (client decorations of the window)
+	ext, err := xprop.PropValNums(xprop.GetProperty(common.X, w, "_GTK_FRAME_EXTENTS"))
+	if err == nil && len(ext) >= 4 {
+		extents.Left -= int(ext[0])
+		extents.Right -= int(ext[1])
+		extents.Top -= int(ext[2])
+		extents.Bottom -= int(ext[3])
 	}
 
 	// Window geometry (dimensions of the window)
-	geometry, err := xwindow.New(common.X, w).DecorGeometry()
+	geometry, err = xwindow.New(common.X, w).DecorGeometry()
 	if err != nil {
 		geometry = &xrect.XRect{}
 	}
@@ -246,8 +224,8 @@ func GetInfo(w xproto.Window) (info Info) {
 		Name:     name,
 		Desk:     desk,
 		States:   states,
-		Hints:    hints,
-		Extents:  extents,
+		Hints:    *hints,
+		Extents:  *extents,
 		Geometry: geometry,
 	}
 }
