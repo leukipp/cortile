@@ -23,9 +23,9 @@ var UNKNOWN = "<UNKNOWN>"
 
 type Client struct {
 	Win          *xwindow.Window // X window object
-	Info         Info
-	CurrentProp  Property // Properties that the client has at the moment
-	OriginalProp Property // Properties that the client had before tiling
+	Info         Info            // Client window information
+	CurrentProp  Property        // Properties that the client has at the moment
+	OriginalProp Property        // Properties that the client had before tiling
 }
 
 type Info struct {
@@ -68,11 +68,12 @@ func CreateClient(w xproto.Window) (c *Client) {
 func (c *Client) MoveResize(x, y, w, h int) {
 	c.Unmaximize()
 
-	// Decoration offsets
-	dx, dy, dw, dh := c.DecorOffsets(x, y, w, h)
+	// Decoration margins (l/r/t/b relative to outer window dimensions)
+	l, r, t, b := c.DecorMargin()
+	dx, dy, dw, dh := int(math.Min(float64(l), 0.0)), int(math.Min(float64(t), 0.0)), l+r, t+b
 
-	// Move and resize window
-	err := c.Win.WMMoveResize(dx, dy, dw, dh)
+	// Move and resize window (function accounts for window decorations)
+	err := c.Win.WMMoveResize(x+dx, y+dy, w-dw, h-dh)
 	if err != nil {
 		log.Warn("Error when moving window [", c.Info.Class, "]")
 	}
@@ -81,61 +82,58 @@ func (c *Client) MoveResize(x, y, w, h int) {
 	c.Update()
 }
 
-func (c *Client) DecorGeometry() (cGeom xrect.Rect) {
+func (c *Client) DecorMargin() (l, r, t, b int) {
 
-	// Inner window dimensions
-	rGeom, err1 := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
-	if err1 != nil {
-		log.Warn(err1)
-		return
-	}
-
-	// Decoration dimensions
-	dx, dy, dw, dh := c.DecorDimensions()
-
-	// Decoration geometry
-	cGeom = xrect.New(rGeom.X()+dx, rGeom.Y()+dy, rGeom.Width()+dw, rGeom.Height()+dh)
-
-	return
-}
-
-func (c *Client) DecorOffsets(x, y, w, h int) (dx, dy, dw, dh int) {
-
-	// Decoration dimensions
-	dx, dy, dw, dh = c.DecorDimensions()
-
-	// Decoration offsets
-	dx, dy, dw, dh = x+dx, y+dy, w+dw, h+dh
-
-	return
-}
-
-func (c *Client) DecorDimensions() (dx, dy, dw, dh int) {
-
-	// Inner window dimensions
-	cGeom, err1 := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
-	if err1 != nil {
-		log.Warn(err1)
-		return
-	}
-
-	// Outer window dimensions
-	pGeom, err2 := c.Win.DecorGeometry()
+	// Outer window dimensions (x/y relative to workspace)
+	oGeom, err2 := c.Win.DecorGeometry()
 	if err2 != nil {
 		log.Warn(err2)
 		return
 	}
 
-	// Remove server decoration borders
-	dw, dh = cGeom.Width()-pGeom.Width(), cGeom.Height()-pGeom.Height()
-
-	// Add client decoration borders
-	if len(c.Info.Extents) == 4 {
-		dx = cGeom.X() - int(c.Info.Extents[0])
-		dy = cGeom.Y() - int(c.Info.Extents[2])
-		dw += int(c.Info.Extents[0]) + int(c.Info.Extents[1])
-		dh += int(c.Info.Extents[2]) + int(c.Info.Extents[3])
+	// Inner window dimensions (x/y relative to outer window)
+	iGeom, err1 := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
+	if err1 != nil {
+		log.Warn(err1)
+		return
 	}
+
+	// Server decoration borders (w/h offset caused by window margin)
+	l = iGeom.X()
+	r = oGeom.Width() - iGeom.Width() - l
+	t = iGeom.Y()
+	b = oGeom.Height() - iGeom.Height() - t
+
+	// Client decoration borders (w/h offset caused by client padding)
+	if len(c.Info.Extents) == 4 {
+		l -= int(c.Info.Extents[0])
+		r -= int(c.Info.Extents[1])
+		t -= int(c.Info.Extents[2])
+		b -= int(c.Info.Extents[3])
+	}
+
+	return
+}
+
+func (c *Client) OuterGeometry() (x, y, w, h int) {
+
+	// Outer window dimensions (x/y relative to workspace)
+	oGeom, err2 := c.Win.DecorGeometry()
+	if err2 != nil {
+		log.Warn(err2)
+		return
+	}
+
+	// Inner window dimensions (x/y relative to outer window)
+	iGeom, err1 := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
+	if err1 != nil {
+		log.Warn(err1)
+		return
+	}
+
+	// Decoration margins (l/r/t/b relative to outer window dimensions)
+	l, r, t, b := c.DecorMargin()
+	x, y, w, h = oGeom.X()+iGeom.X()-l, oGeom.Y()+iGeom.Y()-t, iGeom.Width()+l+r, iGeom.Height()+t+b
 
 	return
 }
@@ -150,12 +148,12 @@ func (c *Client) Update() (success bool) {
 	c.Info = info
 
 	// Update client geometry
-	pGeom, err := c.Win.DecorGeometry()
+	cGeom, err := c.Win.DecorGeometry()
 	if err != nil {
 		log.Warn(err)
 		return false
 	}
-	c.CurrentProp.Geom = pGeom
+	c.CurrentProp.Geom = cGeom
 
 	return true
 }

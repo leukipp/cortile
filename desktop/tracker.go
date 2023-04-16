@@ -23,16 +23,16 @@ type Tracker struct {
 }
 
 func CreateTracker(ws map[uint]*Workspace) *Tracker {
-	t := Tracker{
+	tr := Tracker{
 		Clients:    make(map[xproto.Window]*store.Client),
 		Workspaces: ws,
 	}
 
 	// Init clients
-	xevent.PropertyNotifyFun(t.handleWorkspaceUpdates).Connect(common.X, common.X.RootWin())
-	t.populateClients()
+	xevent.PropertyNotifyFun(tr.handleWorkspaceUpdates).Connect(common.X, common.X.RootWin())
+	tr.populateClients()
 
-	return &t
+	return &tr
 }
 
 func (tr *Tracker) populateClients() {
@@ -132,6 +132,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		}
 
 		// Calculate proportion based on resized window size
+		_, _, cw, ch = c.OuterGeometry()
 		_, _, dw, dh := common.DesktopDimensions()
 		switch al.GetName() {
 		case "vertical-left":
@@ -157,7 +158,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		}
 
 		// Set proportion based on resized window
-		log.Info("Proportion set to ", math.Round(proportion*100)/100, " [", c.Info.Class, "]")
+		log.Info("Proportion set to ", math.Round(proportion*1e4)/1e4, " [", c.Info.Class, "]")
 		al.SetProportion(proportion)
 		ws.Tile()
 	}
