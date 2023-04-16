@@ -96,14 +96,14 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 	// Previous dimensions
 	pGeom := c.CurrentProp.Geom
-	pw, ph := pGeom.Width(), pGeom.Height()
+	_, _, pw, ph := pGeom.Pieces()
 
 	// Current dimensions
 	cGeom, err := c.Win.DecorGeometry()
 	if err != nil {
 		return
 	}
-	cw, ch := cGeom.Width(), cGeom.Height()
+	_, _, cw, ch := cGeom.Pieces()
 
 	// Check width or height change
 	resized := math.Abs(float64(cw-pw)) > 0.0 || math.Abs(float64(ch-ph)) > 0.0

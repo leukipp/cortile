@@ -22,10 +22,10 @@ import (
 var UNKNOWN = "<UNKNOWN>"
 
 type Client struct {
-	Win         *xwindow.Window // X window object
-	Info        Info
-	CurrentProp Property // Properties that the client has at the moment
-	SavedProp   Property // Properties that the client had before tiling
+	Win          *xwindow.Window // X window object
+	Info         Info
+	CurrentProp  Property // Properties that the client has at the moment
+	OriginalProp Property // Properties that the client had before tiling
 }
 
 type Info struct {
@@ -58,7 +58,7 @@ func CreateClient(w xproto.Window) (c *Client) {
 			Geom: savedGeom,
 			Deco: HasDecoration(w),
 		},
-		SavedProp: Property{
+		OriginalProp: Property{
 			Geom: savedGeom,
 			Deco: HasDecoration(w),
 		},
@@ -178,7 +178,7 @@ func (c Client) UnDecorate() {
 }
 
 func (c Client) Decorate() {
-	if !c.SavedProp.Deco {
+	if !c.OriginalProp.Deco {
 		return
 	}
 
@@ -193,7 +193,7 @@ func (c Client) Restore() {
 	c.Decorate()
 
 	// Move window to stored position
-	geom := c.SavedProp.Geom
+	geom := c.OriginalProp.Geom
 	c.MoveResize(geom.X(), geom.Y(), geom.Width(), geom.Height())
 
 	log.Info("Restoring window position x=", geom.X(), ", y=", geom.Y(), " [", c.Info.Class, "]")
