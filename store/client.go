@@ -22,60 +22,47 @@ import (
 var UNKNOWN = "<UNKNOWN>"
 
 type Client struct {
-	Win          *xwindow.Window // X window object
-	Info         Info            // Client window information
-	CurrentProp  Property        // Properties that the client has at the moment
-	OriginalProp Property        // Properties that the client had before tiling
+	Win      *xwindow.Window // X window object
+	Latest   Info            // Client latest window information
+	Original Info            // Client original window information
 }
 
 type Info struct {
-	Class   string       // Client window application name
-	Name    string       // Client window title name
-	Desk    uint         // Desktop the client is currently in
-	States  []string     // Client window states
-	Hints   *motif.Hints // Client window hints
-	Extents []uint       // Client window extents
-}
-
-type Property struct {
-	Geom xrect.Rect // Client rectangle geometry
-	Deco bool       // Decoration active or not
+	Class    string       // Client window application name
+	Name     string       // Client window title name
+	Desk     uint         // Desktop the client is currently in
+	States   []string     // Client window states
+	Hints    *motif.Hints // Client window hints
+	Extents  []uint       // Client window extents
+	Geometry xrect.Rect   // Client window geometry
 }
 
 func CreateClient(w xproto.Window) (c *Client) {
-	win := xwindow.New(common.X, w)
 	info := GetInfo(w)
-
-	savedGeom, err := win.DecorGeometry()
-	if err != nil {
-		log.Info(err)
-	}
-
 	return &Client{
-		Win:  win,
-		Info: info,
-		CurrentProp: Property{
-			Geom: savedGeom,
-			Deco: HasDecoration(w),
-		},
-		OriginalProp: Property{
-			Geom: savedGeom,
-			Deco: HasDecoration(w),
-		},
+		Win:      xwindow.New(common.X, w),
+		Latest:   info,
+		Original: info,
 	}
 }
 
 func (c *Client) MoveResize(x, y, w, h int) {
 	c.Unmaximize()
 
-	// Decoration margins (l/r/t/b relative to outer window dimensions)
+	// Decoration margins
 	l, r, t, b := c.DecorMargin()
-	dx, dy, dw, dh := int(math.Min(float64(l), 0.0)), int(math.Min(float64(t), 0.0)), l+r, t+b
 
-	// Move and resize window (function accounts for window decorations)
-	err := c.Win.WMMoveResize(x+dx, y+dy, w-dw, h-dh)
+	// Calculate dimensions offsets
+	dx, dy := 0, 0
+	if c.Latest.Hints.Flags&motif.HintDecorations > 0 {
+		dx, dy = l, t
+	}
+	dw, dh := l+r, t+b
+
+	// Move and resize window
+	err := ewmh.MoveresizeWindow(c.Win.X, c.Win.Id, x+dx, y+dy, w-dw, h-dh)
 	if err != nil {
-		log.Warn("Error when moving window [", c.Info.Class, "]")
+		log.Warn("Error when moving window [", c.Latest.Class, "]")
 	}
 
 	// Update stored dimensions
@@ -105,11 +92,11 @@ func (c *Client) DecorMargin() (l, r, t, b int) {
 	b = oGeom.Height() - iGeom.Height() - t
 
 	// Client decoration borders (w/h offset caused by client padding)
-	if len(c.Info.Extents) == 4 {
-		l -= int(c.Info.Extents[0])
-		r -= int(c.Info.Extents[1])
-		t -= int(c.Info.Extents[2])
-		b -= int(c.Info.Extents[3])
+	if len(c.Latest.Extents) == 4 {
+		l -= int(c.Latest.Extents[0])
+		r -= int(c.Latest.Extents[1])
+		t -= int(c.Latest.Extents[2])
+		b -= int(c.Latest.Extents[3])
 	}
 
 	return
@@ -133,6 +120,8 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 
 	// Decoration margins (l/r/t/b relative to outer window dimensions)
 	l, r, t, b := c.DecorMargin()
+
+	// Calculate outer geometry (including server and client decorations)
 	x, y, w, h = oGeom.X()+iGeom.X()-l, oGeom.Y()+iGeom.Y()-t, iGeom.Width()+l+r, iGeom.Height()+t+b
 
 	return
@@ -144,16 +133,8 @@ func (c *Client) Update() (success bool) {
 		return false
 	}
 
-	// Set client infos
-	c.Info = info
-
-	// Update client geometry
-	cGeom, err := c.Win.DecorGeometry()
-	if err != nil {
-		log.Warn(err)
-		return false
-	}
-	c.CurrentProp.Geom = cGeom
+	// Update client infos
+	c.Latest = info
 
 	return true
 }
@@ -176,7 +157,7 @@ func (c Client) UnDecorate() {
 }
 
 func (c Client) Decorate() {
-	if !c.OriginalProp.Deco {
+	if !motif.Decor(c.Original.Hints) {
 		return
 	}
 
@@ -189,17 +170,21 @@ func (c Client) Decorate() {
 
 func (c Client) Restore() {
 	c.Decorate()
+	c.Unmaximize()
 
-	// Move window to stored position
-	geom := c.OriginalProp.Geom
-	c.MoveResize(geom.X(), geom.Y(), geom.Width(), geom.Height())
+	// Move window to original position
+	geom := c.Original.Geometry
+	err := ewmh.MoveresizeWindow(c.Win.X, c.Win.Id, geom.X(), geom.Y(), geom.Width(), geom.Height())
+	if err != nil {
+		log.Warn("Error when moving window [", c.Latest.Class, "]")
+	}
 
-	log.Info("Restoring window position x=", geom.X(), ", y=", geom.Y(), " [", c.Info.Class, "]")
+	// Update stored dimensions
+	c.Update()
 }
 
 func GetInfo(w xproto.Window) (info Info) {
 	var err error
-	var wmClass *icccm.WmClass
 
 	var class string
 	var name string
@@ -209,7 +194,7 @@ func GetInfo(w xproto.Window) (info Info) {
 	var extents []uint
 
 	// Window class (internal class name of the window)
-	wmClass, err = icccm.WmClassGet(common.X, w)
+	wmClass, err := icccm.WmClassGet(common.X, w)
 	if err != nil {
 		log.Trace(err)
 		class = UNKNOWN
@@ -250,19 +235,21 @@ func GetInfo(w xproto.Window) (info Info) {
 		extents = []uint{}
 	}
 
-	return Info{
-		Class:   class,
-		Name:    name,
-		Desk:    desk,
-		States:  states,
-		Hints:   hints,
-		Extents: extents,
+	// Window geometry (dimensions of the window)
+	geometry, err := xwindow.New(common.X, w).DecorGeometry()
+	if err != nil {
+		geometry = &xrect.XRect{}
 	}
-}
 
-func HasDecoration(w xproto.Window) bool {
-	info := GetInfo(w)
-	return motif.Decor(info.Hints)
+	return Info{
+		Class:    class,
+		Name:     name,
+		Desk:     desk,
+		States:   states,
+		Hints:    hints,
+		Extents:  extents,
+		Geometry: geometry,
+	}
 }
 
 func IsMaximized(w xproto.Window) bool {
@@ -288,23 +275,16 @@ func IsInsideViewPort(w xproto.Window) bool {
 		return false
 	}
 
-	// Window dimensions
-	wGeom, err := xwindow.New(common.X, w).DecorGeometry()
-	if err != nil {
-		log.Warn(err)
-		return false
-	}
-
 	// Viewport dimensions
 	vRect := xrect.New(common.DesktopDimensions())
 
 	// Substract viewport rectangle (r2) from window rectangle (r1)
-	sRects := xrect.Subtract(wGeom, vRect)
+	sRects := xrect.Subtract(info.Geometry, vRect)
 
 	// If r1 does not overlap r2, then only one rectangle is returned which is equivalent to r1
 	isOutsideViewport := false
 	if len(sRects) == 1 {
-		isOutsideViewport = reflect.DeepEqual(sRects[0], wGeom)
+		isOutsideViewport = reflect.DeepEqual(sRects[0], info.Geometry)
 	}
 
 	if isOutsideViewport {

@@ -28,7 +28,7 @@ func (mg *Manager) AddClient(c *Client) {
 		return
 	}
 
-	log.Info("Add client [", c.Info.Class, "]")
+	log.Info("Add client [", c.Latest.Class, "]")
 
 	// Fill up master area then slave area
 	if len(mg.Masters) < mg.AllowedMasters {
@@ -43,7 +43,7 @@ func (mg *Manager) RemoveClient(c *Client) {
 		return
 	}
 
-	log.Info("Remove client [", c.Info.Class, "]")
+	log.Info("Remove client [", c.Latest.Class, "]")
 
 	// Remove master window
 	mi := getIndex(mg.Masters, c)
@@ -70,7 +70,7 @@ func (mg *Manager) MakeMaster(c *Client) {
 		return
 	}
 
-	log.Info("Make window master [", c.Info.Class, "]")
+	log.Info("Make window master [", c.Latest.Class, "]")
 
 	// Swap window with first master
 	if len(mg.Masters) > 0 {

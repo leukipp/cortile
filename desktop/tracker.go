@@ -67,7 +67,7 @@ func (tr *Tracker) trackWindow(w xproto.Window) {
 	// Add new client
 	c := store.CreateClient(w)
 	tr.Clients[c.Win.Id] = c
-	ws := tr.Workspaces[c.Info.Desk]
+	ws := tr.Workspaces[c.Latest.Desk]
 	ws.AddClient(c)
 
 	// Attach handlers and tile
@@ -83,7 +83,7 @@ func (tr *Tracker) trackWindow(w xproto.Window) {
 func (tr *Tracker) untrackWindow(w xproto.Window) {
 	if tr.isTracked(w) {
 		c := tr.Clients[w]
-		ws := tr.Workspaces[c.Info.Desk]
+		ws := tr.Workspaces[c.Latest.Desk]
 
 		// Remove client
 		ws.RemoveClient(c)
@@ -95,7 +95,7 @@ func (tr *Tracker) untrackWindow(w xproto.Window) {
 func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 	// Previous dimensions
-	pGeom := c.CurrentProp.Geom
+	pGeom := c.Latest.Geometry
 	_, _, pw, ph := pGeom.Pieces()
 
 	// Current dimensions
@@ -111,7 +111,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	if resized {
 		proportion := 0.0
 		gap := common.Config.WindowGapSize
-		ws := tr.Workspaces[c.Info.Desk]
+		ws := tr.Workspaces[c.Latest.Desk]
 		al := ws.ActiveLayout()
 		mg := al.GetManager()
 
@@ -158,7 +158,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		}
 
 		// Set proportion based on resized window
-		log.Info("Proportion set to ", math.Round(proportion*1e4)/1e4, " [", c.Info.Class, "]")
+		log.Info("Proportion set to ", math.Round(proportion*1e4)/1e4, " [", c.Latest.Class, "]")
 		al.SetProportion(proportion)
 		ws.Tile()
 	}
@@ -167,7 +167,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 	// Previous position
-	pGeom := c.CurrentProp.Geom
+	pGeom := c.Latest.Geometry
 	px, py, _, _ := pGeom.Pieces()
 
 	// Current position
@@ -181,7 +181,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 	moved := math.Abs(float64(cx-px)) > 0.0 || math.Abs(float64(cy-py)) > 0.0
 
 	if moved {
-		ws := tr.Workspaces[c.Info.Desk]
+		ws := tr.Workspaces[c.Latest.Desk]
 		al := ws.ActiveLayout()
 		mg := al.GetManager()
 
@@ -199,9 +199,9 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 			}
 
 			// Swap moved client with hovered client
-			isHovered := common.IsInsideRect(common.Pointer, co.CurrentProp.Geom)
+			isHovered := common.IsInsideRect(common.Pointer, co.Latest.Geometry)
 			if isHovered {
-				log.Info("Swap clients [", c.Info.Class, " - ", co.Info.Class, "]")
+				log.Info("Swap clients [", c.Latest.Class, " - ", co.Latest.Class, "]")
 				mg.SwapClient(c, co)
 				break
 			}
@@ -216,7 +216,7 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 	// Client maximized
 	for _, state := range states {
 		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
-			ws := tr.Workspaces[c.Info.Desk]
+			ws := tr.Workspaces[c.Latest.Desk]
 			for i, l := range ws.Layouts {
 				if l.GetName() == "fullscreen" {
 					ws.SetLayout(uint(i))
@@ -233,9 +233,9 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 	// Client minimized
 	for _, state := range states {
 		if state == "_NET_WM_STATE_HIDDEN" {
-			tr.Workspaces[c.Info.Desk].RemoveClient(c)
+			tr.Workspaces[c.Latest.Desk].RemoveClient(c)
 			tr.untrackWindow(c.Win.Id)
-			tr.Workspaces[c.Info.Desk].Tile()
+			tr.Workspaces[c.Latest.Desk].Tile()
 		}
 	}
 }
@@ -243,9 +243,9 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 func (tr *Tracker) handleDesktopChange(c *store.Client) {
 
 	// Remove client from current workspace
-	tr.Workspaces[c.Info.Desk].RemoveClient(c)
-	if tr.Workspaces[c.Info.Desk].TilingEnabled {
-		tr.Workspaces[c.Info.Desk].Tile()
+	tr.Workspaces[c.Latest.Desk].RemoveClient(c)
+	if tr.Workspaces[c.Latest.Desk].TilingEnabled {
+		tr.Workspaces[c.Latest.Desk].Tile()
 	}
 
 	// Update client desktop
@@ -255,9 +255,9 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 	}
 
 	// Add client to new workspace
-	tr.Workspaces[c.Info.Desk].AddClient(c)
-	if tr.Workspaces[c.Info.Desk].TilingEnabled {
-		tr.Workspaces[c.Info.Desk].Tile()
+	tr.Workspaces[c.Latest.Desk].AddClient(c)
+	if tr.Workspaces[c.Latest.Desk].TilingEnabled {
+		tr.Workspaces[c.Latest.Desk].Tile()
 	} else {
 		c.Restore()
 	}
@@ -280,7 +280,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 
 	// Attach structure events
 	xevent.ConfigureNotifyFun(func(x *xgbutil.XUtil, ev xevent.ConfigureNotifyEvent) {
-		log.Debug("Client structure event [", c.Info.Class, "]")
+		log.Debug("Client structure event [", c.Latest.Class, "]")
 
 		if tr.isTrackable(c.Win.Id) {
 			tr.handleResizeClient(c)
@@ -292,7 +292,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 	// Attach property events
 	xevent.PropertyNotifyFun(func(x *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
 		aname, _ := xprop.AtomName(common.X, ev.Atom)
-		log.Debug("Client property event ", aname, " [", c.Info.Class, "]")
+		log.Debug("Client property event ", aname, " [", c.Latest.Class, "]")
 
 		if tr.isTrackable(c.Win.Id) {
 			if aname == "_NET_WM_STATE" {
