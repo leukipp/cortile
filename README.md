@@ -7,7 +7,7 @@ Once enabled, the tiling manager will _handle resizing and positioning_ of exist
 
 <br clear="left"/>
 
-## Features [![github](https://img.shields.io/github/stars/leukipp/cortile)](#Features)
+## Features [![github](https://img.shields.io/github/stars/leukipp/cortile)](#Features)<a id="Features"></a>
 - [x] Workspace based tiling.
 - [x] Keyboard and hot corner events.
 - [x] Vertical, horizontal and fullscreen mode.
@@ -24,83 +24,18 @@ The _go_ implementation ensures a fast and responsive system, where _multiple la
 
 [![demo](https://raw.githubusercontent.com/leukipp/cortile/main/assets/demo.gif)](https://github.com/leukipp/cortile)
 
-## Install [![github](https://img.shields.io/github/go-mod/go-version/leukipp/cortile)](#Install)
-You need [go >= 1.17](https://go.dev/dl/) to run cortile.
-
-<details><summary>Install - go</summary><div>
-
-### Option 1: Install go via package manager:
-Use a `package manager` supported on your system:
+## Installation [![github](https://img.shields.io/github/v/release/leukipp/cortile)](#Installation)<a id="Installation"></a>
+Download the latest [binary files](https://github.com/leukipp/cortile/releases/latest) from `GitHub releases`:
 ```bash
-# apt
-sudo apt install golang
+# extract cortile from the tar.gz archive
+tar -xvf cortile_*_linux_amd64.tar.gz
 
-# yum
-sudo yum install golang
-
-# dnf
-sudo dnf install golang
-
-# pacman
-sudo pacman -S go
+# execute the binary file
+./cortile
 ```
+Alternative installation methods can be found under the [Development](#Development) section.
 
-### Option 2: Install go via archive download:
-Download a `binary release` suitable for your system:
-```bash
-cd /tmp/ && wget https://dl.google.com/go/go1.17.linux-amd64.tar.gz
-sudo tar -xvf go1.17.linux-amd64.tar.gz
-sudo mv -fi go /usr/local
-```
-
-Set required environment variables:
-```bash
-echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.profile
-echo "export GOPATH=~/.go" >> ~/.profile
-source ~/.profile
-```
-
-</div></details>
-
-Verify the installed go version:
-```bash
-go env | grep "GOPATH\|GOVERSION"
-```
-
-<details><summary>Install - cortile</summary><div>
-
-### Option 1: Install cortile via release files
-Download [binary files](https://github.com/leukipp/cortile/releases) from `GitHub releases`:
-```bash
-# coming soon
-```
-
-### Option 2: Install cortile via remote source
-Install `directly from GitHub` main branch:
-```bash
-go install github.com/leukipp/cortile@main
-```
-
-### Option 3: Install cortile via local source
-Clone `source code from GitHub` main branch:
-```bash
-git clone https://github.com/leukipp/cortile.git -b main
-cd cortile
-```
-
-If necessary you can make local changes, then execute:
-```bash
-go build && go install
-```
-
-</div></details>
-
-Start cortile in verbose mode:
-```bash
-$GOPATH/bin/cortile -v
-```
-
-## Configuration [![github](https://img.shields.io/github/v/tag/leukipp/cortile)](#Configuration)
+## Configuration [![github](https://img.shields.io/github/release-date/leukipp/cortile)](#Configuration)<a id="Configuration"></a>
 The configuration file is located at `~/.config/cortile/config.toml` and is created with default values during the first startup.
 Additional information about individual entries can be found in the comments section of the [config.toml](https://github.com/leukipp/cortile/blob/main/config.toml) file.
 
@@ -146,8 +81,78 @@ Other useful shortcuts on Xfce environments:
 - Resize window: <kbd>Alt</kbd>+<kbd>Right-Click</kbd>.
 - Maximize window: <kbd>Alt</kbd>+<kbd>Double-Click</kbd>.
 
-## Additional [![github](https://img.shields.io/github/issues-pr-closed/leukipp/cortile)](#Additional)
-Special settings of cortile:
+## Development [![github](https://img.shields.io/github/go-mod/go-version/leukipp/cortile)](#Development)<a id="Development"></a>
+You need [go >= 1.17](https://go.dev/dl/) to compile cortile.
+
+<details><summary>Install - go</summary><div>
+
+### Option 1: Install go via package manager:
+Use a `package manager` supported on your system:
+```bash
+# apt
+sudo apt install golang
+
+# yum
+sudo yum install golang
+
+# dnf
+sudo dnf install golang
+
+# pacman
+sudo pacman -S go
+```
+
+### Option 2: Install go via archive download:
+Download a `binary release` suitable for your system:
+```bash
+cd /tmp/ && wget https://dl.google.com/go/go1.17.linux-amd64.tar.gz
+sudo tar -xvf go1.17.linux-amd64.tar.gz
+sudo mv -fi go /usr/local
+```
+
+Set required environment variables:
+```bash
+echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.profile
+echo "export GOPATH=~/.go" >> ~/.profile
+source ~/.profile
+```
+
+</div></details>
+
+Verify the installed go version:
+```bash
+go env | grep "GOPATH\|GOVERSION"
+```
+
+<details><summary>Install - cortile</summary><div>
+
+### Option 1: Install cortile via remote source
+Install `directly from GitHub` main branch:
+```bash
+go install github.com/leukipp/cortile@main
+```
+
+### Option 2: Install cortile via local source
+Clone `source code from GitHub` main branch:
+```bash
+git clone https://github.com/leukipp/cortile.git -b main
+cd cortile
+```
+
+If necessary you can make local changes, then execute:
+```bash
+go build && go install
+```
+
+</div></details>
+
+Start cortile in verbose mode:
+```bash
+$GOPATH/bin/cortile -v
+```
+
+## Additional [![github](https://img.shields.io/github/issues-pr-closed/leukipp/cortile)](#Additional)<a id="Additional"></a>
+Special settings:
 - Use the `edge_margin` property to account for additional spaces.
   - e.g. panels (deskbar), desktop infographics (conky).
 - Use the `edge_margin` property to enable tiling only for parts of the monitor. 
@@ -155,24 +160,24 @@ Special settings of cortile:
 - Use the `window_slaves_max` property to limit the number of windows.
   - e.g. with one active master and `window_slaves_max = 2` the fourth and the following windows are stacked (behind the two slaves).
 
-Hot corners of cortile:
+Hot corners:
 - Use `tiling_enabled = false` if you prefer to utilize only the hot corner functionalities.
 - Use the hot `[corners]` properties to execute any external command available on your system.
   - e.g. use `bottom_center = "firefox"` to open a web browser window.
 
-Companion tools for cortile:
+Companion tools:
 - You can install a [minimal-gtk](https://www.xfce-look.org/p/1016504) theme and leave `window_decoration = true`.
 - Simply add cortile to your `startup applications` to run it after login.
 
-## Known Issues [![github](https://img.shields.io/github/issues-closed/leukipp/cortile)](#Known_Issues)
-Known issues and limitations of cortile:
+## Limitations [![github](https://img.shields.io/github/issues-closed/leukipp/cortile)](#Limitations)<a id="Limitations"></a>
+Known limitations:
 - Only the biggest monitor is used for tiling.
 - Persistent window resize only for the master-slave proportion.
 
-If you encounter problems start the process with `cortile -vv`, which provides additional verbose outputs. Per default, a log file is created at `/tmp/cortile.log`.
+If you encounter problems start the process with `cortile -vv`, which provides additional verbose outputs. Per default, a log file is created under `/tmp/cortile.log`.
 
-## Credits [![github](https://img.shields.io/github/contributors/leukipp/cortile)](#Credits)
+## Credits [![github](https://img.shields.io/github/contributors/leukipp/cortile)](#Credits)<a id="Credits"></a>
 Based on [zentile](https://github.com/blrsn/zentile) from [Berin Larson](https://github.com/blrsn).
 
-## License [![github](https://img.shields.io/github/license/leukipp/cortile)](#License)
+## License [![github](https://img.shields.io/github/license/leukipp/cortile)](#License)<a id="License"></a>
 [MIT](https://github.com/leukipp/cortile/blob/main/LICENSE)
