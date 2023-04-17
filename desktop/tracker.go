@@ -95,7 +95,7 @@ func (tr *Tracker) untrackWindow(w xproto.Window) {
 func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 	// Previous dimensions
-	pGeom := c.Latest.Geometry
+	pGeom := c.Latest.Dimensions.Geometry
 	_, _, pw, ph := pGeom.Pieces()
 
 	// Current dimensions
@@ -167,7 +167,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 	// Previous position
-	pGeom := c.Latest.Geometry
+	pGeom := c.Latest.Dimensions.Geometry
 	px, py, _, _ := pGeom.Pieces()
 
 	// Current position
@@ -199,7 +199,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 			}
 
 			// Swap moved client with hovered client
-			isHovered := common.IsInsideRect(common.Pointer, co.Latest.Geometry)
+			isHovered := common.IsInsideRect(common.Pointer, co.Latest.Dimensions.Geometry)
 			if isHovered {
 				log.Info("Swap clients [", c.Latest.Class, " - ", co.Latest.Class, "]")
 				mg.SwapClient(c, co)

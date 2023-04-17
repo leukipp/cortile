@@ -19,7 +19,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var UNKNOWN = "<UNKNOWN>"
+const (
+	UNKNOWN = "<UNKNOWN>"
+)
 
 type Client struct {
 	Win      *xwindow.Window // X window object
@@ -27,14 +29,20 @@ type Client struct {
 	Original Info            // Original client window information
 }
 
-type Info struct {
-	Class    string            // Client window application name
-	Name     string            // Client window title name
-	Desk     uint              // Client window desktop
-	States   []string          // Client window states
-	Hints    motif.Hints       // Client window hints
-	Extents  ewmh.FrameExtents // Client window extents
+type Dimensions struct {
 	Geometry xrect.Rect        // Client window geometry
+	Hints    motif.Hints       // Client window geometry hints
+	Extents  ewmh.FrameExtents // Client window geometry extents
+	Position bool              // Adjust position on move/resize
+	Size     bool              // Adjust size on move/resize
+}
+
+type Info struct {
+	Class      string     // Client window application name
+	Name       string     // Client window title name
+	Desk       uint       // Client window desktop
+	States     []string   // Client window states
+	Dimensions Dimensions // Client window dimensions
 }
 
 func CreateClient(w xproto.Window) (c *Client) {
@@ -50,14 +58,16 @@ func (c *Client) MoveResize(x, y, w, h int) {
 	c.Unmaximize()
 
 	// Decoration extents
-	extents := c.Latest.Extents
+	extents := c.Latest.Dimensions.Extents
 
 	// Calculate dimensions offsets
-	dx, dy := 0, 0
-	if c.Latest.Hints.Flags&motif.HintDecorations > 0 {
+	dx, dy, dw, dh := 0, 0, 0, 0
+	if c.Latest.Dimensions.Position {
 		dx, dy = extents.Left, extents.Top
 	}
-	dw, dh := extents.Left+extents.Right, extents.Top+extents.Bottom
+	if c.Latest.Dimensions.Size {
+		dw, dh = extents.Left+extents.Right, extents.Top+extents.Bottom
+	}
 
 	// Move and resize window
 	err := ewmh.MoveresizeWindow(c.Win.X, c.Win.Id, x+dx, y+dy, w-dw, h-dh)
@@ -86,7 +96,7 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 	}
 
 	// Decoration extents (l/r/t/b relative to outer window dimensions)
-	extents := c.Latest.Extents
+	extents := c.Latest.Dimensions.Extents
 	dx, dy, dw, dh := extents.Left, extents.Top, extents.Left+extents.Right, extents.Top+extents.Bottom
 
 	// Calculate outer geometry (including server and client decorations)
@@ -125,10 +135,9 @@ func (c Client) UnDecorate() {
 }
 
 func (c Client) Decorate() {
-	if !motif.Decor(&c.Original.Hints) {
+	if !motif.Decor(&c.Original.Dimensions.Hints) {
 		return
 	}
-
 	motif.WmHintsSet(common.X, c.Win.Id,
 		&motif.Hints{
 			Flags:      motif.HintDecorations,
@@ -138,17 +147,14 @@ func (c Client) Decorate() {
 
 func (c Client) Restore() {
 	c.Decorate()
-	c.Unmaximize()
+
+	// Disable dimension adjustments
+	c.Latest.Dimensions.Position = false
+	c.Latest.Dimensions.Size = false
 
 	// Move window to original position
-	geom := c.Original.Geometry
-	err := ewmh.MoveresizeWindow(c.Win.X, c.Win.Id, geom.X(), geom.Y(), geom.Width(), geom.Height())
-	if err != nil {
-		log.Warn("Error when moving window [", c.Latest.Class, "]")
-	}
-
-	// Update stored dimensions
-	c.Update()
+	geom := c.Original.Dimensions.Geometry
+	c.MoveResize(geom.X(), geom.Y(), geom.Width(), geom.Height())
 }
 
 func GetInfo(w xproto.Window) (info Info) {
@@ -158,17 +164,15 @@ func GetInfo(w xproto.Window) (info Info) {
 	var name string
 	var desk uint
 	var states []string
-	var hints *motif.Hints
-	var extents *ewmh.FrameExtents
-	var geometry xrect.Rect
+	var dimensions Dimensions
 
 	// Window class (internal class name of the window)
-	wmClass, err := icccm.WmClassGet(common.X, w)
+	cls, err := icccm.WmClassGet(common.X, w)
 	if err != nil {
 		log.Trace(err)
 		class = UNKNOWN
-	} else if wmClass != nil {
-		class = wmClass.Class
+	} else if cls != nil {
+		class = cls.Class
 	}
 
 	// Window name (title on top of the window)
@@ -185,48 +189,57 @@ func GetInfo(w xproto.Window) (info Info) {
 		desk = math.MaxUint
 	}
 
-	// Window states (visualization states of the window)
+	// Window states (states of the window)
 	states, err = ewmh.WmStateGet(common.X, w)
 	if err != nil {
 		log.Trace(err, " [", class, "]")
 		states = []string{}
 	}
 
-	// Window hints (server decorations of the window)
-	hints, err = motif.WmHintsGet(common.X, w)
-	if err != nil {
-		hints = &motif.Hints{}
-	}
-
-	// Window extents (server decorations of the window)
-	extents, err = ewmh.FrameExtentsGet(common.X, w)
-	if err != nil {
-		extents = &ewmh.FrameExtents{}
-	}
-
-	// Window extents (client decorations of the window)
-	ext, err := xprop.PropValNums(xprop.GetProperty(common.X, w, "_GTK_FRAME_EXTENTS"))
-	if err == nil && len(ext) >= 4 {
-		extents.Left -= int(ext[0])
-		extents.Right -= int(ext[1])
-		extents.Top -= int(ext[2])
-		extents.Bottom -= int(ext[3])
-	}
-
 	// Window geometry (dimensions of the window)
-	geometry, err = xwindow.New(common.X, w).DecorGeometry()
+	geometry, err := xwindow.New(common.X, w).DecorGeometry()
 	if err != nil {
 		geometry = &xrect.XRect{}
 	}
 
-	return Info{
-		Class:    class,
-		Name:     name,
-		Desk:     desk,
-		States:   states,
-		Hints:    *hints,
-		Extents:  *extents,
+	// Window hints (server hints of the window)
+	hints, err := motif.WmHintsGet(common.X, w)
+	if err != nil {
+		hints = &motif.Hints{}
+	}
+
+	// Window extents (server/clients decorations of the window)
+	extNet, _ := xprop.PropValNums(xprop.GetProperty(common.X, w, "_NET_FRAME_EXTENTS"))
+	extGtk, _ := xprop.PropValNums(xprop.GetProperty(common.X, w, "_GTK_FRAME_EXTENTS"))
+
+	ext := make([]uint, 4)
+	for i, e := range extNet {
+		ext[i] += e
+	}
+	for i, e := range extGtk {
+		ext[i] -= e
+	}
+
+	// Window dimensions (geometry/extents information's for move/resize)
+	dimensions = Dimensions{
 		Geometry: geometry,
+		Hints:    *hints,
+		Extents: ewmh.FrameExtents{
+			Left:   int(ext[0]),
+			Right:  int(ext[1]),
+			Top:    int(ext[2]),
+			Bottom: int(ext[3]),
+		},
+		Position: (extNet != nil && hints.Flags&motif.HintDecorations > 0 && hints.Decoration > 1) || (extGtk != nil),
+		Size:     (extNet != nil) || (extGtk != nil),
+	}
+
+	return Info{
+		Class:      class,
+		Name:       name,
+		Desk:       desk,
+		States:     states,
+		Dimensions: dimensions,
 	}
 }
 
@@ -257,12 +270,12 @@ func IsInsideViewPort(w xproto.Window) bool {
 	vRect := xrect.New(common.DesktopDimensions())
 
 	// Substract viewport rectangle (r2) from window rectangle (r1)
-	sRects := xrect.Subtract(info.Geometry, vRect)
+	sRects := xrect.Subtract(info.Dimensions.Geometry, vRect)
 
 	// If r1 does not overlap r2, then only one rectangle is returned which is equivalent to r1
 	isOutsideViewport := false
 	if len(sRects) == 1 {
-		isOutsideViewport = reflect.DeepEqual(sRects[0], info.Geometry)
+		isOutsideViewport = reflect.DeepEqual(sRects[0], info.Dimensions.Geometry)
 	}
 
 	if isOutsideViewport {
