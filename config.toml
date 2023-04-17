@@ -24,7 +24,6 @@ window_ignore = [
     ['lightdm.*', ''],
     ['blueman.*', ''],
     ['pavucontrol.*', ''],
-    ['xfce4-display-settings.*', ''],
     ['firefox.*', '.*Mozilla Firefox'],
 ]
 
@@ -125,25 +124,25 @@ window_previous = "Control-Shift-KP_8"
 ############################################################
 
 # Corner at top left.
-top_left = "layout_cycle"
+top_left = "window_previous"
 
 # Corner at top center.
-top_center = "tile"
+top_center = "layout_horizontal_top"
 
 # Corner at top right.
 top_right = "master_make"
 
 # Corner at center right.
-center_right = "proportion_increase"
+center_right = "layout_vertical_right"
 
 # Corner at bottom right.
-bottom_right = "master_increase"
+bottom_right = "proportion_increase"
 
 # Corner at bottom center.
-bottom_center = "untile"
+bottom_center = "layout_horizontal_bottom"
 
 # Corner at bottom left.
-bottom_left = "master_decrease"
+bottom_left = "proportion_decrease"
 
 # Corner at center left.
-center_left = "proportion_decrease"
+center_left = "layout_vertical_left"

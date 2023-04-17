@@ -30,7 +30,7 @@ You need [go >= 1.17](https://go.dev/dl/) to run cortile.
 <details><summary>Install - go</summary><div>
 
 ### Option 1: Install go via package manager:
-Use the `package manager` supported on your system:
+Use a `package manager` supported on your system:
 ```bash
 # apt
 sudo apt install golang
@@ -132,14 +132,14 @@ If some of them are already in use by your system, update the default values in 
 Hot corner events are defined under the `[corners]` section and will be triggered when the mouse enters one of the target areas:
 | Corners                             | Description                              |
 | ----------------------------------- | ---------------------------------------- |
-| <kbd>Top</kbd>-<kbd>Left</kbd>      | Cycle through layouts                    |
-| <kbd>Top</kbd>-<kbd>Center</kbd>    | Tile current workspace                   |
+| <kbd>Top</kbd>-<kbd>Left</kbd>      | Focus previous window                    |
+| <kbd>Top</kbd>-<kbd>Center</kbd>    | Activate horizontal-top layout           |
 | <kbd>Top</kbd>-<kbd>Right</kbd>     | Make the active window master            |
-| <kbd>Center</kbd>-<kbd>Right</kbd>  | Increase proportion of master-slave area |
-| <kbd>Bottom</kbd>-<kbd>Right</kbd>  | Increase number of master windows        |
-| <kbd>Bottom</kbd>-<kbd>Center</kbd> | Untile current workspace                 |
-| <kbd>Bottom</kbd>-<kbd>Left</kbd>   | Decrease number of master windows        |
-| <kbd>Center</kbd>-<kbd>Left</kbd>   | Decrease proportion of master-slave area |
+| <kbd>Center</kbd>-<kbd>Right</kbd>  | Activate vertical-right layout           |
+| <kbd>Bottom</kbd>-<kbd>Right</kbd>  | Increase proportion of master-slave area |
+| <kbd>Bottom</kbd>-<kbd>Center</kbd> | Activate horizontal-bottom layout        |
+| <kbd>Bottom</kbd>-<kbd>Left</kbd>   | Decrease proportion of master-slave area |
+| <kbd>Center</kbd>-<kbd>Left</kbd>   | Activate vertical-left layout            |
 
 Other useful shortcuts on Xfce environments:
 - Move window: <kbd>Alt</kbd>+<kbd>Left-Click</kbd>.
@@ -166,7 +166,6 @@ Companion tools for cortile:
 
 ## Known Issues [![github](https://img.shields.io/github/issues-closed/leukipp/cortile)](#Known_Issues)
 Known issues and limitations of cortile:
-- Huge gaps around GTK apps ([#3](https://github.com/leukipp/cortile/issues/3)).
 - Only the biggest monitor is used for tiling.
 - Persistent window resize only for the master-slave proportion.
 
