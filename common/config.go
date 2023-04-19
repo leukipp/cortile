@@ -2,15 +2,16 @@ package common
 
 import (
 	_ "embed"
+	"fmt"
 
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/BurntSushi/toml"
+	"github.com/fsnotify/fsnotify"
 
-	"github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 )
 
 var Config ConfigMapper
@@ -35,38 +36,79 @@ type ConfigMapper struct {
 }
 
 func InitConfig(defaultConfig []byte) {
-	writeDefaultConfig(defaultConfig)
-	toml.DecodeFile(configFilePath(), &Config)
-}
 
-func writeDefaultConfig(defaultConfig []byte) {
-	// Create config folder
+	// Create config folder if not exists
 	if _, err := os.Stat(configFolderPath()); os.IsNotExist(err) {
 		os.MkdirAll(configFolderPath(), 0700)
 	}
 
-	// Write default config
+	// Write default config if not exists
 	if _, err := os.Stat(configFilePath()); os.IsNotExist(err) {
 		ioutil.WriteFile(configFilePath(), defaultConfig, 0644)
 	}
+
+	// Read config file into memory
+	readConfig()
+
+	// Config file watcher
+	watchConfig()
+}
+
+func readConfig() {
+
+	// Obtain config file path
+	path := configFilePath()
+	fmt.Println("load", path)
+
+	// Decode contents into struct
+	toml.DecodeFile(path, &Config)
+}
+
+func watchConfig() {
+
+	// Init file watcher
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Error(err)
+	} else {
+		watcher.Add(configFilePath())
+	}
+
+	// Listen for events
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Has(fsnotify.Write) {
+					readConfig()
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Error(err)
+			}
+		}
+	}()
 }
 
 func configFolderPath() string {
-	var configFolder string
 
-	switch runtime.GOOS {
-	case "linux":
-		xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
-		if xdgConfigHome != "" {
-			configFolder = filepath.Join(xdgConfigHome, "cortile")
-		} else {
-			configFolder, _ = homedir.Expand("~/.config/cortile/")
-		}
-	default:
-		configFolder, _ = homedir.Expand("~/.cortile/")
+	// Obtain user home directory
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal("Error obtaining home directory", err)
 	}
 
-	return configFolder
+	// Obtain config directory
+	xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
+	if xdgConfigHome != "" {
+		return filepath.Join(xdgConfigHome, "cortile")
+	}
+	return filepath.Join(userHome, ".config", "cortile")
 }
 
 func configFilePath() string {
