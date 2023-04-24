@@ -17,6 +17,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var (
+	timer *time.Timer // Tiling timer after window resize
+)
+
 type Tracker struct {
 	Clients    map[xproto.Window]*store.Client // List of clients that are being tracked
 	Workspaces map[uint]*Workspace             // List of workspaces used
@@ -73,11 +77,6 @@ func (tr *Tracker) trackWindow(w xproto.Window) {
 	// Attach handlers and tile
 	tr.attachHandlers(c)
 	tr.Workspaces[common.CurrentDesk].Tile()
-
-	// Tile again as some applications load geometry delayed
-	time.AfterFunc(1000*time.Millisecond, func() {
-		tr.Workspaces[common.CurrentDesk].Tile()
-	})
 }
 
 func (tr *Tracker) untrackWindow(w xproto.Window) {
@@ -132,8 +131,8 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		}
 
 		// Calculate proportion based on resized window size
-		_, _, cw, ch = c.OuterGeometry()
 		_, _, dw, dh := common.DesktopDimensions()
+		_, _, cw, ch = c.OuterGeometry()
 		switch al.GetName() {
 		case "vertical-left":
 			proportion = 1.0 - (float64(cw+gap) / float64(dw))
@@ -157,10 +156,16 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 			}
 		}
 
-		// Set proportion based on resized window
+		// Set proportion based on resized window and tile workspace
 		log.Info("Proportion set to ", math.Round(proportion*1e4)/1e4, " [", c.Latest.Class, "]")
 		al.SetProportion(proportion)
 		ws.Tile()
+
+		// Re-tile as some applications load geometry delayed
+		if timer != nil {
+			timer.Stop()
+		}
+		timer = time.AfterFunc(500*time.Millisecond, ws.Tile)
 	}
 }
 

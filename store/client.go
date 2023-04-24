@@ -70,7 +70,7 @@ func (c *Client) MoveResize(x, y, w, h int) {
 	}
 
 	// Move and resize window
-	err := ewmh.MoveresizeWindow(c.Win.X, c.Win.Id, x+dx, y+dy, w-dw, h-dh)
+	err := ewmh.MoveresizeWindow(common.X, c.Win.Id, x+dx, y+dy, w-dw, h-dh)
 	if err != nil {
 		log.Warn("Error when moving window [", c.Latest.Class, "]")
 	}
@@ -127,22 +127,20 @@ func (c Client) Unmaximize() {
 }
 
 func (c Client) UnDecorate() {
-	motif.WmHintsSet(common.X, c.Win.Id,
-		&motif.Hints{
-			Flags:      motif.HintDecorations,
-			Decoration: motif.DecorationNone,
-		})
+	motif.WmHintsSet(common.X, c.Win.Id, &motif.Hints{
+		Flags:      motif.HintDecorations,
+		Decoration: motif.DecorationNone,
+	})
 }
 
 func (c Client) Decorate() {
 	if !motif.Decor(&c.Original.Dimensions.Hints) {
 		return
 	}
-	motif.WmHintsSet(common.X, c.Win.Id,
-		&motif.Hints{
-			Flags:      motif.HintDecorations,
-			Decoration: motif.DecorationAll,
-		})
+	motif.WmHintsSet(common.X, c.Win.Id, &motif.Hints{
+		Flags:      motif.HintDecorations,
+		Decoration: motif.DecorationAll,
+	})
 }
 
 func (c Client) Restore() {
@@ -252,7 +250,7 @@ func IsMaximized(w xproto.Window) bool {
 	// Check maximized windows
 	for _, state := range info.States {
 		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
-			log.Info("Ignore maximized window", " [", info.Name, "]")
+			log.Info("Ignore maximized window [", info.Name, "]")
 			return true
 		}
 	}
@@ -290,7 +288,7 @@ func IsModal(info Info) bool {
 	// Check model dialog windows
 	for _, state := range info.States {
 		if state == "_NET_WM_STATE_MODAL" {
-			log.Info("Ignore modal window", " [", info.Name, "]")
+			log.Info("Ignore modal window [", info.Name, "]")
 			return true
 		}
 	}
@@ -303,7 +301,7 @@ func IsHidden(info Info) bool {
 	// Check hidden windows
 	for _, state := range info.States {
 		if state == "_NET_WM_STATE_HIDDEN" {
-			log.Info("Ignore hidden window", " [", info.Name, "]")
+			log.Info("Ignore hidden window [", info.Name, "]")
 			return true
 		}
 	}
@@ -316,7 +314,7 @@ func IsFloating(info Info) bool {
 	// Check floating state
 	for _, state := range info.States {
 		if state == "_NET_WM_STATE_ABOVE" {
-			log.Info("Ignore floating window", " [", info.Name, "]")
+			log.Info("Ignore floating window [", info.Name, "]")
 			return true
 		}
 	}
