@@ -18,6 +18,6 @@ type Layout interface {
 	IncreaseProportion()
 	DecreaseProportion()
 	SetProportion(p float64)
-	GetName() string
 	GetManager() *store.Manager
+	GetName() string
 }

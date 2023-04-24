@@ -39,13 +39,13 @@ func CreateWorkspaces() map[uint]*Workspace {
 	return workspaces
 }
 
-func CreateLayouts(workspaceNum uint) []Layout {
+func CreateLayouts(deskNum uint) []Layout {
 	return []Layout{
-		layout.CreateFullscreenLayout(workspaceNum),
-		layout.CreateVerticalLeftLayout(workspaceNum),
-		layout.CreateVerticalRightLayout(workspaceNum),
-		layout.CreateHorizontalTopLayout(workspaceNum),
-		layout.CreateHorizontalBottomLayout(workspaceNum),
+		layout.CreateFullscreenLayout(deskNum),
+		layout.CreateVerticalLeftLayout(deskNum),
+		layout.CreateVerticalRightLayout(deskNum),
+		layout.CreateHorizontalTopLayout(deskNum),
+		layout.CreateHorizontalBottomLayout(deskNum),
 	}
 }
 
@@ -58,15 +58,15 @@ func (ws *Workspace) ActiveLayout() Layout {
 }
 
 func (ws *Workspace) SwitchLayout() {
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
-	ws.ActiveLayoutNum = (ws.ActiveLayoutNum + 1) % uint(len(ws.Layouts))
-	ws.ActiveLayout().Do()
+	ws.SetLayout((ws.ActiveLayoutNum + 1) % uint(len(ws.Layouts)))
+	ws.Tile()
 }
 
 func (ws *Workspace) Tile() {
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	ws.ActiveLayout().Do()
@@ -100,4 +100,8 @@ func (ws *Workspace) RemoveClient(c *store.Client) {
 	for _, l := range ws.Layouts {
 		l.RemoveClient(c)
 	}
+}
+
+func (ws *Workspace) IsEnabled() bool {
+	return ws.TilingEnabled
 }

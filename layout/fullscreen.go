@@ -9,20 +9,18 @@ import (
 
 type FullscreenLayout struct {
 	*store.Manager        // Layout store manager
-	WorkspaceNum   uint   // Active workspace index
 	Name           string // Layout name
 }
 
-func CreateFullscreenLayout(workspaceNum uint) *FullscreenLayout {
+func CreateFullscreenLayout(deskNum uint) *FullscreenLayout {
 	return &FullscreenLayout{
-		Manager:      store.CreateManager(),
-		WorkspaceNum: workspaceNum,
-		Name:         "fullscreen",
+		Manager: store.CreateManager(deskNum),
+		Name:    "fullscreen",
 	}
 }
 
 func (l *FullscreenLayout) Do() {
-	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetName(), " layout [workspace-", l.WorkspaceNum, "]")
+	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetName(), " layout [workspace-", l.DeskNum, "]")
 
 	gap := common.Config.WindowGapSize
 
@@ -31,6 +29,8 @@ func (l *FullscreenLayout) Do() {
 		dx, dy, dw, dh := common.DesktopDimensions()
 		c.MoveResize(dx+gap, dy+gap, dw-2*gap, dh-2*gap)
 	}
+
+	common.X.Conn().Sync()
 }
 
 func (l *FullscreenLayout) Undo() {
@@ -48,10 +48,10 @@ func (l *FullscreenLayout) DecreaseProportion() {
 func (l *FullscreenLayout) SetProportion(p float64) {
 }
 
-func (l *FullscreenLayout) GetName() string {
-	return l.Name
-}
-
 func (l *FullscreenLayout) GetManager() *store.Manager {
 	return l.Manager
+}
+
+func (l *FullscreenLayout) GetName() string {
+	return l.Name
 }

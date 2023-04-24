@@ -48,6 +48,7 @@ func main() {
 		for _, ws := range workspaces {
 			ws.Tile()
 		}
+		desktop.ShowLayout(tracker.Workspaces[common.CurrentDesk])
 	}
 
 	// Bind keys and mouse

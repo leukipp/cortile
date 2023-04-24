@@ -13,30 +13,27 @@ import (
 type HorizontalLayout struct {
 	*store.Manager         // Layout store manager
 	Proportion     float64 // Master-slave proportion
-	WorkspaceNum   uint    // Active workspace index
 	Name           string  // Layout name
 }
 
-func CreateHorizontalTopLayout(workspaceNum uint) *HorizontalLayout {
+func CreateHorizontalTopLayout(deskNum uint) *HorizontalLayout {
 	return &HorizontalLayout{
-		Manager:      store.CreateManager(),
-		Proportion:   common.Config.Proportion,
-		WorkspaceNum: workspaceNum,
-		Name:         "horizontal-top",
+		Manager:    store.CreateManager(deskNum),
+		Proportion: common.Config.Proportion,
+		Name:       "horizontal-top",
 	}
 }
 
-func CreateHorizontalBottomLayout(workspaceNum uint) *HorizontalLayout {
+func CreateHorizontalBottomLayout(deskNum uint) *HorizontalLayout {
 	return &HorizontalLayout{
-		Manager:      store.CreateManager(),
-		Proportion:   1.0 - common.Config.Proportion,
-		WorkspaceNum: workspaceNum,
-		Name:         "horizontal-bottom",
+		Manager:    store.CreateManager(deskNum),
+		Proportion: 1.0 - common.Config.Proportion,
+		Name:       "horizontal-bottom",
 	}
 }
 
 func (l *HorizontalLayout) Do() {
-	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetName(), " layout [workspace-", l.WorkspaceNum, "]")
+	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetName(), " layout [workspace-", l.DeskNum, "]")
 
 	dx, dy, dw, dh := common.DesktopDimensions()
 	msize := len(l.Masters)
@@ -122,10 +119,10 @@ func (l *HorizontalLayout) SetProportion(p float64) {
 	l.Proportion = math.Min(math.Max(p, common.Config.ProportionMin), common.Config.ProportionMax)
 }
 
-func (l *HorizontalLayout) GetName() string {
-	return l.Name
-}
-
 func (l *HorizontalLayout) GetManager() *store.Manager {
 	return l.Manager
+}
+
+func (l *HorizontalLayout) GetName() string {
+	return l.Name
 }

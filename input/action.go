@@ -67,25 +67,32 @@ func Tile(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
 	ws.TilingEnabled = true
 	ws.Tile()
+
+	desktop.ShowLayout(ws)
 }
 
 func UnTile(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
+	if !ws.IsEnabled() {
+		return
+	}
 	ws.TilingEnabled = false
 	ws.UnTile()
 }
 
 func SwitchLayout(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	ws.SwitchLayout()
+
+	desktop.ShowLayout(ws)
 }
 
 func FullscreenLayout(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	for i, l := range ws.Layouts {
@@ -94,11 +101,13 @@ func FullscreenLayout(t *desktop.Tracker) {
 		}
 	}
 	ws.Tile()
+
+	desktop.ShowLayout(ws)
 }
 
 func VerticalLeftLayout(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	for i, l := range ws.Layouts {
@@ -107,11 +116,13 @@ func VerticalLeftLayout(t *desktop.Tracker) {
 		}
 	}
 	ws.Tile()
+
+	desktop.ShowLayout(ws)
 }
 
 func VerticalRightLayout(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	for i, l := range ws.Layouts {
@@ -120,11 +131,13 @@ func VerticalRightLayout(t *desktop.Tracker) {
 		}
 	}
 	ws.Tile()
+
+	desktop.ShowLayout(ws)
 }
 
 func HorizontalTopLayout(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	for i, l := range ws.Layouts {
@@ -133,11 +146,13 @@ func HorizontalTopLayout(t *desktop.Tracker) {
 		}
 	}
 	ws.Tile()
+
+	desktop.ShowLayout(ws)
 }
 
 func HorizontalBottomLayout(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	for i, l := range ws.Layouts {
@@ -146,12 +161,14 @@ func HorizontalBottomLayout(t *desktop.Tracker) {
 		}
 	}
 	ws.Tile()
+
+	desktop.ShowLayout(ws)
 }
 
 func MakeMaster(t *desktop.Tracker) {
 	c := t.Clients[common.ActiveWin]
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	ws.ActiveLayout().MakeMaster(c)
@@ -160,43 +177,52 @@ func MakeMaster(t *desktop.Tracker) {
 
 func IncreaseMaster(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	ws.ActiveLayout().IncreaseMaster()
 	ws.Tile()
+
+	desktop.ShowLayout(ws)
 }
 
 func DecreaseMaster(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
+
 	ws.ActiveLayout().DecreaseMaster()
 	ws.Tile()
+
+	desktop.ShowLayout(ws)
 }
 
 func IncreaseSlave(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	ws.ActiveLayout().IncreaseSlave()
 	ws.Tile()
+
+	desktop.ShowLayout(ws)
 }
 
 func DecreaseSlave(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	ws.ActiveLayout().DecreaseSlave()
 	ws.Tile()
+
+	desktop.ShowLayout(ws)
 }
 
 func IncreaseProportion(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	ws.ActiveLayout().IncreaseProportion()
@@ -205,7 +231,7 @@ func IncreaseProportion(t *desktop.Tracker) {
 
 func DecreaseProportion(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	ws.ActiveLayout().DecreaseProportion()
@@ -214,7 +240,7 @@ func DecreaseProportion(t *desktop.Tracker) {
 
 func NextWindow(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	ws.ActiveLayout().NextClient()
@@ -222,7 +248,7 @@ func NextWindow(t *desktop.Tracker) {
 
 func PreviousWindow(t *desktop.Tracker) {
 	ws := t.Workspaces[common.CurrentDesk]
-	if !ws.TilingEnabled {
+	if !ws.IsEnabled() {
 		return
 	}
 	ws.ActiveLayout().PreviousClient()

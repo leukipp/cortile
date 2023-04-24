@@ -156,9 +156,11 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 			}
 		}
 
-		// Set proportion based on resized window and tile workspace
+		// Set proportion based on resized window
 		log.Info("Proportion set to ", math.Round(proportion*1e4)/1e4, " [", c.Latest.Class, "]")
 		al.SetProportion(proportion)
+
+		// Tile workspace
 		ws.Tile()
 
 		// Re-tile as some applications load geometry delayed
@@ -211,7 +213,15 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 				break
 			}
 		}
+
+		// Tile workspace
 		ws.Tile()
+
+		// Re-tile as some applications load geometry delayed
+		if timer != nil {
+			timer.Stop()
+		}
+		timer = time.AfterFunc(500*time.Millisecond, ws.Tile)
 	}
 }
 
@@ -249,7 +259,7 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 
 	// Remove client from current workspace
 	tr.Workspaces[c.Latest.Desk].RemoveClient(c)
-	if tr.Workspaces[c.Latest.Desk].TilingEnabled {
+	if tr.Workspaces[c.Latest.Desk].IsEnabled() {
 		tr.Workspaces[c.Latest.Desk].Tile()
 	}
 
@@ -261,7 +271,7 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 
 	// Add client to new workspace
 	tr.Workspaces[c.Latest.Desk].AddClient(c)
-	if tr.Workspaces[c.Latest.Desk].TilingEnabled {
+	if tr.Workspaces[c.Latest.Desk].IsEnabled() {
 		tr.Workspaces[c.Latest.Desk].Tile()
 	} else {
 		c.Restore()

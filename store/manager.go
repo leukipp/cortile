@@ -9,15 +9,16 @@ import (
 type Manager struct {
 	Masters        []*Client // List of master window clients
 	Slaves         []*Client // List of slave window clients
+	DeskNum        uint      // Number of managed desktop index
 	AllowedMasters int       // Number of current maximal allowed masters
 	AllowedSlaves  int       // Number of current maximal allowed slaves
-
 }
 
-func CreateManager() *Manager {
+func CreateManager(deskNum uint) *Manager {
 	return &Manager{
 		Masters:        make([]*Client, 0),
 		Slaves:         make([]*Client, 0),
+		DeskNum:        deskNum,
 		AllowedMasters: 1,
 		AllowedSlaves:  common.Config.WindowSlavesMax,
 	}
