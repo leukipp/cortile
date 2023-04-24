@@ -1,13 +1,11 @@
 # Cortile
-<img src="https://raw.githubusercontent.com/leukipp/cortile/main/assets/logo.png" style="width:80px;margin:0px 10px 0px 0px;" align="left"/>
-
-Tiling manager with _hot corner support_ for Xfce and other [EWMH Compliant Window Managers](https://en.wikipedia.org/wiki/Extended_Window_Manager_Hints).
-Simply _keep your current window manager_ and **install [cortile](https://github.com/leukipp/cortile) on top** of it.
-Once enabled, the tiling manager will _handle resizing and positioning_ of existing and new windows.
-
+<a href="https://github.com/leukipp/cortile"><img src="https://raw.githubusercontent.com/leukipp/cortile/main/assets/logo.png" style="display:inline-block;width:75px;margin-right:10px;" align="left"/></a>
+Tiling manager with hot corner support for Xfce and other [EWMH Compliant Window Managers](https://en.wikipedia.org/wiki/Extended_Window_Manager_Hints#List_of_window_managers_that_support_Extended_Window_Manager_Hints).
+Simply keep your current window manager and **install cortile on top** of it.
+Once enabled, the tiling manager will handle _resizing_ and _positioning_ of _existing_ and _new_ windows.
 <br clear="left"/>
 
-## Features [![github](https://img.shields.io/github/stars/leukipp/cortile)](#Features)<a id="Features"></a>
+## Features [![github](https://img.shields.io/github/stars/leukipp/cortile)](#features-)
 - [x] Workspace based tiling.
 - [x] Keyboard and hot corner events.
 - [x] Vertical, horizontal and fullscreen mode.
@@ -22,10 +20,10 @@ Once enabled, the tiling manager will _handle resizing and positioning_ of exist
 Support for **keyboard and mouse navigation** sets cortile apart from other tiling solutions.
 The _go_ implementation ensures a fast and responsive system, where _multiple layouts_, _keyboard shortcuts_, _drag & drop_ and _hot corner_ events simplify and speed up your daily work.
 
-[![demo](https://raw.githubusercontent.com/leukipp/cortile/main/assets/demo.gif)](https://github.com/leukipp/cortile)
+[![demo](https://raw.githubusercontent.com/leukipp/cortile/main/assets/demo.gif)](https://github.com/leukipp/cortile/blob/main/assets/demo.gif)
 
-## Installation [![github](https://img.shields.io/github/v/release/leukipp/cortile)](#Installation)<a id="Installation"></a>
-Download the latest [binary files](https://github.com/leukipp/cortile/releases/latest) from `GitHub releases`:
+## Installation [![github](https://img.shields.io/github/v/release/leukipp/cortile)](#installation-)
+Download the latest binary file from the [releases](https://github.com/leukipp/cortile/releases/latest):
 ```bash
 # extract cortile from the tar.gz archive
 tar -xvf cortile_*_linux_amd64.tar.gz
@@ -33,13 +31,13 @@ tar -xvf cortile_*_linux_amd64.tar.gz
 # execute the binary file
 ./cortile
 ```
-Alternative installation methods can be found under the [Development](#Development) section.
+Alternative installation methods can be found in the [development](#development-) section.
 
-## Configuration [![github](https://img.shields.io/github/release-date/leukipp/cortile)](#Configuration)<a id="Configuration"></a>
+## Configuration [![github](https://img.shields.io/github/release-date/leukipp/cortile)](#configuration-)
 The configuration file is located at `~/.config/cortile/config.toml` and is created with default values during the first startup.
 Additional information about individual entries can be found in the comments section of the [config.toml](https://github.com/leukipp/cortile/blob/main/config.toml) file.
 
-[![config](https://raw.githubusercontent.com/leukipp/cortile/main/assets/config.gif)](https://github.com/leukipp/cortile)
+[![config](https://raw.githubusercontent.com/leukipp/cortile/main/assets/config.gif)](https://github.com/leukipp/cortile/blob/main/assets/config.gif)
 
 ### Shortcuts
 The default keyboard shortcuts are assigned as shown below.
@@ -76,18 +74,18 @@ Hot corner events are defined under the `[corners]` section and will be triggere
 | <kbd>Bottom</kbd>-<kbd>Left</kbd>   | Decrease proportion of master-slave area |
 | <kbd>Center</kbd>-<kbd>Left</kbd>   | Activate vertical-left layout            |
 
-Other useful shortcuts on Xfce environments:
+Useful mouse shortcuts on Xfce environments:
 - Move window: <kbd>Alt</kbd>+<kbd>Left-Click</kbd>.
 - Resize window: <kbd>Alt</kbd>+<kbd>Right-Click</kbd>.
 - Maximize window: <kbd>Alt</kbd>+<kbd>Double-Click</kbd>.
 
-## Development [![github](https://img.shields.io/github/go-mod/go-version/leukipp/cortile)](#Development)<a id="Development"></a>
+## Development [![github](https://img.shields.io/github/go-mod/go-version/leukipp/cortile)](#development-)
 You need [go >= 1.17](https://go.dev/dl/) to compile cortile.
 
 <details><summary>Install - go</summary><div>
 
 ### Option 1: Install go via package manager:
-Use a `package manager` supported on your system:
+Use a package manager supported on your system:
 ```bash
 # apt
 sudo apt install golang
@@ -103,7 +101,7 @@ sudo pacman -S go
 ```
 
 ### Option 2: Install go via archive download:
-Download a `binary release` suitable for your system:
+Download a binary release suitable for your system:
 ```bash
 cd /tmp/ && wget https://dl.google.com/go/go1.17.linux-amd64.tar.gz
 sudo tar -xvf go1.17.linux-amd64.tar.gz
@@ -127,13 +125,13 @@ go env | grep "GOPATH\|GOVERSION"
 <details><summary>Install - cortile</summary><div>
 
 ### Option 1: Install cortile via remote source
-Install `directly from GitHub` main branch:
+Install directly from main branch:
 ```bash
 go install github.com/leukipp/cortile@main
 ```
 
 ### Option 2: Install cortile via local source
-Clone `source code from GitHub` main branch:
+Clone source code from main branch:
 ```bash
 git clone https://github.com/leukipp/cortile.git -b main
 cd cortile
@@ -151,7 +149,7 @@ Start cortile in verbose mode:
 $GOPATH/bin/cortile -v
 ```
 
-## Additional [![github](https://img.shields.io/github/issues-pr-closed/leukipp/cortile)](#Additional)<a id="Additional"></a>
+## Additional [![github](https://img.shields.io/github/issues-pr-closed/leukipp/cortile)](#additional-)
 Special settings:
 - Use the `edge_margin` property to account for additional spaces.
   - e.g. panels (deskbar), desktop infographics (conky).
@@ -167,17 +165,20 @@ Hot corners:
 
 Companion tools:
 - You can install a [minimal-gtk](https://www.xfce-look.org/p/1016504) theme and leave `window_decoration = true`.
-- Simply add cortile to your `startup applications` to run it after login.
+- Simply add cortile to your startup applications to run it after login.
 
-## Limitations [![github](https://img.shields.io/github/issues-closed/leukipp/cortile)](#Limitations)<a id="Limitations"></a>
+## Issues [![github](https://img.shields.io/github/issues-closed/leukipp/cortile)](#issues-)
+It's recommended to disable all build-in window snapping functions. On Xfce environments they can be found under "Window Manager" > "Advanced" > "Window snapping".
+
+If you encounter problems start the process with `cortile -vv`, which provides additional verbose outputs.
+A log file is created by default under `/tmp/cortile.log`.
+
 Known limitations:
 - Only the biggest monitor is used for tiling.
 - Persistent window resize only for the master-slave proportion.
 
-If you encounter problems start the process with `cortile -vv`, which provides additional verbose outputs. Per default, a log file is created under `/tmp/cortile.log`.
-
-## Credits [![github](https://img.shields.io/github/contributors/leukipp/cortile)](#Credits)<a id="Credits"></a>
+## Credits [![github](https://img.shields.io/github/contributors/leukipp/cortile)](#credits-)
 Based on [zentile](https://github.com/blrsn/zentile) from [Berin Larson](https://github.com/blrsn).
 
-## License [![github](https://img.shields.io/github/license/leukipp/cortile)](#License)<a id="License"></a>
+## License [![github](https://img.shields.io/github/license/leukipp/cortile)](#license-)
 [MIT](https://github.com/leukipp/cortile/blob/main/LICENSE)
