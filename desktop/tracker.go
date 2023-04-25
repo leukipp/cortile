@@ -63,6 +63,21 @@ func (tr *Tracker) populateClients() {
 	}
 }
 
+func (tr *Tracker) tileWorkspace(c *store.Client, ms time.Duration) {
+	ws := tr.Workspaces[c.Latest.Desk]
+
+	// Tile workspace
+	ws.Tile()
+
+	// Re-tile as some applications load geometry delayed
+	if ms > 0 {
+		if timer != nil {
+			timer.Stop()
+		}
+		timer = time.AfterFunc(ms*time.Millisecond, ws.Tile)
+	}
+}
+
 func (tr *Tracker) trackWindow(w xproto.Window) {
 	if tr.isTracked(w) {
 		return
@@ -76,7 +91,7 @@ func (tr *Tracker) trackWindow(w xproto.Window) {
 
 	// Attach handlers and tile
 	tr.attachHandlers(c)
-	tr.Workspaces[common.CurrentDesk].Tile()
+	tr.tileWorkspace(c, 0)
 }
 
 func (tr *Tracker) untrackWindow(w xproto.Window) {
@@ -108,8 +123,6 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	resized := math.Abs(float64(cw-pw)) > 0.0 || math.Abs(float64(ch-ph)) > 0.0
 
 	if resized {
-		proportion := 0.0
-		gap := common.Config.WindowGapSize
 		ws := tr.Workspaces[c.Latest.Desk]
 		al := ws.ActiveLayout()
 		mg := al.GetManager()
@@ -130,44 +143,48 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 			return
 		}
 
-		// Calculate proportion based on resized window size
-		_, _, dw, dh := common.DesktopDimensions()
-		_, _, cw, ch = c.OuterGeometry()
-		switch al.GetName() {
-		case "vertical-left":
-			proportion = 1.0 - (float64(cw+gap) / float64(dw))
-			if mg.IsMaster(c) {
-				proportion = float64(cw+2*gap) / float64(dw)
-			}
-		case "vertical-right":
-			proportion = float64(cw+gap) / float64(dw)
-			if mg.IsMaster(c) {
-				proportion = 1.0 - (float64(cw+2*gap) / float64(dw))
-			}
-		case "horizontal-top":
-			proportion = 1.0 - (float64(ch+gap) / float64(dh))
-			if mg.IsMaster(c) {
-				proportion = float64(ch+2*gap) / float64(dh)
-			}
-		case "horizontal-bottom":
-			proportion = float64(ch+gap) / float64(dh)
-			if mg.IsMaster(c) {
-				proportion = 1.0 - (float64(ch+2*gap) / float64(dh))
-			}
-		}
+		// Ignore proportion updates from added windows
+		lifetime := time.Since(c.Created)
+		if lifetime > 1500*time.Millisecond {
+			proportion := 0.0
+			gap := common.Config.WindowGapSize
 
-		// Set proportion based on resized window
-		log.Info("Proportion set to ", math.Round(proportion*1e4)/1e4, " [", c.Latest.Class, "]")
-		al.SetProportion(proportion)
+			_, _, dw, dh := common.DesktopDimensions()
+			_, _, cw, ch = c.OuterGeometry()
+
+			// Calculate proportion based on resized window size
+			switch al.GetName() {
+			case "vertical-left":
+				proportion = 1.0 - (float64(cw+gap) / float64(dw))
+				if mg.IsMaster(c) {
+					proportion = float64(cw+2*gap) / float64(dw)
+				}
+			case "vertical-right":
+				proportion = float64(cw+gap) / float64(dw)
+				if mg.IsMaster(c) {
+					proportion = 1.0 - (float64(cw+2*gap) / float64(dw))
+				}
+			case "horizontal-top":
+				proportion = 1.0 - (float64(ch+gap) / float64(dh))
+				if mg.IsMaster(c) {
+					proportion = float64(ch+2*gap) / float64(dh)
+				}
+			case "horizontal-bottom":
+				proportion = float64(ch+gap) / float64(dh)
+				if mg.IsMaster(c) {
+					proportion = 1.0 - (float64(ch+2*gap) / float64(dh))
+				}
+			}
+
+			// Set proportion based on resized window
+			log.Info("Update proportion to ", math.Round(proportion*1e4)/1e4, " [", c.Latest.Class, "]")
+			al.SetProportion(proportion)
+		} else {
+			log.Info("Ignore proportion update with lifetime of ", lifetime, " [", c.Latest.Class, "]")
+		}
 
 		// Tile workspace
-		ws.Tile()
-
-		// Re-tile as some applications load geometry delayed
-		if timer != nil {
-			timer.Stop()
-		}
-		timer = time.AfterFunc(500*time.Millisecond, ws.Tile)
+		tr.tileWorkspace(c, 500)
 	}
 }
 
@@ -215,13 +232,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 		}
 
 		// Tile workspace
-		ws.Tile()
-
-		// Re-tile as some applications load geometry delayed
-		if timer != nil {
-			timer.Stop()
-		}
-		timer = time.AfterFunc(500*time.Millisecond, ws.Tile)
+		tr.tileWorkspace(c, 500)
 	}
 }
 
@@ -237,7 +248,7 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 					ws.SetLayout(uint(i))
 				}
 			}
-			ws.Tile()
+			tr.tileWorkspace(c, 0)
 		}
 	}
 }
@@ -250,7 +261,7 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 		if state == "_NET_WM_STATE_HIDDEN" {
 			tr.Workspaces[c.Latest.Desk].RemoveClient(c)
 			tr.untrackWindow(c.Win.Id)
-			tr.Workspaces[c.Latest.Desk].Tile()
+			tr.tileWorkspace(c, 0)
 		}
 	}
 }
@@ -260,7 +271,7 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 	// Remove client from current workspace
 	tr.Workspaces[c.Latest.Desk].RemoveClient(c)
 	if tr.Workspaces[c.Latest.Desk].IsEnabled() {
-		tr.Workspaces[c.Latest.Desk].Tile()
+		tr.tileWorkspace(c, 0)
 	}
 
 	// Update client desktop
@@ -272,7 +283,7 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 	// Add client to new workspace
 	tr.Workspaces[c.Latest.Desk].AddClient(c)
 	if tr.Workspaces[c.Latest.Desk].IsEnabled() {
-		tr.Workspaces[c.Latest.Desk].Tile()
+		tr.tileWorkspace(c, 0)
 	} else {
 		c.Restore()
 	}
@@ -281,7 +292,7 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 func (tr *Tracker) handleWorkspaceUpdates(X *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
 	aname, _ := xprop.AtomName(common.X, ev.Atom)
 
-	log.Debug("Workspace update event ", aname)
+	log.Trace("Workspace update event ", aname)
 
 	// Client added or workspace changed
 	if aname == "_NET_CLIENT_LIST_STACKING" || aname == "_NET_DESKTOP_VIEWPORT" || aname == "_NET_WORKAREA" {
@@ -295,7 +306,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 
 	// Attach structure events
 	xevent.ConfigureNotifyFun(func(x *xgbutil.XUtil, ev xevent.ConfigureNotifyEvent) {
-		log.Debug("Client structure event [", c.Latest.Class, "]")
+		log.Trace("Client structure event [", c.Latest.Class, "]")
 
 		if tr.isTrackable(c.Win.Id) {
 			tr.handleResizeClient(c)
@@ -307,7 +318,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 	// Attach property events
 	xevent.PropertyNotifyFun(func(x *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
 		aname, _ := xprop.AtomName(common.X, ev.Atom)
-		log.Debug("Client property event ", aname, " [", c.Latest.Class, "]")
+		log.Trace("Client property event ", aname, " [", c.Latest.Class, "]")
 
 		if tr.isTrackable(c.Win.Id) {
 			if aname == "_NET_WM_STATE" {

@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil/ewmh"
@@ -25,16 +26,9 @@ const (
 
 type Client struct {
 	Win      *xwindow.Window // X window object
+	Created  time.Time       // Internal client creation time
 	Latest   Info            // Latest client window information
 	Original Info            // Original client window information
-}
-
-type Dimensions struct {
-	Geometry xrect.Rect        // Client window geometry
-	Hints    motif.Hints       // Client window geometry hints
-	Extents  ewmh.FrameExtents // Client window geometry extents
-	Position bool              // Adjust position on move/resize
-	Size     bool              // Adjust size on move/resize
 }
 
 type Info struct {
@@ -45,10 +39,19 @@ type Info struct {
 	Dimensions Dimensions // Client window dimensions
 }
 
+type Dimensions struct {
+	Geometry xrect.Rect        // Client window geometry
+	Hints    motif.Hints       // Client window geometry hints
+	Extents  ewmh.FrameExtents // Client window geometry extents
+	Position bool              // Adjust position on move/resize
+	Size     bool              // Adjust size on move/resize
+}
+
 func CreateClient(w xproto.Window) (c *Client) {
 	info := GetInfo(w)
 	return &Client{
 		Win:      xwindow.New(common.X, w),
+		Created:  time.Now(),
 		Latest:   info,
 		Original: info,
 	}
