@@ -81,7 +81,7 @@ func (ws *Workspace) AddClient(c *store.Client) {
 		return
 	}
 
-	log.Debug("Add client [", c.Latest.Class, "]")
+	log.Info("Add client for each layout [", c.Latest.Class, "]")
 
 	// Add client to all layouts
 	for _, l := range ws.Layouts {
@@ -94,7 +94,7 @@ func (ws *Workspace) RemoveClient(c *store.Client) {
 		return
 	}
 
-	log.Debug("Remove client [", c.Latest.Class, "]")
+	log.Info("Remove client from each layout [", c.Latest.Class, "]")
 
 	// Remove client from all layouts
 	for _, l := range ws.Layouts {

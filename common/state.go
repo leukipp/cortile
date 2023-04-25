@@ -147,7 +147,7 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 
 	aname, _ := xprop.AtomName(X, e.Atom)
 
-	log.Debug("State event ", aname)
+	log.Trace("State event ", aname)
 
 	// Update common state variables
 	if aname == "_NET_NUMBER_OF_DESKTOPS" {
