@@ -100,7 +100,7 @@ func configFolderPath() string {
 	// Obtain user home directory
 	userHome, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatal("Error obtaining home directory", err)
+		log.Fatal("Error obtaining home directory ", err)
 	}
 
 	// Obtain config directory

@@ -63,21 +63,6 @@ func (tr *Tracker) populateClients() {
 	}
 }
 
-func (tr *Tracker) tileWorkspace(c *store.Client, ms time.Duration) {
-	ws := tr.Workspaces[c.Latest.Desk]
-
-	// Tile workspace
-	ws.Tile()
-
-	// Re-tile as some applications load geometry delayed
-	if ms > 0 {
-		if timer != nil {
-			timer.Stop()
-		}
-		timer = time.AfterFunc(ms*time.Millisecond, ws.Tile)
-	}
-}
-
 func (tr *Tracker) trackWindow(w xproto.Window) {
 	if tr.isTracked(w) {
 		return
@@ -103,6 +88,21 @@ func (tr *Tracker) untrackWindow(w xproto.Window) {
 		ws.RemoveClient(c)
 		xevent.Detach(common.X, w)
 		delete(tr.Clients, w)
+	}
+}
+
+func (tr *Tracker) tileWorkspace(c *store.Client, ms time.Duration) {
+	ws := tr.Workspaces[c.Latest.Desk]
+
+	// Tile workspace
+	ws.Tile()
+
+	// Re-tile as some applications load geometry delayed
+	if ms > 0 {
+		if timer != nil {
+			timer.Stop()
+		}
+		timer = time.AfterFunc(ms*time.Millisecond, ws.Tile)
 	}
 }
 
@@ -291,11 +291,14 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 
 func (tr *Tracker) handleWorkspaceUpdates(X *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
 	aname, _ := xprop.AtomName(common.X, ev.Atom)
-
 	log.Trace("Workspace update event ", aname)
 
-	// Client added or workspace changed
-	if aname == "_NET_CLIENT_LIST_STACKING" || aname == "_NET_DESKTOP_VIEWPORT" || aname == "_NET_WORKAREA" {
+	clientAdded := aname == "_NET_CLIENT_LIST_STACKING"
+	desktopChanged := aname == "_NET_DESKTOP_LAYOUT" || aname == "_NET_DESKTOP_VIEWPORT"
+	workspaceChanged := aname == "_NET_WORKAREA"
+
+	// Client added or layout changed
+	if clientAdded || desktopChanged || workspaceChanged {
 		tr.populateClients()
 		tr.Workspaces[common.CurrentDesk].Tile()
 	}

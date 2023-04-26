@@ -1,8 +1,9 @@
 package common
 
 import (
-	"github.com/BurntSushi/xgb/xproto"
+	"time"
 
+	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil"
 	"github.com/BurntSushi/xgbutil/ewmh"
 	"github.com/BurntSushi/xgbutil/xevent"
@@ -38,9 +39,7 @@ type Position struct {
 func InitState() {
 	var err error
 
-	X, err = xgbutil.NewConn()
-	checkFatal(err)
-	checkEwmhCompliance()
+	X := Connect()
 
 	DeskCount, err = ewmh.NumberOfDesktopsGet(X)
 	checkFatal(err)
@@ -49,13 +48,13 @@ func InitState() {
 	checkFatal(err)
 
 	ViewPorts, err = ViewPortsGet(X)
-	checkError(err)
+	checkFatal(err)
 
 	Stacking, err = ewmh.ClientListStackingGet(X)
-	checkError(err)
+	checkFatal(err)
 
 	ActiveWin, err = ewmh.ActiveWindowGet(X)
-	checkError(err)
+	checkFatal(err)
 
 	Corners = CreateCorners()
 
@@ -63,6 +62,33 @@ func InitState() {
 	root.Listen(xproto.EventMaskPropertyChange)
 
 	xevent.PropertyNotifyFun(stateUpdate).Connect(X, X.RootWin())
+}
+
+func Connect() *xgbutil.XUtil {
+	var err error
+
+	// connect to X server
+	X, err = xgbutil.NewConn()
+	checkFatal(err)
+
+	// check ewmh compliance
+	_, err = ewmh.GetEwmhWM(X)
+	if err != nil {
+		log.Fatal("Window manager is not ewmh complaint ", err)
+	}
+
+	// wait for client list availability
+	i, j := 0, 100
+	for i < j {
+		_, err = ewmh.ClientListStackingGet(X)
+		if err == nil {
+			break
+		}
+		i += 1
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	return X
 }
 
 func PhysicalHeadsGet(rGeom xrect.Rect) xinerama.Heads {
@@ -79,8 +105,7 @@ func PhysicalHeadsGet(rGeom xrect.Rect) xinerama.Heads {
 func ViewPortsGet(X *xgbutil.XUtil) (Head, error) {
 
 	// Get the geometry of the root window
-	root := xwindow.New(X, X.RootWin())
-	rGeom, err := root.Geometry()
+	rGeom, err := xwindow.New(X, X.RootWin()).Geometry()
 	checkFatal(err)
 
 	// Get the physical heads
@@ -146,7 +171,6 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	var err error
 
 	aname, _ := xprop.AtomName(X, e.Atom)
-
 	log.Trace("State event ", aname)
 
 	// Update common state variables
@@ -154,6 +178,9 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 		DeskCount, err = ewmh.NumberOfDesktopsGet(X)
 	} else if aname == "_NET_CURRENT_DESKTOP" {
 		CurrentDesk, err = ewmh.CurrentDesktopGet(X)
+	} else if aname == "_NET_DESKTOP_LAYOUT" {
+		ViewPorts, err = ViewPortsGet(X)
+		Corners = CreateCorners()
 	} else if aname == "_NET_DESKTOP_VIEWPORT" {
 		ViewPorts, err = ViewPortsGet(X)
 		Corners = CreateCorners()
@@ -171,21 +198,8 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	}
 }
 
-func checkEwmhCompliance() {
-	_, err := ewmh.GetEwmhWM(X)
-	if err != nil {
-		log.Fatal("Window manager is not EWMH complaint!")
-	}
-}
-
 func checkFatal(err error) {
 	if err != nil {
-		log.Fatal("Error populating state ", err)
-	}
-}
-
-func checkError(err error) {
-	if err != nil {
-		log.Error("Warning populating state ", err)
+		log.Fatal("Error on initialization ", err)
 	}
 }
