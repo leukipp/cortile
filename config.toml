@@ -1,8 +1,10 @@
-############################################################
-# https://github.com/leukipp/cortile/blob/main/config.toml #
-############################################################
+################################################################################
+#                                                                              #
+#           https://github.com/leukipp/cortile/blob/main/config.toml           #
+#                                                                              #
+################################################################################
 
-########################## Tiling ##########################
+#################################### Tiling ####################################
 
 # Tiling will be enabled on application start if set to true (true | false).
 tiling_enabled = true
@@ -10,7 +12,10 @@ tiling_enabled = true
 # Initial tiling layout ("fullscreen" | "vertical-left" | "vertical-right" | "horizontal-top" | "horizontal-bottom").
 tiling_layout = "vertical-right"
 
-########################## Window ##########################
+# An overlay window is displayed for this time period when the layout was changed (0ms = disabled).
+tiling_gui = 1500
+
+#################################### Window ####################################
 
 # Regex RE2 syntax to ignore windows (WM_CLASS string can be found by running 'xprop WM_CLASS').
 # window_ignore = [
@@ -39,7 +44,7 @@ window_gap_size = 4
 # Window decorations will be removed if set to false (true | false).
 window_decoration = true
 
-######################## Proportion ########################
+################################## Proportion ##################################
 
 # Initial division of master-slave area (0.0 - 1.0).
 proportion = 0.6
@@ -53,7 +58,7 @@ proportion_max = 0.9
 # How much to increment/decrement master-slave area (0.0 - 1.0).
 proportion_step = 0.05
 
-########################### Edge ###########################
+##################################### Edge #####################################
 
 # Additional margin of the tiling area ([top, right, bottom, left]).
 edge_margin = [0, 0, 0, 0]
@@ -64,9 +69,25 @@ edge_corner_size = 10
 # Width or height of a hot-corner area within the edge centers (0 - 100).
 edge_center_size = 100
 
-############################################################
-[keys]        # Key symbols can be found by running 'xev'. #
-############################################################
+################################################################################
+[colors]                            # RGBA color values used for gui elements. #
+################################################################################
+
+# Layout window text color.
+gui_text = [255, 255, 255, 255]
+
+# Layout window background color.
+gui_background = [30, 30, 40, 255]
+
+# Layout slave client rectangle color.
+gui_client_slave = [58, 58, 78, 255]
+
+# Layout master client rectangle color.
+gui_client_master = [98, 98, 128, 255]
+
+################################################################################
+[keys]                            # Key symbols can be found by running 'xev'. #
+################################################################################
 
 # Tile the current workspace.
 tile = "Control-Shift-T"
@@ -75,7 +96,7 @@ tile = "Control-Shift-T"
 untile = "Control-Shift-U"
 
 # Cycles through the available layouts.
-layout_cycle = "Control-Shift-C"
+layout_cycle = "Control-Shift-L"
 
 # Activates the fullscreen layout.
 layout_fullscreen = "Control-Shift-Space"
@@ -119,9 +140,9 @@ window_next = "Control-Shift-KP_2"
 # Moves focus to the previous window.
 window_previous = "Control-Shift-KP_8"
 
-############################################################
-[corners]  # Action strings can also be external commands. #
-############################################################
+################################################################################
+[corners]                    # Action strings from above or external commands. #
+################################################################################
 
 # Corner at top left.
 top_left = "window_previous"

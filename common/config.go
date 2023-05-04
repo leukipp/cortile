@@ -19,6 +19,7 @@ var Config ConfigMapper
 type ConfigMapper struct {
 	TilingEnabled    bool              `toml:"tiling_enabled"`     // Tile windows on startup
 	TilingLayout     string            `toml:"tiling_layout"`      // Initial tiling layout
+	TilingGui        int               `toml:"tiling_gui"`         // Time duration of gui
 	WindowIgnore     [][]string        `toml:"window_ignore"`      // Regex to ignore windows
 	WindowMastersMax int               `toml:"window_masters_max"` // Maximum number of allowed masters
 	WindowSlavesMax  int               `toml:"window_slaves_max"`  // Maximum number of allowed slaves
@@ -31,6 +32,7 @@ type ConfigMapper struct {
 	EdgeMargin       []int             `toml:"edge_margin"`        // Margin values of tiling area
 	EdgeCornerSize   int               `toml:"edge_corner_size"`   // Size of square defining edge corners
 	EdgeCenterSize   int               `toml:"edge_center_size"`   // Length of rectangle defining edge centers
+	Colors           map[string][]int  `toml:"colors"`             // List of color values for gui elements
 	Keys             map[string]string `toml:"keys"`               // Event bindings for keyboard shortcuts
 	Corners          map[string]string `toml:"corners"`            // Event bindings for hot-corners
 }

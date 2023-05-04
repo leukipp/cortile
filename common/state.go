@@ -194,7 +194,7 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	}
 
 	if err != nil {
-		log.Warn("Warning updating state ", err)
+		log.Warn("Error updating state ", err)
 	}
 }
 

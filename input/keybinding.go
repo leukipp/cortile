@@ -42,6 +42,6 @@ func (k KeyMapper) bind(a string, t *desktop.Tracker) {
 		Execute(a, t)
 	}).Connect(common.X, common.X.RootWin(), common.Config.Keys[a], true)
 	if err != nil {
-		log.Warn("Action for ", a, ": ", err)
+		log.Warn("Error on action for ", a, ": ", err)
 	}
 }

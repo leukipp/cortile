@@ -23,28 +23,33 @@ import (
 )
 
 var (
-	fontSize   = 18 // Size of text font
-	fontMargin = 6  // Margin of text font
-	rectMargin = 4  // Margin of layout rectangles
+	gui *xwindow.Window // Layout overlay window
+)
 
-	colorText       = xgraphics.BGRA{B: 0xff, G: 0xff, R: 0xff, A: 0xff} // Text font color 1e1f29
-	colorSlave      = xgraphics.BGRA{B: 0xff, G: 0xff, R: 0xff, A: 0xff} // Slave rectangle color
-	colorMaster     = xgraphics.BGRA{B: 0xcc, G: 0xcc, R: 0xcc, A: 0xff} // Master rectangle color
-	colorBackground = xgraphics.BGRA{B: 0x40, G: 0x30, R: 0x30, A: 0xff} // Window background color
+var (
+	fontSize   int = 16 // Size of text font
+	fontMargin int = 4  // Margin of text font
+	rectMargin int = 4  // Margin of layout rectangles
 )
 
 func ShowLayout(ws *Workspace) {
+	if common.Config.TilingGui <= 0 {
+		return
+	}
+
+	// Obtain layout infos
 	al := ws.ActiveLayout()
 	mg := al.GetManager()
 	name := al.GetName()
 
-	// Calculate scaled layout dimensions
+	// Calculate scaled desktop dimensions
 	dx, dy, dw, dh := common.DesktopDimensions()
 	_, _, width, height := scale(dx, dy, dw, dh)
 
 	// Create an empty canvas image
+	bg := bgra("gui_background")
 	cv := xgraphics.New(common.X, image.Rect(0, 0, width+rectMargin, height+fontSize+2*fontMargin+rectMargin))
-	cv.For(func(x int, y int) xgraphics.BGRA { return colorBackground })
+	cv.For(func(x int, y int) xgraphics.BGRA { return bg })
 
 	// Wait for tiling events
 	time.AfterFunc(100*time.Millisecond, func() {
@@ -53,16 +58,32 @@ func ShowLayout(ws *Workspace) {
 		drawClients(cv, mg, name)
 
 		// Draw layout name
-		drawText(cv, name, colorText, cv.Rect.Dx()/2, cv.Rect.Dy()-fontSize-2*fontMargin)
+		drawText(cv, name, bgra("gui_text"), cv.Rect.Dx()/2, cv.Rect.Dy()-fontSize-2*fontMargin)
 
 		// Show the canvas graphics
-		showGraphics(cv, 1500)
+		showGraphics(cv, time.Duration(common.Config.TilingGui))
 	})
 }
 
 func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 	clients := mg.Clients()
 
+	// Draw default rectangle
+	if len(clients) == 0 {
+
+		// Calculate scaled desktop dimensions
+		cx, cy, cw, ch := common.DesktopDimensions()
+		x, y, width, height := scale(cx, cy, cw, ch)
+
+		// Draw client rectangle onto canvas
+		color := bgra("gui_client_slave")
+		rect := &image.Uniform{color}
+		drawImage(cv, rect, color, x+rectMargin, y+rectMargin, x+width, y+height)
+
+		return
+	}
+
+	// Draw master and slave rectangle
 	for i, c := range clients {
 		if i >= mg.AllowedMasters+mg.AllowedSlaves {
 			break
@@ -83,9 +104,9 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 		iconSize /= 2
 
 		// Obtain rectangle color
-		color := colorSlave
+		color := bgra("gui_client_slave")
 		if mg.IsMaster(c) || layout == "fullscreen" {
-			color = colorMaster
+			color = bgra("gui_client_master")
 		}
 
 		// Draw client rectangle onto canvas
@@ -166,12 +187,35 @@ func showGraphics(img *xgraphics.Image, duration time.Duration) *xwindow.Window 
 	img.XDraw()
 	win.Map()
 
+	// Close previous opened window
+	if gui != nil {
+		gui.Destroy()
+	}
+	gui = win
+
 	// Close window after given duration
 	if duration > 0 {
 		time.AfterFunc(duration*time.Millisecond, win.Destroy)
 	}
 
 	return win
+}
+
+func bgra(name string) xgraphics.BGRA {
+	rgba := common.Config.Colors[name]
+
+	// Validate length
+	if len(rgba) != 4 {
+		log.Warn("Error obtaining color for ", name)
+		return xgraphics.BGRA{}
+	}
+
+	return xgraphics.BGRA{
+		R: uint8(rgba[0]),
+		G: uint8(rgba[1]),
+		B: uint8(rgba[2]),
+		A: uint8(rgba[3]),
+	}
 }
 
 func scale(x, y, w, h int) (sx, sy, sw, sh int) {

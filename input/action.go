@@ -191,7 +191,6 @@ func DecreaseMaster(t *desktop.Tracker) {
 	if !ws.IsEnabled() {
 		return
 	}
-
 	ws.ActiveLayout().DecreaseMaster()
 	ws.Tile()
 
