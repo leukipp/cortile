@@ -46,7 +46,7 @@ If some of them are already in use by your system, update the default values in 
 | ------------------------------------------------------- | ---------------------------------------- |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>           | Tile current workspace                   |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd>           | Untile current workspace                 |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>           | Cycle through layouts                    |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>           | Cycle through layouts                    |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>       | Activate fullscreen layout               |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Left</kbd>        | Activate vertical-left layout            |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Right</kbd>       | Activate vertical-right layout           |
@@ -74,7 +74,7 @@ Hot corner events are defined under the `[corners]` section and will be triggere
 | <kbd>Bottom</kbd>-<kbd>Left</kbd>   | Decrease proportion of master-slave area |
 | <kbd>Center</kbd>-<kbd>Left</kbd>   | Activate vertical-left layout            |
 
-Useful mouse shortcuts on Xfce environments:
+Useful mouse shortcuts in Xfce environments:
 - Move window: <kbd>Alt</kbd>+<kbd>Left-Click</kbd>.
 - Resize window: <kbd>Alt</kbd>+<kbd>Right-Click</kbd>.
 - Maximize window: <kbd>Alt</kbd>+<kbd>Double-Click</kbd>.
@@ -152,11 +152,11 @@ $GOPATH/bin/cortile -v
 ## Additional [![github](https://img.shields.io/github/issues-pr-closed/leukipp/cortile)](#additional-)
 Special settings:
 - Use the `edge_margin` property to account for additional spaces.
-  - e.g. panels (deskbar), desktop infographics (conky).
+  - e.g. for deskbar panels or conky infographics.
 - Use the `edge_margin` property to enable tiling only for parts of the monitor. 
-  - e.g. use a left/right margin that is half the resolution of a large display to tile only windows that are moved inside a certain area.
+  - e.g. use a margin that is half the resolution of a large screen to tile only windows that are moved within a specified area.
 - Use the `window_slaves_max` property to limit the number of windows.
-  - e.g. with one active master and `window_slaves_max = 2` the fourth and the following windows are stacked (behind the two slaves).
+  - e.g. with one active master and `window_slaves_max = 2`, all windows following the third window are stacked behind the two slaves.
 
 Hot corners:
 - Use `tiling_enabled = false` if you prefer to utilize only the hot corner functionalities.
@@ -168,7 +168,7 @@ Companion tools:
 - Simply add cortile to your startup applications to run it after login.
 
 ## Issues [![github](https://img.shields.io/github/issues-closed/leukipp/cortile)](#issues-)
-It's recommended to disable all build-in window snapping functions. On Xfce environments they can be found under "Window Manager" > "Advanced" > "Window snapping".
+It's recommended to disable all build-in window snapping features. In Xfce environments, they can be found under "Window Manager" > "Advanced" > "Windows snapping".
 
 If you encounter problems start the process with `cortile -vv`, which provides additional verbose outputs.
 A log file is created by default under `/tmp/cortile.log`.
