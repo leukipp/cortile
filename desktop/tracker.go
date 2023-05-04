@@ -61,6 +61,10 @@ func (tr *Tracker) populateClients() {
 			tr.untrackWindow(w1)
 		}
 	}
+
+	// Tile workspace
+	ws := tr.Workspaces[common.CurrentDesk]
+	ws.Tile()
 }
 
 func (tr *Tracker) trackWindow(w xproto.Window) {
@@ -110,19 +114,24 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 	// Previous dimensions
 	pGeom := c.Latest.Dimensions.Geometry
-	_, _, pw, ph := pGeom.Pieces()
+	px, py, pw, ph := pGeom.Pieces()
 
 	// Current dimensions
 	cGeom, err := c.Win.DecorGeometry()
 	if err != nil {
 		return
 	}
-	_, _, cw, ch := cGeom.Pieces()
+	cx, cy, cw, ch := cGeom.Pieces()
 
 	// Check width or height change
 	resized := math.Abs(float64(cw-pw)) > 0.0 || math.Abs(float64(ch-ph)) > 0.0
 
-	if resized {
+	// Check window lifetime
+	lifetime := time.Since(c.Created)
+	added := lifetime < 1000*time.Millisecond
+	initialized := (math.Abs(float64(cx-px)) > 0.0 || math.Abs(float64(cy-py)) > 0.0) && added
+
+	if resized || initialized {
 		ws := tr.Workspaces[c.Latest.Desk]
 		al := ws.ActiveLayout()
 		mg := al.GetManager()
@@ -144,8 +153,9 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		}
 
 		// Ignore proportion updates from added windows
-		lifetime := time.Since(c.Created)
-		if lifetime > 1500*time.Millisecond {
+		if added {
+			log.Info("Ignore proportion update with lifetime of ", lifetime, " [", c.Latest.Class, "]")
+		} else {
 			proportion := 0.0
 			gap := common.Config.WindowGapSize
 
@@ -179,8 +189,6 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 			// Set proportion based on resized window
 			log.Info("Update proportion to ", math.Round(proportion*1e4)/1e4, " [", c.Latest.Class, "]")
 			al.SetProportion(proportion)
-		} else {
-			log.Info("Ignore proportion update with lifetime of ", lifetime, " [", c.Latest.Class, "]")
 		}
 
 		// Tile workspace
@@ -223,8 +231,8 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 			}
 
 			// Swap moved client with hovered client
-			isHovered := common.IsInsideRect(common.Pointer, co.Latest.Dimensions.Geometry)
-			if isHovered {
+			hovered := common.IsInsideRect(common.Pointer, co.Latest.Dimensions.Geometry)
+			if hovered {
 				log.Info("Swap clients [", c.Latest.Class, " - ", co.Latest.Class, "]")
 				mg.SwapClient(c, co)
 				break
@@ -300,7 +308,6 @@ func (tr *Tracker) handleWorkspaceUpdates(X *xgbutil.XUtil, ev xevent.PropertyNo
 	// Client added or layout changed
 	if clientAdded || desktopChanged || workspaceChanged {
 		tr.populateClients()
-		tr.Workspaces[common.CurrentDesk].Tile()
 	}
 }
 

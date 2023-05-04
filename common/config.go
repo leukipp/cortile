@@ -58,7 +58,7 @@ func readConfig() {
 
 	// Obtain config file path
 	path := configFilePath()
-	fmt.Println("load", path)
+	fmt.Println("LOAD", path)
 
 	// Decode contents into struct
 	toml.DecodeFile(path, &Config)

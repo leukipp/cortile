@@ -114,7 +114,8 @@ func (c *Client) Update() (success bool) {
 		return false
 	}
 
-	// Update client infos
+	// Update client info
+	log.Debug("Update client info [", info.Class, "]")
 	c.Latest = info
 
 	return true
