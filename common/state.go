@@ -20,7 +20,7 @@ var (
 	DeskCount   uint            // Number of desktop workspaces
 	CurrentDesk uint            // Current desktop
 	ViewPorts   Head            // Physical monitors
-	Stacking    []xproto.Window // List of client windows
+	Windows     []xproto.Window // List of client windows
 	ActiveWin   xproto.Window   // Current active window
 	Corners     []*Corner       // Corners for pointer events
 	Pointer     Position        // Pointer position
@@ -50,7 +50,7 @@ func InitState() {
 	ViewPorts, err = ViewPortsGet(X)
 	checkFatal(err)
 
-	Stacking, err = ewmh.ClientListStackingGet(X)
+	Windows, err = ewmh.ClientListGet(X)
 	checkFatal(err)
 
 	ActiveWin, err = ewmh.ActiveWindowGet(X)
@@ -80,7 +80,7 @@ func Connect() *xgbutil.XUtil {
 	// wait for client list availability
 	i, j := 0, 100
 	for i < j {
-		_, err = ewmh.ClientListStackingGet(X)
+		_, err = ewmh.ClientListGet(X)
 		if err == nil {
 			break
 		}
@@ -113,7 +113,7 @@ func ViewPortsGet(X *xgbutil.XUtil) (Head, error) {
 	desktops := PhysicalHeadsGet(rGeom)
 
 	// Adjust desktops geometry
-	clients, err := ewmh.ClientListStackingGet(X)
+	clients, err := ewmh.ClientListGet(X)
 	for _, id := range clients {
 		strut, err := ewmh.WmStrutPartialGet(X, id)
 		if err != nil {
@@ -187,8 +187,8 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	} else if aname == "_NET_WORKAREA" {
 		ViewPorts, err = ViewPortsGet(X)
 		Corners = CreateCorners()
-	} else if aname == "_NET_CLIENT_LIST_STACKING" {
-		Stacking, err = ewmh.ClientListStackingGet(X)
+	} else if aname == "_NET_CLIENT_LIST" {
+		Windows, err = ewmh.ClientListGet(X)
 	} else if aname == "_NET_ACTIVE_WINDOW" {
 		ActiveWin, err = ewmh.ActiveWindowGet(X)
 	}
