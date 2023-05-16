@@ -32,11 +32,11 @@ window_ignore = [
     ['firefox.*', '.*Mozilla Firefox'],
 ]
 
-# Maximum number of allowed master windows (0 - 10).
-window_masters_max = 5
+# Maximum number of allowed master windows (0 - 5).
+window_masters_max = 3
 
-# Maximum number of allowed slave windows (1 - 10).
-window_slaves_max = 5
+# Maximum number of allowed slave windows (1 - 5).
+window_slaves_max = 3
 
 # How much space should be left between windows (0 - 100).
 window_gap_size = 4
@@ -49,14 +49,11 @@ window_decoration = true
 # Initial division of master-slave area (0.0 - 1.0).
 proportion = 0.6
 
-# Minimum division of master-slave area (0.0 - 1.0).
-proportion_min = 0.1
-
-# Maximum division of master-slave area (0.0 - 1.0).
-proportion_max = 0.9
-
 # How much to increment/decrement master-slave area (0.0 - 1.0).
 proportion_step = 0.05
+
+# Minimum window width/height in proportion to workspace (0.0 - 1.0).
+proportion_min = 0.2
 
 ##################################### Edge #####################################
 
