@@ -206,6 +206,7 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 					ws.SetLayout(uint(i))
 				}
 			}
+			c.Activate()
 			tr.tileWorkspace(c, 0)
 			ShowLayout(ws)
 			break

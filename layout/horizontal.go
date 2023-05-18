@@ -152,7 +152,7 @@ func (l *HorizontalLayout) UpdateProportions(c *store.Client, d *store.Direction
 	if l.IsMaster(c) {
 		py := float64(ch+2*gap) / float64(dh)
 		px := float64(cw) / float64(dw-(msize+1)*gap)
-		idxmm := l.Index(l.Masters.Clients, c) % mmax
+		idxmm := l.Index(l.Masters, c) % mmax
 
 		// Set master-slave proportions
 		if d.Top {
@@ -168,7 +168,7 @@ func (l *HorizontalLayout) UpdateProportions(c *store.Client, d *store.Direction
 	} else {
 		py := float64(ch+gap) / float64(dh)
 		px := float64(cw) / float64(dw-(ssize+1)*gap)
-		idxss := l.Index(l.Slaves.Clients, c) % smax
+		idxss := l.Index(l.Slaves, c) % smax
 
 		// Set master-slave proportions
 		if d.Bottom {

@@ -66,7 +66,15 @@ func ShowLayout(ws *Workspace) {
 }
 
 func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
-	clients := mg.Clients()
+	clients := append(mg.Visible(mg.Masters), mg.Visible(mg.Slaves)...)
+	for _, c := range clients {
+		for _, state := range c.Latest.States {
+			if state == "_NET_WM_STATE_FULLSCREEN" || layout == "fullscreen" {
+				clients = mg.Visible(&store.Windows{Clients: mg.Clients(), Allowed: 1})
+				break
+			}
+		}
+	}
 
 	// Draw default rectangle
 	if len(clients) == 0 {
@@ -84,10 +92,7 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 	}
 
 	// Draw master and slave rectangle
-	for i, c := range clients {
-		if i >= mg.Masters.Allowed+mg.Slaves.Allowed {
-			break
-		}
+	for _, c := range clients {
 
 		// Calculate scaled client dimensions
 		cx, cy, cw, ch := c.OuterGeometry()

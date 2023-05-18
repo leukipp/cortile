@@ -3,6 +3,7 @@ package store
 import (
 	"math"
 
+	"github.com/BurntSushi/xgbutil/ewmh"
 	"github.com/leukipp/cortile/common"
 
 	log "github.com/sirupsen/logrus"
@@ -83,7 +84,7 @@ func (mg *Manager) RemoveClient(c *Client) {
 	log.Debug("Remove client from manager [", c.Latest.Class, "]")
 
 	// Remove master window
-	mi := mg.Index(mg.Masters.Clients, c)
+	mi := mg.Index(mg.Masters, c)
 	if mi >= 0 {
 		if len(mg.Slaves.Clients) > 0 {
 			mg.SwapClient(mg.Masters.Clients[mi], mg.Slaves.Clients[0])
@@ -95,7 +96,7 @@ func (mg *Manager) RemoveClient(c *Client) {
 	}
 
 	// Remove slave window
-	si := mg.Index(mg.Slaves.Clients, c)
+	si := mg.Index(mg.Slaves, c)
 	if si >= 0 {
 		mg.updateSlaves(removeClient(mg.Slaves.Clients, si))
 		return
@@ -122,11 +123,11 @@ func (mg *Manager) SwapClient(c1 *Client, c2 *Client) {
 
 	log.Info("Swap clients [", c1.Latest.Class, " - ", c2.Latest.Class, "]")
 
-	mIndex1 := mg.Index(mg.Masters.Clients, c1)
-	sIndex1 := mg.Index(mg.Slaves.Clients, c1)
+	mIndex1 := mg.Index(mg.Masters, c1)
+	sIndex1 := mg.Index(mg.Slaves, c1)
 
-	mIndex2 := mg.Index(mg.Masters.Clients, c2)
-	sIndex2 := mg.Index(mg.Slaves.Clients, c2)
+	mIndex2 := mg.Index(mg.Masters, c2)
+	sIndex2 := mg.Index(mg.Slaves, c2)
 
 	// Swap master with master
 	if mIndex1 >= 0 && mIndex2 >= 0 {
@@ -155,13 +156,13 @@ func (mg *Manager) SwapClient(c1 *Client, c2 *Client) {
 
 func (mg *Manager) NextClient() {
 	clients := mg.Clients()
-	lastIndex := len(clients) - 1
+	last := len(clients) - 1
 
 	// Get next window
 	for i, c := range clients {
 		if c.Win.Id == common.ActiveWin {
 			next := i + 1
-			if next > lastIndex {
+			if next > last {
 				next = 0
 			}
 			clients[next].Activate()
@@ -172,14 +173,14 @@ func (mg *Manager) NextClient() {
 
 func (mg *Manager) PreviousClient() {
 	clients := mg.Clients()
-	lastIndex := len(clients) - 1
+	last := len(clients) - 1
 
 	// Get previous window
 	for i, c := range clients {
 		if c.Win.Id == common.ActiveWin {
 			prev := i - 1
 			if prev < 0 {
-				prev = lastIndex
+				prev = last
 			}
 			clients[prev].Activate()
 			break
@@ -282,16 +283,50 @@ func (mg *Manager) IsMaster(c *Client) bool {
 	}
 
 	// Check if window is master
-	return mg.Index(mg.Masters.Clients, c) >= 0
+	return mg.Index(mg.Masters, c) >= 0
 }
 
-func (mg *Manager) Index(cs []*Client, c *Client) int {
-	for i, m := range cs {
+func (mg *Manager) Index(windows *Windows, c *Client) int {
+	if c == nil {
+		return -1
+	}
+
+	// Traverse client list
+	for i, m := range windows.Clients {
 		if m.Win.Id == c.Win.Id {
 			return i
 		}
 	}
+
 	return -1
+}
+
+func (mg *Manager) Ordered(windows *Windows) []*Client {
+	ordered := []*Client{}
+
+	// Create ordered client list
+	stacking, _ := ewmh.ClientListStackingGet(common.X)
+	for _, w := range stacking {
+		for _, c := range windows.Clients {
+			if w == c.Win.Id {
+				ordered = append(ordered, c)
+				break
+			}
+		}
+	}
+
+	return ordered
+}
+
+func (mg *Manager) Visible(windows *Windows) []*Client {
+	visible := make([]*Client, int(math.Min(float64(len(windows.Clients)), float64(windows.Allowed))))
+
+	// Create visible client list
+	for _, c := range mg.Ordered(windows) {
+		visible[mg.Index(windows, c)%windows.Allowed] = c
+	}
+
+	return visible
 }
 
 func (mg *Manager) Clients() []*Client {
