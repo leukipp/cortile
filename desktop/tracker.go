@@ -208,6 +208,7 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 			}
 			tr.tileWorkspace(c, 0)
 			ShowLayout(ws)
+			break
 		}
 	}
 }
@@ -226,6 +227,7 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 			// Untrack client
 			tr.untrackWindow(c.Win.Id)
 			tr.tileWorkspace(c, 0)
+			break
 		}
 	}
 }
@@ -308,14 +310,5 @@ func (tr *Tracker) isTracked(w xproto.Window) bool {
 }
 
 func (tr *Tracker) isTrackable(w xproto.Window) bool {
-	info := store.GetInfo(w)
-	if info.Class == store.UNKNOWN {
-		return false
-	}
-
-	isOutside := !store.IsInsideViewPort(w)
-	isSpecial := store.IsFloating(info) || store.IsPinned(info)
-	isIgnored := store.IsModal(info) || store.IsHidden(info) || store.IsIgnored(info)
-
-	return !isOutside && !isSpecial && !isIgnored
+	return store.IsInsideViewPort(w) && !store.IsIgnored(w) && !store.IsSpecial(w)
 }

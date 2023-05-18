@@ -35,6 +35,7 @@ type Info struct {
 	Class      string     // Client window application name
 	Name       string     // Client window title name
 	Desk       uint       // Client window desktop
+	Types      []string   // Client window types
 	States     []string   // Client window states
 	Dimensions Dimensions // Client window dimensions
 }
@@ -188,6 +189,7 @@ func GetInfo(w xproto.Window) (info Info) {
 	var class string
 	var name string
 	var desk uint
+	var types []string
 	var states []string
 	var dimensions Dimensions
 
@@ -212,6 +214,13 @@ func GetInfo(w xproto.Window) (info Info) {
 	if err != nil {
 		log.Trace(err, " [", class, "]")
 		desk = math.MaxUint
+	}
+
+	// Window types (types of the window)
+	types, err = ewmh.WmWindowTypeGet(common.X, w)
+	if err != nil {
+		log.Trace(err, " [", class, "]")
+		types = []string{}
 	}
 
 	// Window states (states of the window)
@@ -272,9 +281,27 @@ func GetInfo(w xproto.Window) (info Info) {
 		Class:      class,
 		Name:       name,
 		Desk:       desk,
+		Types:      types,
 		States:     states,
 		Dimensions: dimensions,
 	}
+}
+
+func IsMaximized(w xproto.Window) bool {
+	info := GetInfo(w)
+	if info.Class == UNKNOWN {
+		return false
+	}
+
+	// Check maximized windows
+	for _, state := range info.States {
+		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
+			log.Info("Ignore maximized window [", info.Class, "]")
+			return true
+		}
+	}
+
+	return false
 }
 
 func IsInsideViewPort(w xproto.Window) bool {
@@ -302,74 +329,11 @@ func IsInsideViewPort(w xproto.Window) bool {
 	return !isOutsideViewport
 }
 
-func IsMaximized(w xproto.Window) bool {
+func IsIgnored(w xproto.Window) bool {
 	info := GetInfo(w)
 	if info.Class == UNKNOWN {
-		return false
-	}
-
-	// Check maximized windows
-	for _, state := range info.States {
-		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
-			log.Info("Ignore maximized window [", info.Name, "]")
-			return true
-		}
-	}
-
-	return false
-}
-
-func IsModal(info Info) bool {
-
-	// Check model dialog windows
-	for _, state := range info.States {
-		if state == "_NET_WM_STATE_MODAL" {
-			log.Info("Ignore modal window [", info.Name, "]")
-			return true
-		}
-	}
-
-	return false
-}
-
-func IsHidden(info Info) bool {
-
-	// Check hidden windows
-	for _, state := range info.States {
-		if state == "_NET_WM_STATE_HIDDEN" {
-			log.Info("Ignore hidden window [", info.Name, "]")
-			return true
-		}
-	}
-
-	return false
-}
-
-func IsFloating(info Info) bool {
-
-	// Check floating state
-	for _, state := range info.States {
-		if state == "_NET_WM_STATE_ABOVE" {
-			log.Info("Ignore floating window [", info.Name, "]")
-			return true
-		}
-	}
-
-	return false
-}
-
-func IsPinned(info Info) bool {
-
-	// Check pinned windows
-	if info.Desk > common.DeskCount {
-		log.Info("Ignore pinned window [", info.Class, "]")
 		return true
 	}
-
-	return false
-}
-
-func IsIgnored(info Info) bool {
 
 	// Check ignored windows
 	for _, s := range common.Config.WindowIgnore {
@@ -386,9 +350,68 @@ func IsIgnored(info Info) bool {
 		name_match := conf_name != "" && reg_name.MatchString(strings.ToLower(info.Name))
 
 		if class_match && !name_match {
-			log.Info("Ignore window with ", strings.TrimSpace(strings.Join(s, " ")), " from config [", info.Name, "]")
+			log.Info("Ignore window with ", strings.TrimSpace(strings.Join(s, " ")), " from config [", info.Class, "]")
 			return true
 		}
+	}
+
+	return false
+}
+
+func IsSpecial(w xproto.Window) bool {
+	info := GetInfo(w)
+	if info.Class == UNKNOWN {
+		return true
+	}
+
+	// Check window types
+	types := map[string]bool{}
+	for _, typ := range []string{
+		"_NET_WM_WINDOW_TYPE_DOCK",
+		"_NET_WM_WINDOW_TYPE_DESKTOP",
+		"_NET_WM_WINDOW_TYPE_TOOLBAR",
+		"_NET_WM_WINDOW_TYPE_UTILITY",
+		"_NET_WM_WINDOW_TYPE_TOOLTIP",
+		"_NET_WM_WINDOW_TYPE_SPLASH",
+		"_NET_WM_WINDOW_TYPE_DIALOG",
+		"_NET_WM_WINDOW_TYPE_COMBO",
+		"_NET_WM_WINDOW_TYPE_NOTIFICATION",
+		"_NET_WM_WINDOW_TYPE_DROPDOWN_MENU",
+		"_NET_WM_WINDOW_TYPE_POPUP_MENU",
+		"_NET_WM_WINDOW_TYPE_MENU",
+		"_NET_WM_WINDOW_TYPE_DND"} {
+		types[typ] = true
+	}
+	for _, typ := range info.Types {
+		if types[typ] {
+			log.Info("Ignore window with type ", typ, " [", info.Class, "]")
+			return true
+		}
+	}
+
+	// Check window states
+	states := map[string]bool{}
+	for _, state := range []string{
+		"_NET_WM_STATE_HIDDEN",
+		"_NET_WM_STATE_STICKY",
+		"_NET_WM_STATE_MODAL",
+		"_NET_WM_STATE_ABOVE",
+		"_NET_WM_STATE_BELOW",
+		"_NET_WM_STATE_SKIP_PAGER",
+		"_NET_WM_STATE_SKIP_TASKBAR"} {
+		states[state] = true
+	}
+	for _, state := range info.States {
+		if states[state] {
+			log.Info("Ignore window with state ", state, " [", info.Class, "]")
+			return true
+		}
+	}
+
+	// Check pinned windows
+	if info.Desk > common.DeskCount {
+		log.Info("Ignore pinned window [", info.Class, "]")
+		return true
 	}
 
 	return false
