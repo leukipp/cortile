@@ -20,10 +20,29 @@ import (
 //go:embed config.toml
 var defaultConfig []byte
 
+type Args struct {
+	config string // Argument for config file path
+	lock   string // Argument for lock file path
+	log    string // Argument for log file path
+	vvv    bool   // Argument for very very verbose mode
+	vv     bool   // Argument for very verbose mode
+	v      bool   // Argument for verbose mode
+}
+
 func main() {
+	var args Args
+
+	// Command line arguments
+	flag.StringVar(&args.config, "config", common.ConfigFilePath(), "config file path")
+	flag.StringVar(&args.lock, "lock", "/run/lock/cortile.lock", "lock file path")
+	flag.StringVar(&args.log, "log", "/tmp/cortile.log", "log file path")
+	flag.BoolVar(&args.vvv, "vvv", false, "very very verbose mode")
+	flag.BoolVar(&args.vv, "vv", false, "very verbose mode")
+	flag.BoolVar(&args.v, "v", false, "verbose mode")
+	flag.Parse()
 
 	// Allow only one instance
-	lock, err := createLockFile("/run/lock/cortile.lock")
+	lock, err := createLockFile(args.lock)
 	if err != nil {
 		fmt.Println(fmt.Errorf("cortile already running (%s)", err))
 		return
@@ -31,10 +50,10 @@ func main() {
 	defer lock.Close()
 
 	// Init log
-	setLogLevel()
+	setLogLevel(args)
 
 	// Init config
-	common.InitConfig(defaultConfig)
+	common.InitConfig(defaultConfig, args.config)
 
 	// Init state
 	common.InitState()
@@ -75,30 +94,19 @@ func createLockFile(filename string) (*os.File, error) {
 	return file, nil
 }
 
-func setLogLevel() {
-	var l string
-	var vvv bool
-	var vv bool
-	var v bool
-
-	flag.StringVar(&l, "l", "/tmp/cortile.log", "log path")
-	flag.BoolVar(&vvv, "vvv", false, "very very verbose mode")
-	flag.BoolVar(&vv, "vv", false, "very verbose mode")
-	flag.BoolVar(&v, "v", false, "verbose mode")
-	flag.Parse()
-
-	if vvv {
+func setLogLevel(args Args) {
+	if args.vvv {
 		log.SetLevel(log.TraceLevel)
-	} else if vv {
+	} else if args.vv {
 		log.SetLevel(log.DebugLevel)
-	} else if v {
+	} else if args.v {
 		log.SetLevel(log.InfoLevel)
 	} else {
 		log.SetLevel(log.WarnLevel)
 	}
 	log.SetFormatter(&log.TextFormatter{ForceColors: true, FullTimestamp: true})
 
-	file, err := os.OpenFile(l, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(args.log, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if file == nil {
 		log.Error(err)
 		return

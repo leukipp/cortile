@@ -36,43 +36,59 @@ type ConfigMapper struct {
 	Corners          map[string]string `toml:"corners"`            // Event bindings for hot-corners
 }
 
-func InitConfig(defaultConfig []byte) {
+func InitConfig(defaultConfig []byte, configFilePath string) {
 
 	// Create config folder if not exists
-	if _, err := os.Stat(configFolderPath()); os.IsNotExist(err) {
-		os.MkdirAll(configFolderPath(), 0700)
+	configFolderPath := filepath.Dir(configFilePath)
+	if _, err := os.Stat(configFolderPath); os.IsNotExist(err) {
+		os.MkdirAll(configFolderPath, 0700)
 	}
 
 	// Write default config if not exists
-	if _, err := os.Stat(configFilePath()); os.IsNotExist(err) {
-		ioutil.WriteFile(configFilePath(), defaultConfig, 0644)
+	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
+		ioutil.WriteFile(configFilePath, defaultConfig, 0644)
 	}
 
 	// Read config file into memory
-	readConfig()
+	readConfig(configFilePath)
 
 	// Config file watcher
-	watchConfig()
+	watchConfig(configFilePath)
 }
 
-func readConfig() {
+func ConfigFilePath() string {
 
-	// Obtain config file path
-	path := configFilePath()
-	fmt.Println("LOAD", path)
+	// Obtain user home directory
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal("Error obtaining home directory ", err)
+	}
+	configFolderPath := filepath.Join(userHome, ".config", "cortile")
+
+	// Obtain config directory
+	xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
+	if xdgConfigHome != "" {
+		configFolderPath = filepath.Join(xdgConfigHome, "cortile")
+	}
+
+	return filepath.Join(configFolderPath, "config.toml")
+}
+
+func readConfig(configFilePath string) {
+	fmt.Println("LOAD", configFilePath)
 
 	// Decode contents into struct
-	toml.DecodeFile(path, &Config)
+	toml.DecodeFile(configFilePath, &Config)
 }
 
-func watchConfig() {
+func watchConfig(configFilePath string) {
 
 	// Init file watcher
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Error(err)
 	} else {
-		watcher.Add(configFilePath())
+		watcher.Add(configFilePath)
 	}
 
 	// Listen for events
@@ -84,7 +100,7 @@ func watchConfig() {
 					return
 				}
 				if event.Has(fsnotify.Write) {
-					readConfig()
+					readConfig(configFilePath)
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
@@ -94,24 +110,4 @@ func watchConfig() {
 			}
 		}
 	}()
-}
-
-func configFolderPath() string {
-
-	// Obtain user home directory
-	userHome, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal("Error obtaining home directory ", err)
-	}
-
-	// Obtain config directory
-	xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
-	if xdgConfigHome != "" {
-		return filepath.Join(xdgConfigHome, "cortile")
-	}
-	return filepath.Join(userHome, ".config", "cortile")
-}
-
-func configFilePath() string {
-	return filepath.Join(configFolderPath(), "config.toml")
 }
