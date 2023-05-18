@@ -17,7 +17,7 @@ type Layout interface {
 	DecreaseSlave()
 	IncreaseProportion()
 	DecreaseProportion()
-	SetProportion(p float64)
+	UpdateProportions(c *store.Client, d *store.Directions)
 	GetManager() *store.Manager
 	GetName() string
 }

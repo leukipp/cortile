@@ -85,7 +85,7 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 
 	// Draw master and slave rectangle
 	for i, c := range clients {
-		if i >= mg.AllowedMasters+mg.AllowedSlaves {
+		if i >= mg.Masters.Allowed+mg.Slaves.Allowed {
 			break
 		}
 
@@ -116,7 +116,7 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 		// Draw client icon onto canvas
 		ico, err := xgraphics.FindIcon(common.X, c.Win.Id, iconSize, iconSize)
 		if err == nil {
-			drawImage(cv, ico, color, x+rectMargin+width/2-iconSize/2, y+rectMargin+height/2-iconSize/2, x+width, y+height)
+			drawImage(cv, ico, color, x+rectMargin/2+width/2-iconSize/2, y+rectMargin/2+height/2-iconSize/2, x+width, y+height)
 		}
 	}
 }

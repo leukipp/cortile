@@ -41,10 +41,15 @@ type Info struct {
 
 type Dimensions struct {
 	Geometry xrect.Rect        // Client window geometry
-	Hints    motif.Hints       // Client window geometry hints
+	Hints    Hints             // Client window dimension hints
 	Extents  ewmh.FrameExtents // Client window geometry extents
 	Position bool              // Adjust position on move/resize
 	Size     bool              // Adjust size on move/resize
+}
+
+type Hints struct {
+	Normal icccm.NormalHints // Client window geometry hints
+	Motif  motif.Hints       // Client window decoration hints
 }
 
 func CreateClient(w xproto.Window) (c *Client) {
@@ -57,8 +62,13 @@ func CreateClient(w xproto.Window) (c *Client) {
 	}
 }
 
+func (c *Client) Activate() {
+	ewmh.ActiveWindowReq(common.X, c.Win.Id)
+}
+
 func (c *Client) MoveResize(x, y, w, h int) {
-	c.Unmaximize()
+	c.UnDecorate()
+	c.UnMaximize()
 
 	// Decoration extents
 	extents := c.Latest.Dimensions.Extents
@@ -80,6 +90,70 @@ func (c *Client) MoveResize(x, y, w, h int) {
 
 	// Update stored dimensions
 	c.Update()
+}
+
+func (c *Client) UnDecorate() {
+	if common.Config.WindowDecoration || !motif.Decor(&c.Latest.Dimensions.Hints.Motif) {
+		return
+	}
+
+	// Remove window decorations
+	motif.WmHintsSet(common.X, c.Win.Id, &motif.Hints{
+		Flags:      motif.HintDecorations,
+		Decoration: motif.DecorationNone,
+	})
+}
+
+func (c *Client) UnMaximize() {
+
+	// Unmaximize window
+	for _, state := range c.Latest.States {
+		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
+			ewmh.WmStateReq(common.X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_VERT")
+			ewmh.WmStateReq(common.X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_HORZ")
+			break
+		}
+	}
+}
+
+func (c *Client) Update() (success bool) {
+	info := GetInfo(c.Win.Id)
+	if info.Class == UNKNOWN {
+		return false
+	}
+
+	// Update client info
+	log.Debug("Update client info [", info.Class, "]")
+	c.Latest = info
+
+	return true
+}
+
+func (c *Client) Restore() {
+
+	// Calculate decoration extents
+	dw, dh := 0, 0
+	decoration := motif.DecorationNone
+	if motif.Decor(&c.Original.Dimensions.Hints.Motif) {
+		decoration = motif.DecorationAll
+		if !common.Config.WindowDecoration {
+			extents := c.Original.Dimensions.Extents
+			dw, dh = extents.Left+extents.Right, extents.Top+extents.Bottom
+		}
+	}
+
+	// Restore window decorations
+	motif.WmHintsSet(common.X, c.Win.Id, &motif.Hints{
+		Flags:      motif.HintDecorations,
+		Decoration: uint(decoration),
+	})
+
+	// Restore window size limits
+	icccm.WmNormalHintsSet(common.X, c.Win.Id, &c.Original.Dimensions.Hints.Normal)
+
+	// Move window to original position
+	geom := c.Original.Dimensions.Geometry
+	c.MoveResize(geom.X(), geom.Y(), geom.Width()-dw, geom.Height()-dh)
 }
 
 func (c *Client) OuterGeometry() (x, y, w, h int) {
@@ -106,57 +180,6 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 	x, y, w, h = oGeom.X()+iGeom.X()-dx, oGeom.Y()+iGeom.Y()-dy, iGeom.Width()+dw, iGeom.Height()+dh
 
 	return
-}
-
-func (c *Client) Update() (success bool) {
-	info := GetInfo(c.Win.Id)
-	if info.Class == UNKNOWN {
-		return false
-	}
-
-	// Update client info
-	log.Debug("Update client info [", info.Class, "]")
-	c.Latest = info
-
-	return true
-}
-
-func (c Client) Activate() {
-	ewmh.ActiveWindowReq(common.X, c.Win.Id)
-}
-
-func (c Client) Unmaximize() {
-	ewmh.WmStateReq(common.X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_VERT")
-	ewmh.WmStateReq(common.X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_HORZ")
-}
-
-func (c Client) UnDecorate() {
-	motif.WmHintsSet(common.X, c.Win.Id, &motif.Hints{
-		Flags:      motif.HintDecorations,
-		Decoration: motif.DecorationNone,
-	})
-}
-
-func (c Client) Decorate() {
-	if !motif.Decor(&c.Original.Dimensions.Hints) {
-		return
-	}
-	motif.WmHintsSet(common.X, c.Win.Id, &motif.Hints{
-		Flags:      motif.HintDecorations,
-		Decoration: motif.DecorationAll,
-	})
-}
-
-func (c Client) Restore() {
-	c.Decorate()
-
-	// Disable dimension adjustments
-	c.Latest.Dimensions.Position = false
-	c.Latest.Dimensions.Size = false
-
-	// Move window to original position
-	geom := c.Original.Dimensions.Geometry
-	c.MoveResize(geom.X(), geom.Y(), geom.Width(), geom.Height())
 }
 
 func GetInfo(w xproto.Window) (info Info) {
@@ -204,13 +227,19 @@ func GetInfo(w xproto.Window) (info Info) {
 		geometry = &xrect.XRect{}
 	}
 
-	// Window hints (server hints of the window)
-	hints, err := motif.WmHintsGet(common.X, w)
+	// Window normal hints (normal hints of the window)
+	nhints, err := icccm.WmNormalHintsGet(common.X, w)
 	if err != nil {
-		hints = &motif.Hints{}
+		nhints = &icccm.NormalHints{}
 	}
 
-	// Window extents (server/clients decorations of the window)
+	// Window motif hints (hints of the window)
+	mhints, err := motif.WmHintsGet(common.X, w)
+	if err != nil {
+		mhints = &motif.Hints{}
+	}
+
+	// Window extents (server/client decorations of the window)
 	extNet, _ := xprop.PropValNums(xprop.GetProperty(common.X, w, "_NET_FRAME_EXTENTS"))
 	extGtk, _ := xprop.PropValNums(xprop.GetProperty(common.X, w, "_GTK_FRAME_EXTENTS"))
 
@@ -222,17 +251,20 @@ func GetInfo(w xproto.Window) (info Info) {
 		ext[i] -= e
 	}
 
-	// Window dimensions (geometry/extents information's for move/resize)
+	// Window dimensions (geometry/extent information for move/resize)
 	dimensions = Dimensions{
 		Geometry: geometry,
-		Hints:    *hints,
+		Hints: Hints{
+			Normal: *nhints,
+			Motif:  *mhints,
+		},
 		Extents: ewmh.FrameExtents{
 			Left:   int(ext[0]),
 			Right:  int(ext[1]),
 			Top:    int(ext[2]),
 			Bottom: int(ext[3]),
 		},
-		Position: (extNet != nil && hints.Flags&motif.HintDecorations > 0 && hints.Decoration > 1) || (extGtk != nil),
+		Position: (extNet != nil && mhints.Flags&motif.HintDecorations > 0 && mhints.Decoration > 1) || (extGtk != nil),
 		Size:     (extNet != nil) || (extGtk != nil),
 	}
 
@@ -243,23 +275,6 @@ func GetInfo(w xproto.Window) (info Info) {
 		States:     states,
 		Dimensions: dimensions,
 	}
-}
-
-func IsMaximized(w xproto.Window) bool {
-	info := GetInfo(w)
-	if info.Class == UNKNOWN {
-		return false
-	}
-
-	// Check maximized windows
-	for _, state := range info.States {
-		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
-			log.Info("Ignore maximized window [", info.Name, "]")
-			return true
-		}
-	}
-
-	return false
 }
 
 func IsInsideViewPort(w xproto.Window) bool {
@@ -285,6 +300,23 @@ func IsInsideViewPort(w xproto.Window) bool {
 	}
 
 	return !isOutsideViewport
+}
+
+func IsMaximized(w xproto.Window) bool {
+	info := GetInfo(w)
+	if info.Class == UNKNOWN {
+		return false
+	}
+
+	// Check maximized windows
+	for _, state := range info.States {
+		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
+			log.Info("Ignore maximized window [", info.Name, "]")
+			return true
+		}
+	}
+
+	return false
 }
 
 func IsModal(info Info) bool {

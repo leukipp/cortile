@@ -166,12 +166,11 @@ func HorizontalBottomLayout(t *desktop.Tracker) {
 }
 
 func MakeMaster(t *desktop.Tracker) {
-	c := t.Clients[common.ActiveWin]
 	ws := t.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
-	ws.ActiveLayout().MakeMaster(c)
+	ws.ActiveLayout().MakeMaster(t.Clients[common.ActiveWin])
 	ws.Tile()
 }
 

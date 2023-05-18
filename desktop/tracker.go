@@ -42,7 +42,7 @@ func CreateTracker(ws map[uint]*Workspace) *Tracker {
 func (tr *Tracker) populateClients() {
 
 	// Add trackable windows
-	for _, w := range common.Stacking {
+	for _, w := range common.Windows {
 		if tr.isTrackable(w) {
 			tr.trackWindow(w)
 		}
@@ -51,7 +51,7 @@ func (tr *Tracker) populateClients() {
 	// If window is tracked, but not in client list
 	for w1 := range tr.Clients {
 		trackable := false
-		for _, w2 := range common.Stacking {
+		for _, w2 := range common.Windows {
 			if w1 == w2 {
 				trackable = tr.isTrackable(w1)
 				break
@@ -111,6 +111,10 @@ func (tr *Tracker) tileWorkspace(c *store.Client, ms time.Duration) {
 }
 
 func (tr *Tracker) handleResizeClient(c *store.Client) {
+	ws := tr.Workspaces[c.Latest.Desk]
+	if !ws.IsEnabled() || store.IsMaximized(c.Win.Id) {
+		return
+	}
 
 	// Previous dimensions
 	pGeom := c.Latest.Dimensions.Geometry
@@ -123,8 +127,9 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	}
 	cx, cy, cw, ch := cGeom.Pieces()
 
-	// Check width or height change
+	// Check width/height changes and directions
 	resized := math.Abs(float64(cw-pw)) > 0.0 || math.Abs(float64(ch-ph)) > 0.0
+	directions := &store.Directions{Top: cy != py, Right: cx == px && cw != pw, Bottom: cy == py && ch != ph, Left: cx != px}
 
 	// Check window lifetime
 	lifetime := time.Since(c.Created)
@@ -132,63 +137,10 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	initialized := (math.Abs(float64(cx-px)) > 0.0 || math.Abs(float64(cy-py)) > 0.0) && added
 
 	if resized || initialized {
-		ws := tr.Workspaces[c.Latest.Desk]
-		al := ws.ActiveLayout()
-		mg := al.GetManager()
 
-		// Update client dimensions
-		success := c.Update()
-		if !success {
-			return
-		}
-
-		// Ignore fullscreen layouts
-		if store.IsMaximized(c.Win.Id) {
-			return
-		}
-
-		// Ignore master or slave only layouts
-		if len(mg.Masters) == 0 || len(mg.Slaves) == 0 {
-			return
-		}
-
-		// Ignore proportion updates from added windows
-		if added {
-			log.Info("Ignore proportion update with lifetime of ", lifetime, " [", c.Latest.Class, "]")
-		} else {
-			proportion := 0.0
-			gap := common.Config.WindowGapSize
-
-			_, _, dw, dh := common.DesktopDimensions()
-			_, _, cw, ch = c.OuterGeometry()
-
-			// Calculate proportion based on resized window size
-			switch al.GetName() {
-			case "vertical-left":
-				proportion = 1.0 - (float64(cw+gap) / float64(dw))
-				if mg.IsMaster(c) {
-					proportion = float64(cw+2*gap) / float64(dw)
-				}
-			case "vertical-right":
-				proportion = float64(cw+gap) / float64(dw)
-				if mg.IsMaster(c) {
-					proportion = 1.0 - (float64(cw+2*gap) / float64(dw))
-				}
-			case "horizontal-top":
-				proportion = 1.0 - (float64(ch+gap) / float64(dh))
-				if mg.IsMaster(c) {
-					proportion = float64(ch+2*gap) / float64(dh)
-				}
-			case "horizontal-bottom":
-				proportion = float64(ch+gap) / float64(dh)
-				if mg.IsMaster(c) {
-					proportion = 1.0 - (float64(ch+2*gap) / float64(dh))
-				}
-			}
-
-			// Set proportion based on resized window
-			log.Info("Update proportion to ", math.Round(proportion*1e4)/1e4, " [", c.Latest.Class, "]")
-			al.SetProportion(proportion)
+		// Update proportions
+		if !added {
+			ws.ActiveLayout().UpdateProportions(c, directions)
 		}
 
 		// Tile workspace
@@ -197,6 +149,10 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 }
 
 func (tr *Tracker) handleMoveClient(c *store.Client) {
+	ws := tr.Workspaces[c.Latest.Desk]
+	if !ws.IsEnabled() || store.IsMaximized(c.Win.Id) {
+		return
+	}
 
 	// Previous position
 	pGeom := c.Latest.Dimensions.Geometry
@@ -213,27 +169,16 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 	moved := math.Abs(float64(cx-px)) > 0.0 || math.Abs(float64(cy-py)) > 0.0
 
 	if moved {
-		ws := tr.Workspaces[c.Latest.Desk]
-		al := ws.ActiveLayout()
-		mg := al.GetManager()
+		mg := ws.ActiveLayout().GetManager()
 
 		// Check if pointer hovers other clients
-		clients := mg.Clients()
-		for _, co := range clients {
+		for _, co := range mg.Clients() {
 			if c.Win.Id == co.Win.Id {
 				continue
 			}
 
-			// Update client dimensions
-			success := co.Update()
-			if !success {
-				return
-			}
-
 			// Swap moved client with hovered client
-			hovered := common.IsInsideRect(common.Pointer, co.Latest.Dimensions.Geometry)
-			if hovered {
-				log.Info("Swap clients [", c.Latest.Class, " - ", co.Latest.Class, "]")
+			if common.IsInsideRect(common.Pointer, co.Latest.Dimensions.Geometry) {
 				mg.SwapClient(c, co)
 				break
 			}
@@ -251,12 +196,18 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 	for _, state := range states {
 		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
 			ws := tr.Workspaces[c.Latest.Desk]
+			if !ws.IsEnabled() {
+				return
+			}
+
+			// Set fullscreen layout
 			for i, l := range ws.Layouts {
 				if l.GetName() == "fullscreen" {
 					ws.SetLayout(uint(i))
 				}
 			}
 			tr.tileWorkspace(c, 0)
+			ShowLayout(ws)
 		}
 	}
 }
@@ -267,7 +218,12 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 	// Client minimized
 	for _, state := range states {
 		if state == "_NET_WM_STATE_HIDDEN" {
-			tr.Workspaces[c.Latest.Desk].RemoveClient(c)
+			ws := tr.Workspaces[c.Latest.Desk]
+			if !ws.IsEnabled() {
+				return
+			}
+
+			// Untrack client
 			tr.untrackWindow(c.Win.Id)
 			tr.tileWorkspace(c, 0)
 		}
@@ -301,12 +257,12 @@ func (tr *Tracker) handleWorkspaceUpdates(X *xgbutil.XUtil, ev xevent.PropertyNo
 	aname, _ := xprop.AtomName(common.X, ev.Atom)
 	log.Trace("Workspace update event ", aname)
 
-	clientAdded := aname == "_NET_CLIENT_LIST_STACKING"
-	desktopChanged := aname == "_NET_DESKTOP_LAYOUT" || aname == "_NET_DESKTOP_VIEWPORT"
 	workspaceChanged := aname == "_NET_WORKAREA"
+	desktopChanged := aname == "_NET_DESKTOP_LAYOUT" || aname == "_NET_DESKTOP_VIEWPORT"
+	clientAdded := aname == "_NET_CLIENT_LIST" || aname == "_NET_CLIENT_LIST_STACKING"
 
-	// Client added or layout changed
-	if clientAdded || desktopChanged || workspaceChanged {
+	// Layout changed or client added
+	if workspaceChanged || desktopChanged || clientAdded {
 		tr.populateClients()
 	}
 }
@@ -322,6 +278,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 			tr.handleResizeClient(c)
 		} else {
 			tr.untrackWindow(c.Win.Id)
+			tr.tileWorkspace(c, 0)
 		}
 	}).Connect(common.X, c.Win.Id)
 
@@ -340,6 +297,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 			}
 		} else {
 			tr.untrackWindow(c.Win.Id)
+			tr.tileWorkspace(c, 0)
 		}
 	}).Connect(common.X, c.Win.Id)
 }
@@ -355,7 +313,9 @@ func (tr *Tracker) isTrackable(w xproto.Window) bool {
 		return false
 	}
 
-	// Check if window is allowed and inside viewport
-	isAllowed := !store.IsModal(info) && !store.IsHidden(info) && !store.IsFloating(info) && !store.IsPinned(info) && !store.IsIgnored(info)
-	return isAllowed && store.IsInsideViewPort(w)
+	isOutside := !store.IsInsideViewPort(w)
+	isSpecial := store.IsFloating(info) || store.IsPinned(info)
+	isIgnored := store.IsModal(info) || store.IsHidden(info) || store.IsIgnored(info)
+
+	return !isOutside && !isSpecial && !isIgnored
 }

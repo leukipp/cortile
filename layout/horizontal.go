@@ -2,7 +2,6 @@ package layout
 
 import (
 	"math"
-	"strings"
 
 	"github.com/leukipp/cortile/common"
 	"github.com/leukipp/cortile/store"
@@ -11,47 +10,51 @@ import (
 )
 
 type HorizontalLayout struct {
-	*store.Manager         // Layout store manager
-	Proportion     float64 // Master-slave proportion
-	Name           string  // Layout name
+	*store.Manager        // Layout store manager
+	Name           string // Layout name
 }
 
 func CreateHorizontalTopLayout(deskNum uint) *HorizontalLayout {
+	manager := store.CreateManager(deskNum)
+	manager.SetProportions(manager.Proportions.MasterSlave, common.Config.Proportion, 0, 1)
+
 	return &HorizontalLayout{
-		Manager:    store.CreateManager(deskNum),
-		Proportion: common.Config.Proportion,
-		Name:       "horizontal-top",
+		Manager: manager,
+		Name:    "horizontal-top",
 	}
 }
 
 func CreateHorizontalBottomLayout(deskNum uint) *HorizontalLayout {
+	manager := store.CreateManager(deskNum)
+	manager.SetProportions(manager.Proportions.MasterSlave, common.Config.Proportion, 1, 0)
+
 	return &HorizontalLayout{
-		Manager:    store.CreateManager(deskNum),
-		Proportion: 1.0 - common.Config.Proportion,
-		Name:       "horizontal-bottom",
+		Manager: manager,
+		Name:    "horizontal-bottom",
 	}
 }
 
 func (l *HorizontalLayout) Do() {
-	log.Info("Tile ", len(l.Clients()), " windows with ", l.GetName(), " layout [workspace-", l.DeskNum, "]")
+	log.Info("Tile ", len(l.Clients()), " windows with ", l.Name, " layout [workspace-", l.DeskNum, "]")
 
 	dx, dy, dw, dh := common.DesktopDimensions()
-	msize := len(l.Masters)
-	ssize := len(l.Slaves)
+
+	gap := common.Config.WindowGapSize
+
+	mmax := l.Masters.Allowed
+	smax := l.Slaves.Allowed
+
+	msize := int(math.Min(float64(len(l.Masters.Clients)), float64(mmax)))
+	ssize := int(math.Min(float64(len(l.Slaves.Clients)), float64(smax)))
 	csize := len(l.Clients())
 
 	my := dy
-	mh := int(math.Round(float64(dh) * l.Proportion))
+	mh := int(math.Round(float64(dh) * l.Proportions.MasterSlave[0]))
 	sy := my + mh
 	sh := dh - mh
 
-	mallowed := l.AllowedMasters
-	sallowed := l.AllowedSlaves
-	gap := common.Config.WindowGapSize
-
-	// Master on bottom
-	mbottom := strings.Contains(l.Name, "bottom")
-	if mbottom && csize > mallowed {
+	// Swap values if master is on bottom
+	if l.Name == "horizontal-bottom" && csize > mmax {
 		mytmp := my
 		mhtmp := mh
 		sytmp := sy
@@ -65,58 +68,120 @@ func (l *HorizontalLayout) Do() {
 
 	// Master area layout
 	if msize > 0 {
-		mw := (dw - (msize+1)*gap) / msize
 		if ssize == 0 {
 			mh = dh
 		}
 
-		for i, c := range l.Masters {
-			if !common.Config.WindowDecoration {
-				c.UnDecorate()
+		mx := 0
+		for i, c := range l.Masters.Clients {
+
+			// Reset x position
+			if i%mmax == 0 {
+				mx = dx + gap
 			}
-			c.MoveResize(gap+dx+i*(mw+gap), my+gap, mw, mh-2*gap)
+
+			// Calculate width
+			mp := l.Proportions.MasterMaster[i%msize]
+			mw := int(math.Round(float64(dw-(msize+1)*gap) * mp))
+
+			// Move and resize master
+			c.MoveResize(mx, my+gap, mw, mh-2*gap)
+
+			// Add x offset
+			mx += mw + gap
 		}
 	}
 
 	// Slave area layout
 	if ssize > 0 {
-		ssize = int(math.Min(float64(ssize), float64(sallowed)))
-		sw := (dw - (ssize+1)*gap) / ssize
 		if msize == 0 {
-			sy, sh = dy, dh
+			sy, sh = dy+gap, dh-gap
 		}
 
-		for i, c := range l.Slaves {
-			if !common.Config.WindowDecoration {
-				c.UnDecorate()
+		sx := 0
+		for i, c := range l.Slaves.Clients {
+
+			// Reset x position
+			if i%smax == 0 {
+				sx = dx + gap
 			}
-			c.MoveResize(gap+dx+(i%sallowed)*(sw+gap), sy, sw, sh-gap)
+
+			// Calculate width
+			sp := l.Proportions.SlaveSlave[i%ssize]
+			sw := int(math.Round(float64(dw-(ssize+1)*gap) * sp))
+
+			// Move and resize slave
+			c.MoveResize(sx, sy, sw, sh-gap)
+
+			// Add x offset
+			sx += sw + gap
 		}
 	}
 
 	common.X.Conn().Sync()
 }
 
-func (l *HorizontalLayout) Undo() {
-	for _, c := range append(l.Masters, l.Slaves...) {
-		c.Restore()
+func (l *HorizontalLayout) UpdateProportions(c *store.Client, d *store.Directions) {
+	_, _, dw, dh := common.DesktopDimensions()
+	_, _, cw, ch := c.OuterGeometry()
+
+	gap := common.Config.WindowGapSize
+
+	mmax := l.Masters.Allowed
+	smax := l.Slaves.Allowed
+
+	msize := int(math.Min(float64(len(l.Masters.Clients)), float64(mmax)))
+	ssize := int(math.Min(float64(len(l.Slaves.Clients)), float64(smax)))
+
+	// Swap values if master is on top
+	idxms := 0
+	if l.Name == "horizontal-top" {
+		ttmp := d.Top
+		btmp := d.Bottom
+
+		d.Top = btmp
+		d.Bottom = ttmp
+
+		idxms = 1
 	}
-}
+	if l.IsMaster(c) {
+		idxms ^= 1
+	}
 
-func (l *HorizontalLayout) IncreaseProportion() {
-	precision := 1.0 / common.Config.ProportionStep
-	proportion := math.Round(l.Proportion*precision)/precision + common.Config.ProportionStep
-	l.SetProportion(proportion)
-}
+	// Calculate proportions based on window geometry
+	if l.IsMaster(c) {
+		py := float64(ch+2*gap) / float64(dh)
+		px := float64(cw) / float64(dw-(msize+1)*gap)
+		idxmm := l.Index(l.Masters.Clients, c) % mmax
 
-func (l *HorizontalLayout) DecreaseProportion() {
-	precision := 1.0 / common.Config.ProportionStep
-	proportion := math.Round(l.Proportion*precision)/precision - common.Config.ProportionStep
-	l.SetProportion(proportion)
-}
+		// Set master-slave proportions
+		if d.Top {
+			l.Manager.SetProportions(l.Proportions.MasterSlave, py, idxms, idxms^1)
+		}
 
-func (l *HorizontalLayout) SetProportion(p float64) {
-	l.Proportion = math.Min(math.Max(p, common.Config.ProportionMin), common.Config.ProportionMax)
+		// Set master-master proportions
+		if d.Left {
+			l.Manager.SetProportions(l.Proportions.MasterMaster, px, idxmm, idxmm-1)
+		} else if d.Right {
+			l.Manager.SetProportions(l.Proportions.MasterMaster, px, idxmm, idxmm+1)
+		}
+	} else {
+		py := float64(ch+gap) / float64(dh)
+		px := float64(cw) / float64(dw-(ssize+1)*gap)
+		idxss := l.Index(l.Slaves.Clients, c) % smax
+
+		// Set master-slave proportions
+		if d.Bottom {
+			l.Manager.SetProportions(l.Proportions.MasterSlave, py, idxms, idxms^1)
+		}
+
+		// Set slave-slave proportions
+		if d.Left {
+			l.Manager.SetProportions(l.Proportions.SlaveSlave, px, idxss, idxss-1)
+		} else if d.Right {
+			l.Manager.SetProportions(l.Proportions.SlaveSlave, px, idxss, idxss+1)
+		}
+	}
 }
 
 func (l *HorizontalLayout) GetManager() *store.Manager {
