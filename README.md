@@ -1,17 +1,18 @@
 # Cortile
 <a href="https://github.com/leukipp/cortile"><img src="https://raw.githubusercontent.com/leukipp/cortile/main/assets/logo.png" style="display:inline-block;width:75px;margin-right:10px;" align="left"/></a>
-Tiling manager with hot corner support for Xfce and other [EWMH Compliant Window Managers](https://en.wikipedia.org/wiki/Extended_Window_Manager_Hints#List_of_window_managers_that_support_Extended_Window_Manager_Hints).
+Linux auto tiling manager with hot corner support for XFCE and other X11 windowing systems with [EWMH compliant window managers](https://en.wikipedia.org/wiki/Extended_Window_Manager_Hints#List_of_window_managers_that_support_Extended_Window_Manager_Hints).
 Simply keep your current window manager and **install cortile on top** of it.
 Once enabled, the tiling manager will handle _resizing_ and _positioning_ of _existing_ and _new_ windows.
 <br clear="left"/>
 
-## Features [![github](https://img.shields.io/github/stars/leukipp/cortile)](#features-)
+## Features [![features](https://img.shields.io/github/stars/leukipp/cortile)](#features-)
+- [x] Tiling mode gui.
 - [x] Workspace based tiling.
 - [x] Keyboard and hot corner events.
 - [x] Vertical, horizontal and fullscreen mode.
 - [x] Persistent windows via "Always on Visible Workspace".
 - [x] Floating windows via "Always on Top".
-- [x] Resize of master-slave area.
+- [x] Resize of layout proportions.
 - [x] Drag & drop window swap.
 - [x] Auto detection of panels.
 - [x] Selective tiling areas.
@@ -22,7 +23,7 @@ The _go_ implementation ensures a fast and responsive system, where _multiple la
 
 [![demo](https://raw.githubusercontent.com/leukipp/cortile/main/assets/demo.gif)](https://github.com/leukipp/cortile/blob/main/assets/demo.gif)
 
-## Installation [![github](https://img.shields.io/github/v/release/leukipp/cortile)](#installation-)
+## Installation [![installation](https://img.shields.io/github/v/release/leukipp/cortile)](#installation-)
 Download the latest binary file from the [releases](https://github.com/leukipp/cortile/releases/latest):
 ```bash
 # extract cortile from the tar.gz archive
@@ -33,7 +34,21 @@ tar -xvf cortile_*_linux_amd64.tar.gz
 ```
 Alternative installation methods can be found in the [development](#development-) section.
 
-## Configuration [![github](https://img.shields.io/github/release-date/leukipp/cortile)](#configuration-)
+## Usage [![usage](https://img.shields.io/github/release-date/leukipp/cortile)](#usage-)
+The layouts are based on the master-slave concept, where one side of the screen is considered to be the master area and the other side is considered to be the slave area:
+- `vertical-right:` split the screen vertically, master area on the right.
+- `vertical-left:` split the screen vertically, master area on the left.
+- `horizontal-top:` split the screen horizontally, master area on the top.
+- `horizontal-bottom:` split the screen horizontally, master area on the bottom.
+- `fullscreen:` single window in fullscreen mode.
+  
+The number of windows per side and the space they occupy can be changed dynamically.
+Adjustments to window sizes are considered to be proportion changes of the underlying layout.
+
+Windows placed on the master side are static and the layout will only change as long the space is not fully occupied.
+Once the master area is full, the slave area is used, where the layout changes dynamically based on available space and configuration settings.
+
+## Configuration [![configuration](https://img.shields.io/badge/platform-linux%20amd64%20|%20arm64%20|%20armv6%20|%20386%20-lightgrey)](#configuration-)
 The configuration file is located at `~/.config/cortile/config.toml` and is created with default values during the first startup.
 Additional information about individual entries can be found in the comments section of the [config.toml](https://github.com/leukipp/cortile/blob/main/config.toml) file.
 
@@ -74,12 +89,12 @@ Hot corner events are defined under the `[corners]` section and will be triggere
 | <kbd>Bottom</kbd>-<kbd>Left</kbd>   | Decrease proportion of master-slave area |
 | <kbd>Center</kbd>-<kbd>Left</kbd>   | Activate vertical-left layout            |
 
-Useful mouse shortcuts in Xfce environments:
+Useful mouse shortcuts in XFCE environments:
 - Move window: <kbd>Alt</kbd>+<kbd>Left-Click</kbd>.
 - Resize window: <kbd>Alt</kbd>+<kbd>Right-Click</kbd>.
 - Maximize window: <kbd>Alt</kbd>+<kbd>Double-Click</kbd>.
 
-## Development [![github](https://img.shields.io/github/go-mod/go-version/leukipp/cortile)](#development-)
+## Development [![development](https://img.shields.io/github/go-mod/go-version/leukipp/cortile)](#development-)
 You need [go >= 1.17](https://go.dev/dl/) to compile cortile.
 
 <details><summary>Install - go</summary><div>
@@ -149,7 +164,7 @@ Start cortile in verbose mode:
 $GOPATH/bin/cortile -v
 ```
 
-## Additional [![github](https://img.shields.io/github/issues-pr-closed/leukipp/cortile)](#additional-)
+## Additional [![additional](https://img.shields.io/github/issues-pr-closed/leukipp/cortile)](#additional-)
 Special settings:
 - Use the `edge_margin` property to account for additional spaces.
   - e.g. for deskbar panels or conky infographics.
@@ -167,18 +182,18 @@ Companion tools:
 - You can install a [minimal-gtk](https://www.xfce-look.org/p/1016504) theme and leave `window_decoration = true`.
 - Simply add cortile to your startup applications to run it after login.
 
-## Issues [![github](https://img.shields.io/github/issues-closed/leukipp/cortile)](#issues-)
-It's recommended to disable all build-in window snapping features. In Xfce environments, they can be found under "Window Manager" > "Advanced" > "Windows snapping".
+## Issues [![issues](https://img.shields.io/github/issues-closed/leukipp/cortile)](#issues-)
+It's recommended to disable all build-in window snapping features.
+In XFCE environments, they can be found under "Window Manager" > "Advanced" > "Windows snapping".
 
 If you encounter problems start the process with `cortile -vv`, which provides additional verbose outputs.
 A log file is created by default under `/tmp/cortile.log`.
 
 Known limitations:
 - Only the biggest monitor is used for tiling.
-- Persistent window resize only for the master-slave proportion.
 
-## Credits [![github](https://img.shields.io/github/contributors/leukipp/cortile)](#credits-)
+## Credits [![credits](https://img.shields.io/github/contributors/leukipp/cortile)](#credits-)
 Based on [zentile](https://github.com/blrsn/zentile) from [Berin Larson](https://github.com/blrsn).
 
-## License [![github](https://img.shields.io/github/license/leukipp/cortile)](#license-)
+## License [![license](https://img.shields.io/github/license/leukipp/cortile)](#license-)
 [MIT](https://github.com/leukipp/cortile/blob/main/LICENSE)
