@@ -68,8 +68,16 @@ func (l *VerticalLayout) Do() {
 
 	// Master area layout
 	if msize > 0 {
+		minpw := common.Config.ProportionMin
+		minph := common.Config.ProportionMin
+
+		// Adjust sizes and proportions
 		if ssize == 0 {
 			mw = dw
+			minpw = 1.0
+		}
+		if msize == 1 {
+			minph = 1.0
 		}
 
 		my := 0
@@ -80,11 +88,14 @@ func (l *VerticalLayout) Do() {
 				my = dy + gap
 			}
 
-			// Calculate height
-			mp := l.Proportions.MasterMaster[i%msize]
-			mh := int(math.Round(float64(dh-(msize+1)*gap) * mp))
+			// Limit minimum dimensions
+			minw := int(math.Round(float64(dw-2*gap) * minpw))
+			minh := int(math.Round(float64(dh-(msize+1)*gap) * minph))
+			c.LimitDim(minw, minh)
 
 			// Move and resize master
+			mp := l.Proportions.MasterMaster[i%msize]
+			mh := int(math.Round(float64(dh-(msize+1)*gap) * mp))
 			c.MoveResize(mx+gap, my, mw-2*gap, mh)
 
 			// Add y offset
@@ -94,8 +105,17 @@ func (l *VerticalLayout) Do() {
 
 	// Slave area layout
 	if ssize > 0 {
+		minpw := common.Config.ProportionMin
+		minph := common.Config.ProportionMin
+
+		// Adjust sizes and proportions
 		if msize == 0 {
-			sx, sw = dx+gap, dw-gap
+			sx = dx + gap
+			sw = dw - gap
+			minpw = 1.0
+		}
+		if ssize == 1 {
+			minph = 1.0
 		}
 
 		sy := 0
@@ -106,11 +126,14 @@ func (l *VerticalLayout) Do() {
 				sy = dy + gap
 			}
 
-			// Calculate height
-			sp := l.Proportions.SlaveSlave[i%ssize]
-			sh := int(math.Round(float64(dh-(ssize+1)*gap) * sp))
+			// Limit minimum dimensions
+			minw := int(math.Round(float64(dw-2*gap) * minpw))
+			minh := int(math.Round(float64(dh-(ssize+1)*gap) * minph))
+			c.LimitDim(minw, minh)
 
 			// Move and resize slave
+			sp := l.Proportions.SlaveSlave[i%ssize]
+			sh := int(math.Round(float64(dh-(ssize+1)*gap) * sp))
 			c.MoveResize(sx, sy, sw-gap, sh)
 
 			// Add y offset

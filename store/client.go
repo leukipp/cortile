@@ -93,6 +93,20 @@ func (c *Client) MoveResize(x, y, w, h int) {
 	c.Update()
 }
 
+func (c *Client) LimitDim(w, h int) {
+
+	// Decoration extents
+	extents := c.Latest.Dimensions.Extents
+	dw, dh := extents.Left+extents.Right, extents.Top+extents.Bottom
+
+	// Set window size limits
+	icccm.WmNormalHintsSet(common.X, c.Win.Id, &icccm.NormalHints{
+		Flags:     icccm.SizeHintPMinSize,
+		MinWidth:  uint(w - dw),
+		MinHeight: uint(h - dh),
+	})
+}
+
 func (c *Client) UnDecorate() {
 	if common.Config.WindowDecoration || !motif.Decor(&c.Latest.Dimensions.Hints.Motif) {
 		return

@@ -1,6 +1,8 @@
 package layout
 
 import (
+	"math"
+
 	"github.com/leukipp/cortile/common"
 	"github.com/leukipp/cortile/store"
 
@@ -28,6 +30,13 @@ func (l *FullscreenLayout) Do() {
 
 	// Main area layout
 	for _, c := range l.Clients() {
+
+		// Limit minimum dimensions
+		minw := int(math.Round(float64(dw - 2*gap)))
+		minh := int(math.Round(float64(dh - 2*gap)))
+		c.LimitDim(minw, minh)
+
+		// Move and resize client
 		c.MoveResize(dx+gap, dy+gap, dw-2*gap, dh-2*gap)
 	}
 

@@ -88,9 +88,14 @@ func (tr *Tracker) untrackWindow(w xproto.Window) {
 		c := tr.Clients[w]
 		ws := tr.Workspaces[c.Latest.Desk]
 
+		// Detach events
+		xevent.Detach(common.X, w)
+
+		// Restore client
+		c.Restore()
+
 		// Remove client
 		ws.RemoveClient(c)
-		xevent.Detach(common.X, w)
 		delete(tr.Clients, w)
 	}
 }
@@ -280,8 +285,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 		if tr.isTrackable(c.Win.Id) {
 			tr.handleResizeClient(c)
 		} else {
-			tr.untrackWindow(c.Win.Id)
-			tr.tileWorkspace(c, 0)
+			tr.populateClients()
 		}
 	}).Connect(common.X, c.Win.Id)
 
@@ -299,8 +303,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 				tr.handleDesktopChange(c)
 			}
 		} else {
-			tr.untrackWindow(c.Win.Id)
-			tr.tileWorkspace(c, 0)
+			tr.populateClients()
 		}
 	}).Connect(common.X, c.Win.Id)
 }
