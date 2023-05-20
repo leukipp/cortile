@@ -48,7 +48,7 @@ func ShowLayout(ws *Workspace) {
 
 	// Create an empty canvas image
 	bg := bgra("gui_background")
-	cv := xgraphics.New(common.X, image.Rect(0, 0, width+rectMargin, height+fontSize+2*fontMargin+rectMargin))
+	cv := xgraphics.New(common.X, image.Rect(0, 0, width+rectMargin, height+fontSize+2*fontMargin+2*rectMargin))
 	cv.For(func(x int, y int) xgraphics.BGRA { return bg })
 
 	// Wait for tiling events
@@ -58,7 +58,7 @@ func ShowLayout(ws *Workspace) {
 		drawClients(cv, mg, name)
 
 		// Draw layout name
-		drawText(cv, name, bgra("gui_text"), cv.Rect.Dx()/2, cv.Rect.Dy()-fontSize-2*fontMargin)
+		drawText(cv, name, bgra("gui_text"), cv.Rect.Dx()/2, cv.Rect.Dy()-fontSize-2*fontMargin-rectMargin)
 
 		// Show the canvas graphics
 		showGraphics(cv, time.Duration(common.Config.TilingGui))
