@@ -40,6 +40,10 @@ func CreateTracker(ws map[uint]*Workspace) *Tracker {
 }
 
 func (tr *Tracker) populateClients() {
+	ws := tr.Workspaces[common.CurrentDesk]
+	if !ws.IsEnabled() {
+		return
+	}
 
 	// Add trackable windows
 	for _, w := range common.Windows {
@@ -63,7 +67,6 @@ func (tr *Tracker) populateClients() {
 	}
 
 	// Tile workspace
-	ws := tr.Workspaces[common.CurrentDesk]
 	ws.Tile()
 }
 
