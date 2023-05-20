@@ -151,9 +151,13 @@ func showGraphics(img *xgraphics.Image, duration time.Duration) *xwindow.Window 
 		return nil
 	}
 
-	// Create a window with dimensions equal to the image
-	width, height := img.Rect.Dx(), img.Rect.Dy()
-	win.Create(img.X.RootWin(), 0, 0, width, height, 0)
+	// Calculate window dimensions
+	dx, dy, dw, dh := common.DesktopDimensions()
+	w, h := img.Rect.Dx(), img.Rect.Dy()
+	x, y := dx+dw/2-w/2, dy+dh/2-h/2
+
+	// Create the graphics window
+	win.Create(img.X.RootWin(), x, y, w, h, 0)
 	ewmh.WmNameSet(win.X, win.Id, "cortile")
 
 	// Set states for modal like behavior
@@ -168,11 +172,13 @@ func showGraphics(img *xgraphics.Image, duration time.Duration) *xwindow.Window 
 
 	// Set hints for size and decorations
 	icccm.WmNormalHintsSet(img.X, win.Id, &icccm.NormalHints{
-		Flags:     icccm.SizeHintPMinSize | icccm.SizeHintPMaxSize,
-		MinWidth:  uint(width),
-		MinHeight: uint(height),
-		MaxWidth:  uint(width),
-		MaxHeight: uint(height),
+		Flags:     icccm.SizeHintPPosition | icccm.SizeHintPMinSize | icccm.SizeHintPMaxSize,
+		X:         x,
+		Y:         y,
+		MinWidth:  uint(w),
+		MinHeight: uint(h),
+		MaxWidth:  uint(w),
+		MaxHeight: uint(h),
 	})
 	motif.WmHintsSet(img.X, win.Id, &motif.Hints{
 		Flags:      motif.HintFunctions | motif.HintDecorations,
