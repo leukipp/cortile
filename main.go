@@ -41,47 +41,40 @@ func main() {
 	flag.BoolVar(&args.v, "v", false, "verbose mode")
 	flag.Parse()
 
-	// Allow only one instance
-	lock, err := createLockFile(args.lock)
-	if err != nil {
-		fmt.Println(fmt.Errorf("cortile already running (%s)", err))
-		return
-	}
-	defer lock.Close()
+	// Init lock and log
+	defer initLock(args).Close()
+	initLog(args)
 
-	// Init log
-	setLogLevel(args)
-
-	// Init config
+	// Init config and state
 	common.InitConfig(defaultConfig, args.config)
-
-	// Init state
 	common.InitState()
 
 	// Init workspace and tracker
 	workspaces := desktop.CreateWorkspaces()
 	tracker := desktop.CreateTracker(workspaces)
 
-	// Tile on startup
-	if common.Config.TilingEnabled {
-		for _, ws := range workspaces {
-			ws.Tile()
-		}
-		desktop.ShowLayout(tracker.Workspaces[common.CurrentDesk])
-	}
-
-	// Bind keys and mouse
-	input.BindKeys(tracker)
+	// Bind input events
 	input.BindMouse(tracker)
+	input.BindKeys(tracker)
+	input.BindSig(tracker)
 
 	// Run X event loop
 	xevent.Main(common.X)
 }
 
+func initLock(args Args) *os.File {
+	file, err := createLockFile(args.lock)
+	if err != nil {
+		fmt.Println(fmt.Errorf("cortile already running (%s)", err))
+		os.Exit(1)
+	}
+	return file
+}
+
 func createLockFile(filename string) (*os.File, error) {
 	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
-		fmt.Println(fmt.Errorf("lock error (%s)", err))
+		fmt.Println(fmt.Errorf("FILE error (%s)", err))
 		return nil, nil
 	}
 
@@ -94,7 +87,7 @@ func createLockFile(filename string) (*os.File, error) {
 	return file, nil
 }
 
-func setLogLevel(args Args) {
+func initLog(args Args) *os.File {
 	if args.vvv {
 		log.SetLevel(log.TraceLevel)
 	} else if args.vv {
@@ -106,10 +99,9 @@ func setLogLevel(args Args) {
 	}
 	log.SetFormatter(&log.TextFormatter{ForceColors: true, FullTimestamp: true})
 
-	file, err := os.OpenFile(args.log, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	if file == nil {
-		log.Error(err)
-		return
+	file, err := createLogFile(args.log)
+	if err != nil {
+		return file
 	}
 
 	log.SetOutput(io.MultiWriter(os.Stderr, file))
@@ -118,4 +110,15 @@ func setLogLevel(args Args) {
 			file.Close()
 		}
 	})
+
+	return file
+}
+
+func createLogFile(filename string) (*os.File, error) {
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println(fmt.Errorf("FILE error (%s)", err))
+		return nil, err
+	}
+	return file, nil
 }

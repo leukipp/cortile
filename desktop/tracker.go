@@ -32,9 +32,17 @@ func CreateTracker(ws map[uint]*Workspace) *Tracker {
 		Workspaces: ws,
 	}
 
-	// Init clients
+	// Populate clients
 	xevent.PropertyNotifyFun(tr.handleWorkspaceUpdates).Connect(common.X, common.X.RootWin())
 	tr.populateClients()
+
+	// Startup tiling
+	if common.Config.TilingEnabled {
+		for _, ws := range ws {
+			ws.Tile()
+		}
+		ShowLayout(tr.Workspaces[common.CurrentDesk])
+	}
 
 	return &tr
 }
