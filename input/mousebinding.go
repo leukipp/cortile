@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func BindMouse(t *desktop.Tracker) {
+func BindMouse(tr *desktop.Tracker) {
 	poll(common.X, 50, func() {
 
 		// Update pointer position
@@ -31,7 +31,7 @@ func BindMouse(t *desktop.Tracker) {
 
 			if !wasActive && isActive {
 				log.Debug("Corner at position ", hc.Area, " is hot [", hc.Name, "]")
-				Execute(common.Config.Corners[hc.Name], t)
+				Execute(common.Config.Corners[hc.Name], tr)
 			} else if wasActive && !isActive {
 				log.Debug("Corner at position ", hc.Area, " is cold [", hc.Name, "]")
 			}

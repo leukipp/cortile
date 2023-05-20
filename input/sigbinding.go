@@ -8,16 +8,15 @@ import (
 	"github.com/leukipp/cortile/desktop"
 )
 
-func BindSig(t *desktop.Tracker) {
+func BindSig(tr *desktop.Tracker) {
 	c := make(chan os.Signal, 1)
 
 	// Bind signal events
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go exit(c, t)
+	go exit(c, tr)
 }
 
-func exit(c chan os.Signal, t *desktop.Tracker) {
+func exit(c chan os.Signal, tr *desktop.Tracker) {
 	<-c
-	Execute("untile", t)
-	os.Exit(1)
+	Execute("exit", tr)
 }

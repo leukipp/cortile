@@ -34,7 +34,7 @@ func CreateTracker(ws map[uint]*Workspace) *Tracker {
 
 	// Populate clients
 	xevent.PropertyNotifyFun(tr.handleWorkspaceUpdates).Connect(common.X, common.X.RootWin())
-	tr.populateClients()
+	tr.Update()
 
 	// Startup tiling
 	if common.Config.TilingEnabled {
@@ -47,7 +47,7 @@ func CreateTracker(ws map[uint]*Workspace) *Tracker {
 	return &tr
 }
 
-func (tr *Tracker) populateClients() {
+func (tr *Tracker) Update() {
 	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
@@ -283,7 +283,7 @@ func (tr *Tracker) handleWorkspaceUpdates(X *xgbutil.XUtil, ev xevent.PropertyNo
 
 	// Layout changed or client added
 	if workspaceChanged || desktopChanged || clientAdded {
-		tr.populateClients()
+		tr.Update()
 	}
 }
 
@@ -297,7 +297,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 		if tr.isTrackable(c.Win.Id) {
 			tr.handleResizeClient(c)
 		} else {
-			tr.populateClients()
+			tr.Update()
 		}
 	}).Connect(common.X, c.Win.Id)
 
@@ -315,7 +315,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 				tr.handleDesktopChange(c)
 			}
 		} else {
-			tr.populateClients()
+			tr.Update()
 		}
 	}).Connect(common.X, c.Win.Id)
 }

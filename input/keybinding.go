@@ -13,33 +13,33 @@ import (
 
 type KeyMapper struct{}
 
-func BindKeys(t *desktop.Tracker) {
+func BindKeys(tr *desktop.Tracker) {
 	keybind.Initialize(common.X)
 
 	// Bind keyboard shortcuts
 	k := KeyMapper{}
-	k.bind("tile", t)
-	k.bind("untile", t)
-	k.bind("layout_cycle", t)
-	k.bind("layout_fullscreen", t)
-	k.bind("layout_vertical_left", t)
-	k.bind("layout_vertical_right", t)
-	k.bind("layout_horizontal_top", t)
-	k.bind("layout_horizontal_bottom", t)
-	k.bind("master_make", t)
-	k.bind("master_increase", t)
-	k.bind("master_decrease", t)
-	k.bind("slave_increase", t)
-	k.bind("slave_decrease", t)
-	k.bind("proportion_increase", t)
-	k.bind("proportion_decrease", t)
-	k.bind("window_next", t)
-	k.bind("window_previous", t)
+	k.bind("tile", tr)
+	k.bind("untile", tr)
+	k.bind("layout_cycle", tr)
+	k.bind("layout_fullscreen", tr)
+	k.bind("layout_vertical_left", tr)
+	k.bind("layout_vertical_right", tr)
+	k.bind("layout_horizontal_top", tr)
+	k.bind("layout_horizontal_bottom", tr)
+	k.bind("master_make", tr)
+	k.bind("master_increase", tr)
+	k.bind("master_decrease", tr)
+	k.bind("slave_increase", tr)
+	k.bind("slave_decrease", tr)
+	k.bind("proportion_increase", tr)
+	k.bind("proportion_decrease", tr)
+	k.bind("window_next", tr)
+	k.bind("window_previous", tr)
 }
 
-func (k KeyMapper) bind(a string, t *desktop.Tracker) {
+func (k KeyMapper) bind(a string, tr *desktop.Tracker) {
 	err := keybind.KeyPressFun(func(X *xgbutil.XUtil, ev xevent.KeyPressEvent) {
-		Execute(a, t)
+		Execute(a, tr)
 	}).Connect(common.X, common.X.RootWin(), common.Config.Keys[a], true)
 	if err != nil {
 		log.Warn("Error on action for ", a, ": ", err)

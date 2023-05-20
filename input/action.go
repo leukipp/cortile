@@ -1,6 +1,7 @@
 package input
 
 import (
+	"os"
 	"os/exec"
 	"strings"
 
@@ -10,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func Execute(a string, t *desktop.Tracker) {
+func Execute(a string, tr *desktop.Tracker) {
 	if len(strings.TrimSpace(a)) == 0 {
 		return
 	}
@@ -18,39 +19,41 @@ func Execute(a string, t *desktop.Tracker) {
 
 	switch a {
 	case "tile":
-		Tile(t)
+		Tile(tr)
 	case "untile":
-		UnTile(t)
+		UnTile(tr)
 	case "layout_cycle":
-		SwitchLayout(t)
+		SwitchLayout(tr)
 	case "layout_fullscreen":
-		FullscreenLayout(t)
+		FullscreenLayout(tr)
 	case "layout_vertical_left":
-		VerticalLeftLayout(t)
+		VerticalLeftLayout(tr)
 	case "layout_vertical_right":
-		VerticalRightLayout(t)
+		VerticalRightLayout(tr)
 	case "layout_horizontal_top":
-		HorizontalTopLayout(t)
+		HorizontalTopLayout(tr)
 	case "layout_horizontal_bottom":
-		HorizontalBottomLayout(t)
+		HorizontalBottomLayout(tr)
 	case "master_make":
-		MakeMaster(t)
+		MakeMaster(tr)
 	case "master_increase":
-		IncreaseMaster(t)
+		IncreaseMaster(tr)
 	case "master_decrease":
-		DecreaseMaster(t)
+		DecreaseMaster(tr)
 	case "slave_increase":
-		IncreaseSlave(t)
+		IncreaseSlave(tr)
 	case "slave_decrease":
-		DecreaseSlave(t)
+		DecreaseSlave(tr)
 	case "proportion_increase":
-		IncreaseProportion(t)
+		IncreaseProportion(tr)
 	case "proportion_decrease":
-		DecreaseProportion(t)
+		DecreaseProportion(tr)
 	case "window_next":
-		NextWindow(t)
+		NextWindow(tr)
 	case "window_previous":
-		PreviousWindow(t)
+		PreviousWindow(tr)
+	case "exit":
+		Exit(tr)
 	default:
 		params := strings.Split(a, " ")
 		log.Info("Execute command ", params[0], " ", params[1:])
@@ -63,25 +66,25 @@ func Execute(a string, t *desktop.Tracker) {
 	}
 }
 
-func Tile(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
-	ws.TilingEnabled = true
-	ws.Tile()
+func Tile(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
+	ws.Enable(true)
+	tr.Update()
 
 	desktop.ShowLayout(ws)
 }
 
-func UnTile(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func UnTile(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
-	ws.TilingEnabled = false
+	ws.Enable(false)
 	ws.UnTile()
 }
 
-func SwitchLayout(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func SwitchLayout(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
@@ -90,8 +93,8 @@ func SwitchLayout(t *desktop.Tracker) {
 	desktop.ShowLayout(ws)
 }
 
-func FullscreenLayout(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func FullscreenLayout(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
@@ -105,8 +108,8 @@ func FullscreenLayout(t *desktop.Tracker) {
 	desktop.ShowLayout(ws)
 }
 
-func VerticalLeftLayout(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func VerticalLeftLayout(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
@@ -120,8 +123,8 @@ func VerticalLeftLayout(t *desktop.Tracker) {
 	desktop.ShowLayout(ws)
 }
 
-func VerticalRightLayout(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func VerticalRightLayout(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
@@ -135,8 +138,8 @@ func VerticalRightLayout(t *desktop.Tracker) {
 	desktop.ShowLayout(ws)
 }
 
-func HorizontalTopLayout(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func HorizontalTopLayout(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
@@ -150,8 +153,8 @@ func HorizontalTopLayout(t *desktop.Tracker) {
 	desktop.ShowLayout(ws)
 }
 
-func HorizontalBottomLayout(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func HorizontalBottomLayout(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
@@ -165,17 +168,17 @@ func HorizontalBottomLayout(t *desktop.Tracker) {
 	desktop.ShowLayout(ws)
 }
 
-func MakeMaster(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func MakeMaster(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
-	ws.ActiveLayout().MakeMaster(t.Clients[common.ActiveWin])
+	ws.ActiveLayout().MakeMaster(tr.Clients[common.ActiveWin])
 	ws.Tile()
 }
 
-func IncreaseMaster(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func IncreaseMaster(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
@@ -185,8 +188,8 @@ func IncreaseMaster(t *desktop.Tracker) {
 	desktop.ShowLayout(ws)
 }
 
-func DecreaseMaster(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func DecreaseMaster(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
@@ -196,8 +199,8 @@ func DecreaseMaster(t *desktop.Tracker) {
 	desktop.ShowLayout(ws)
 }
 
-func IncreaseSlave(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func IncreaseSlave(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
@@ -207,8 +210,8 @@ func IncreaseSlave(t *desktop.Tracker) {
 	desktop.ShowLayout(ws)
 }
 
-func DecreaseSlave(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func DecreaseSlave(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
@@ -218,8 +221,8 @@ func DecreaseSlave(t *desktop.Tracker) {
 	desktop.ShowLayout(ws)
 }
 
-func IncreaseProportion(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func IncreaseProportion(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
@@ -227,8 +230,8 @@ func IncreaseProportion(t *desktop.Tracker) {
 	ws.Tile()
 }
 
-func DecreaseProportion(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func DecreaseProportion(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
@@ -236,18 +239,29 @@ func DecreaseProportion(t *desktop.Tracker) {
 	ws.Tile()
 }
 
-func NextWindow(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func NextWindow(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
 	ws.ActiveLayout().NextClient()
 }
 
-func PreviousWindow(t *desktop.Tracker) {
-	ws := t.Workspaces[common.CurrentDesk]
+func PreviousWindow(tr *desktop.Tracker) {
+	ws := tr.Workspaces[common.CurrentDesk]
 	if !ws.IsEnabled() {
 		return
 	}
 	ws.ActiveLayout().PreviousClient()
+}
+
+func Exit(tr *desktop.Tracker) {
+	for _, ws := range tr.Workspaces {
+		if !ws.IsEnabled() {
+			continue
+		}
+		ws.Enable(false)
+		ws.UnTile()
+	}
+	os.Exit(1)
 }
