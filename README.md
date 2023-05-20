@@ -1,6 +1,7 @@
 # Cortile
 <a href="https://github.com/leukipp/cortile"><img src="https://raw.githubusercontent.com/leukipp/cortile/main/assets/logo.png" style="display:inline-block;width:75px;margin-right:10px;" align="left"/></a>
-Linux auto tiling manager with hot corner support for XFCE and other X11 windowing systems with [EWMH compliant window managers](https://en.wikipedia.org/wiki/Extended_Window_Manager_Hints#List_of_window_managers_that_support_Extended_Window_Manager_Hints).
+Linux auto tiling manager with hot corner support for [Xfce](https://en.wikipedia.org/wiki/Xfce), [Openbox](https://en.wikipedia.org/wiki/Openbox) and other [EWMH](https://en.wikipedia.org/wiki/Extended_Window_Manager_Hints#List_of_window_managers_that_support_Extended_Window_Manager_Hints) compliant window managers using the [X11](https://en.wikipedia.org/wiki/X_Window_System) window system.
+
 Simply keep your current window manager and **install cortile on top** of it.
 Once enabled, the tiling manager will handle _resizing_ and _positioning_ of _existing_ and _new_ windows.
 <br clear="left"/>
@@ -42,7 +43,7 @@ The layouts are based on the master-slave concept, where one side of the screen 
 - `horizontal-bottom:` split the screen horizontally, master area on the bottom.
 - `fullscreen:` single window in fullscreen mode.
   
-The number of windows per side and the space they occupy can be changed dynamically.
+The number of windows per side and the occupied space can be changed dynamically.
 Adjustments to window sizes are considered to be proportion changes of the underlying layout.
 
 Windows placed on the master side are static and the layout will only change as long the space is not fully occupied.
@@ -89,7 +90,7 @@ Hot corner events are defined under the `[corners]` section and will be triggere
 | <kbd>Bottom</kbd>-<kbd>Left</kbd>   | Decrease proportion of master-slave area |
 | <kbd>Center</kbd>-<kbd>Left</kbd>   | Activate vertical-left layout            |
 
-Useful mouse shortcuts in XFCE environments:
+Useful mouse shortcuts in Xfce environments:
 - Move window: <kbd>Alt</kbd>+<kbd>Left-Click</kbd>.
 - Resize window: <kbd>Alt</kbd>+<kbd>Right-Click</kbd>.
 - Maximize window: <kbd>Alt</kbd>+<kbd>Double-Click</kbd>.
@@ -184,7 +185,7 @@ Companion tools:
 
 ## Issues [![issues](https://img.shields.io/github/issues-closed/leukipp/cortile)](#issues-)
 It's recommended to disable all build-in window snapping features.
-In XFCE environments, they can be found under "Window Manager" > "Advanced" > "Windows snapping".
+In Xfce environments, they can be found under "Window Manager" > "Advanced" > "Windows snapping".
 
 If you encounter problems start the process with `cortile -vv`, which provides additional verbose outputs.
 A log file is created by default under `/tmp/cortile.log`.
