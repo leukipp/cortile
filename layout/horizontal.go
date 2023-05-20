@@ -35,10 +35,9 @@ func CreateHorizontalBottomLayout(deskNum uint) *HorizontalLayout {
 }
 
 func (l *HorizontalLayout) Do() {
-	log.Info("Tile ", len(l.Clients()), " windows with ", l.Name, " layout [workspace-", l.DeskNum, "]")
+	clients := l.Clients(true)
 
 	dx, dy, dw, dh := common.DesktopDimensions()
-
 	gap := common.Config.WindowGapSize
 
 	mmax := l.Masters.Allowed
@@ -46,12 +45,14 @@ func (l *HorizontalLayout) Do() {
 
 	msize := int(math.Min(float64(len(l.Masters.Clients)), float64(mmax)))
 	ssize := int(math.Min(float64(len(l.Slaves.Clients)), float64(smax)))
-	csize := len(l.Clients())
+	csize := len(clients)
 
 	my := dy
 	mh := int(math.Round(float64(dh) * l.Proportions.MasterSlave[0]))
 	sy := my + mh
 	sh := dh - mh
+
+	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.DeskNum, "]")
 
 	// Swap values if master is on bottom
 	if l.Name == "horizontal-bottom" && csize > mmax {

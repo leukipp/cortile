@@ -178,9 +178,10 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 	if moved {
 		mg := ws.ActiveLayout().GetManager()
+		clients := mg.Clients(false)
 
 		// Check if pointer hovers other clients
-		for _, co := range mg.Clients() {
+		for _, co := range clients {
 			if c.Win.Id == co.Win.Id {
 				continue
 			}

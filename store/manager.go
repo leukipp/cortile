@@ -54,9 +54,11 @@ func CreateManager(deskNum uint) *Manager {
 }
 
 func (mg *Manager) Undo() {
-	log.Info("Untile ", len(mg.Clients()), " windows [workspace-", mg.DeskNum, "]")
+	clients := mg.Clients(true)
 
-	for _, c := range mg.Clients() {
+	log.Info("Untile ", len(clients), " windows [workspace-", mg.DeskNum, "]")
+
+	for _, c := range clients {
 		c.Restore()
 	}
 }
@@ -155,7 +157,7 @@ func (mg *Manager) SwapClient(c1 *Client, c2 *Client) {
 }
 
 func (mg *Manager) NextClient() {
-	clients := mg.Clients()
+	clients := mg.Clients(true)
 	last := len(clients) - 1
 
 	// Get next window
@@ -172,7 +174,7 @@ func (mg *Manager) NextClient() {
 }
 
 func (mg *Manager) PreviousClient() {
-	clients := mg.Clients()
+	clients := mg.Clients(true)
 	last := len(clients) - 1
 
 	// Get previous window
@@ -329,8 +331,11 @@ func (mg *Manager) Visible(windows *Windows) []*Client {
 	return visible
 }
 
-func (mg *Manager) Clients() []*Client {
-	return append(mg.Masters.Clients, mg.Slaves.Clients...)
+func (mg *Manager) Clients(all bool) []*Client {
+	if all {
+		return append(mg.Masters.Clients, mg.Slaves.Clients...)
+	}
+	return append(mg.Visible(mg.Masters), mg.Visible(mg.Slaves)...)
 }
 
 func (mg *Manager) updateMasters(cs []*Client) {

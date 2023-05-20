@@ -22,14 +22,17 @@ func CreateFullscreenLayout(deskNum uint) *FullscreenLayout {
 }
 
 func (l *FullscreenLayout) Do() {
-	log.Info("Tile ", len(l.Clients()), " windows with ", l.Name, " layout [workspace-", l.DeskNum, "]")
+	clients := l.Clients(true)
 
 	dx, dy, dw, dh := common.DesktopDimensions()
-
 	gap := common.Config.WindowGapSize
 
+	csize := len(clients)
+
+	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.DeskNum, "]")
+
 	// Main area layout
-	for _, c := range l.Clients() {
+	for _, c := range clients {
 
 		// Limit minimum dimensions
 		minw := int(math.Round(float64(dw - 2*gap)))

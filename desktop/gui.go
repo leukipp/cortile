@@ -66,11 +66,11 @@ func ShowLayout(ws *Workspace) {
 }
 
 func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
-	clients := append(mg.Visible(mg.Masters), mg.Visible(mg.Slaves)...)
+	clients := mg.Clients(false)
 	for _, c := range clients {
 		for _, state := range c.Latest.States {
 			if state == "_NET_WM_STATE_FULLSCREEN" || layout == "fullscreen" {
-				clients = mg.Visible(&store.Windows{Clients: mg.Clients(), Allowed: 1})
+				clients = mg.Visible(&store.Windows{Clients: mg.Clients(true), Allowed: 1})
 				break
 			}
 		}

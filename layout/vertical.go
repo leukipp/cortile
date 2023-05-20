@@ -35,10 +35,9 @@ func CreateVerticalRightLayout(deskNum uint) *VerticalLayout {
 }
 
 func (l *VerticalLayout) Do() {
-	log.Info("Tile ", len(l.Clients()), " windows with ", l.Name, " layout [workspace-", l.DeskNum, "]")
+	clients := l.Clients(true)
 
 	dx, dy, dw, dh := common.DesktopDimensions()
-
 	gap := common.Config.WindowGapSize
 
 	mmax := l.Masters.Allowed
@@ -46,12 +45,14 @@ func (l *VerticalLayout) Do() {
 
 	msize := int(math.Min(float64(len(l.Masters.Clients)), float64(mmax)))
 	ssize := int(math.Min(float64(len(l.Slaves.Clients)), float64(smax)))
-	csize := len(l.Clients())
+	csize := len(clients)
 
 	mx := dx
 	mw := int(math.Round(float64(dw) * l.Proportions.MasterSlave[0]))
 	sx := mx + mw
 	sw := dw - mw
+
+	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.DeskNum, "]")
 
 	// Swap values if master is on right
 	if l.Name == "vertical-right" && csize > mmax {
