@@ -284,6 +284,9 @@ func (tr *Tracker) handleWorkspaceUpdates(X *xgbutil.XUtil, ev xevent.PropertyNo
 	// Layout changed or client added
 	if workspaceChanged || desktopChanged || clientAdded {
 		tr.Update()
+
+		// Re-update as some applications minimize to outside
+		time.AfterFunc(200*time.Millisecond, tr.Update)
 	}
 }
 
