@@ -80,8 +80,8 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 	if len(clients) == 0 {
 
 		// Calculate scaled desktop dimensions
-		cx, cy, cw, ch := common.DesktopDimensions()
-		x, y, width, height := scale(cx, cy, cw, ch)
+		_, _, dw, dh := common.DesktopDimensions()
+		x, y, width, height := scale(0, 0, dw, dh)
 
 		// Draw client rectangle onto canvas
 		color := bgra("gui_client_slave")
@@ -96,7 +96,8 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 
 		// Calculate scaled client dimensions
 		cx, cy, cw, ch := c.OuterGeometry()
-		x, y, width, height := scale(cx, cy, cw, ch)
+		dx, dy, _, _ := common.DesktopDimensions()
+		x, y, width, height := scale(cx-dx, cy-dy, cw, ch)
 
 		// Calculate icon size
 		iconSize := math.MaxInt
