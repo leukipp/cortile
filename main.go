@@ -40,13 +40,13 @@ func main() {
 
 	// Command line arguments
 	flag.StringVar(&args.config, "config", common.ConfigFilePath(), "config file path")
-	flag.StringVar(&args.lock, "lock", "/run/lock/cortile.lock", "lock file path")
+	flag.StringVar(&args.lock, "lock", "/tmp/cortile.lock", "lock file path")
 	flag.StringVar(&args.log, "log", "/tmp/cortile.log", "log file path")
 	flag.BoolVar(&args.vvv, "vvv", false, "very very verbose mode")
 	flag.BoolVar(&args.vv, "vv", false, "very verbose mode")
 	flag.BoolVar(&args.v, "v", false, "verbose mode")
 	flag.CommandLine.Usage = func() {
-		title := fmt.Sprintf("%s %s, built on %s (%s)", os.Args[0], version, date, commit)
+		title := fmt.Sprintf("cortile v%s, built on %s (%s)", version, date, commit)
 		fmt.Fprintf(flag.CommandLine.Output(), "%s\n\nUsage:\n", title)
 		flag.PrintDefaults()
 	}
