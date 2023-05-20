@@ -20,6 +20,12 @@ import (
 //go:embed config.toml
 var defaultConfig []byte
 
+var (
+	version = "dev"     // Build version
+	commit  = "local"   // Build commit
+	date    = "unknown" // Build date
+)
+
 type Args struct {
 	config string // Argument for config file path
 	lock   string // Argument for lock file path
@@ -39,6 +45,11 @@ func main() {
 	flag.BoolVar(&args.vvv, "vvv", false, "very very verbose mode")
 	flag.BoolVar(&args.vv, "vv", false, "very verbose mode")
 	flag.BoolVar(&args.v, "v", false, "verbose mode")
+	flag.CommandLine.Usage = func() {
+		title := fmt.Sprintf("%s %s, built on %s (%s)", os.Args[0], version, date, commit)
+		fmt.Fprintf(flag.CommandLine.Output(), "%s\n\nUsage:\n", title)
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	// Init lock and log
