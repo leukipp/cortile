@@ -142,7 +142,6 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	cx, cy, cw, ch := cGeom.Pieces()
 
 	// Check size changes
-	active := c.Win.Id == common.ActiveWin
 	resized := math.Abs(float64(cw-pw)) > 0.0 || math.Abs(float64(ch-ph)) > 0.0
 	directions := &store.Directions{Top: cy != py, Right: cx == px && cw != pw, Bottom: cy == py && ch != ph, Left: cx != px}
 
@@ -151,7 +150,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	added := lifetime < 1000*time.Millisecond
 	initialized := (math.Abs(float64(cx-px)) > 0.0 || math.Abs(float64(cy-py)) > 0.0) && added
 
-	if active && (resized || initialized) {
+	if resized || initialized {
 
 		// Update proportions
 		if !added {
