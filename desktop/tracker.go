@@ -19,11 +19,17 @@ import (
 
 var (
 	timer *time.Timer // Tiling timer after window resize
+	swap  *Swap       // Stores clients to swap after move
 )
 
 type Tracker struct {
 	Clients    map[xproto.Window]*store.Client // List of clients that are being tracked
 	Workspaces map[uint]*Workspace             // List of workspaces used
+}
+
+type Swap struct {
+	Client1 *store.Client // Stores moving client
+	Client2 *store.Client // Stores hovered client
 }
 
 func CreateTracker(ws map[uint]*Workspace) *Tracker {
@@ -91,7 +97,7 @@ func (tr *Tracker) trackWindow(w xproto.Window) {
 
 	// Attach handlers and tile
 	tr.attachHandlers(c)
-	tr.tileWorkspace(c, 0)
+	tr.tileWorkspace(c)
 }
 
 func (tr *Tracker) untrackWindow(w xproto.Window) {
@@ -111,19 +117,11 @@ func (tr *Tracker) untrackWindow(w xproto.Window) {
 	}
 }
 
-func (tr *Tracker) tileWorkspace(c *store.Client, ms time.Duration) {
+func (tr *Tracker) tileWorkspace(c *store.Client) {
 	ws := tr.Workspaces[c.Latest.Desk]
 
 	// Tile workspace
 	ws.Tile()
-
-	// Re-tile as some applications load geometry delayed
-	if ms > 0 {
-		if timer != nil {
-			timer.Stop()
-		}
-		timer = time.AfterFunc(ms*time.Millisecond, ws.Tile)
-	}
 }
 
 func (tr *Tracker) handleResizeClient(c *store.Client) {
@@ -143,7 +141,8 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	}
 	cx, cy, cw, ch := cGeom.Pieces()
 
-	// Check width/height changes and directions
+	// Check size changes
+	active := c.Win.Id == common.ActiveWin
 	resized := math.Abs(float64(cw-pw)) > 0.0 || math.Abs(float64(ch-ph)) > 0.0
 	directions := &store.Directions{Top: cy != py, Right: cx == px && cw != pw, Bottom: cy == py && ch != ph, Left: cx != px}
 
@@ -152,7 +151,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	added := lifetime < 1000*time.Millisecond
 	initialized := (math.Abs(float64(cx-px)) > 0.0 || math.Abs(float64(cy-py)) > 0.0) && added
 
-	if resized || initialized {
+	if active && (resized || initialized) {
 
 		// Update proportions
 		if !added {
@@ -160,7 +159,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		}
 
 		// Tile workspace
-		tr.tileWorkspace(c, 500)
+		tr.tileWorkspace(c)
 	}
 }
 
@@ -172,37 +171,58 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 	// Previous position
 	pGeom := c.Latest.Dimensions.Geometry
-	px, py, _, _ := pGeom.Pieces()
+	px, py, pw, ph := pGeom.Pieces()
 
 	// Current position
 	cGeom, err := c.Win.DecorGeometry()
 	if err != nil {
 		return
 	}
-	cx, cy, _, _ := cGeom.Pieces()
+	cx, cy, cw, ch := cGeom.Pieces()
 
 	// Check position change
+	active := c.Win.Id == common.ActiveWin
 	moved := math.Abs(float64(cx-px)) > 0.0 || math.Abs(float64(cy-py)) > 0.0
+	resized := math.Abs(float64(cw-pw)) > 0.0 || math.Abs(float64(ch-ph)) > 0.0
 
-	if moved {
+	if active && (moved && !resized) {
 		mg := ws.ActiveLayout().GetManager()
 		clients := mg.Clients(false)
 
-		// Check if pointer hovers other clients
+		// Check if pointer hovers other client
+		swap = nil
 		for _, co := range clients {
 			if c.Win.Id == co.Win.Id {
 				continue
 			}
 
-			// Swap moved client with hovered client
+			// Store moved client and hovered client
 			if common.IsInsideRect(common.Pointer, co.Latest.Dimensions.Geometry) {
-				mg.SwapClient(c, co)
+				swap = &Swap{
+					Client1: c,
+					Client2: co,
+				}
 				break
 			}
 		}
+	}
+}
+
+func (tr *Tracker) handleSwapClient(c *store.Client) {
+	ws := tr.Workspaces[c.Latest.Desk]
+	if !ws.IsEnabled() || store.IsMaximized(c.Win.Id) {
+		return
+	}
+
+	if swap != nil {
+		mg := ws.ActiveLayout().GetManager()
+
+		// Swap clients
+		mg.SwapClient(swap.Client1, swap.Client2)
+		swap = nil
 
 		// Tile workspace
-		tr.tileWorkspace(c, 500)
+		tr.tileWorkspace(c)
 	}
 }
 
@@ -224,7 +244,7 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 				}
 			}
 			c.Activate()
-			tr.tileWorkspace(c, 0)
+			tr.tileWorkspace(c)
 			ShowLayout(ws)
 			break
 		}
@@ -244,7 +264,7 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 
 			// Untrack client
 			tr.untrackWindow(c.Win.Id)
-			tr.tileWorkspace(c, 0)
+			tr.tileWorkspace(c)
 			break
 		}
 	}
@@ -255,7 +275,7 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 	// Remove client from current workspace
 	tr.Workspaces[c.Latest.Desk].RemoveClient(c)
 	if tr.Workspaces[c.Latest.Desk].IsEnabled() {
-		tr.tileWorkspace(c, 0)
+		tr.tileWorkspace(c)
 	}
 
 	// Update client desktop
@@ -267,7 +287,7 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 	// Add client to new workspace
 	tr.Workspaces[c.Latest.Desk].AddClient(c)
 	if tr.Workspaces[c.Latest.Desk].IsEnabled() {
-		tr.tileWorkspace(c, 0)
+		tr.tileWorkspace(c)
 	} else {
 		c.Restore()
 	}
@@ -285,22 +305,22 @@ func (tr *Tracker) handleWorkspaceUpdates(X *xgbutil.XUtil, ev xevent.PropertyNo
 	if workspaceChanged || desktopChanged || clientAdded {
 		tr.Update()
 
-		// Re-update as some applications minimize to outside
+		// Re-update as some wm minimize to outside
 		time.AfterFunc(200*time.Millisecond, tr.Update)
 	}
 }
 
 func (tr *Tracker) attachHandlers(c *store.Client) {
-	c.Win.Listen(xproto.EventMaskStructureNotify | xproto.EventMaskPropertyChange)
+	c.Win.Listen(xproto.EventMaskStructureNotify | xproto.EventMaskPropertyChange | xproto.EventMaskFocusChange)
 
 	// Attach structure events
 	xevent.ConfigureNotifyFun(func(x *xgbutil.XUtil, ev xevent.ConfigureNotifyEvent) {
 		log.Trace("Client structure event [", c.Latest.Class, "]")
 
+		// Handle structure changes
 		if tr.isTrackable(c.Win.Id) {
 			tr.handleResizeClient(c)
-		} else {
-			tr.Update()
+			tr.handleMoveClient(c)
 		}
 	}).Connect(common.X, c.Win.Id)
 
@@ -309,17 +329,28 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 		aname, _ := xprop.AtomName(common.X, ev.Atom)
 		log.Trace("Client property event ", aname, " [", c.Latest.Class, "]")
 
+		// Handle property changes
 		if tr.isTrackable(c.Win.Id) {
 			if aname == "_NET_WM_STATE" {
 				tr.handleMaximizedClient(c)
 				tr.handleMinimizedClient(c)
-				tr.handleMoveClient(c)
 			} else if aname == "_NET_WM_DESKTOP" {
 				tr.handleDesktopChange(c)
 			}
-		} else {
-			tr.Update()
 		}
+	}).Connect(common.X, c.Win.Id)
+
+	// Attach focus events
+	xevent.FocusInFun(func(x *xgbutil.XUtil, ev xevent.FocusInEvent) {
+		log.Trace("Client focus event [", c.Latest.Class, "]")
+
+		// Wait for structure changes
+		time.AfterFunc(200*time.Millisecond, func() {
+			if ev.Mode == xproto.NotifyModeUngrab {
+				tr.handleSwapClient(c)
+			}
+			tr.Update()
+		})
 	}).Connect(common.X, c.Win.Id)
 }
 

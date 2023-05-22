@@ -107,5 +107,8 @@ func (ws *Workspace) Enable(enable bool) {
 }
 
 func (ws *Workspace) IsEnabled() bool {
+	if ws == nil {
+		return false
+	}
 	return ws.TilingEnabled
 }
