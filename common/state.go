@@ -16,14 +16,14 @@ import (
 )
 
 var (
-	X           *xgbutil.XUtil  // X connection object
-	DeskCount   uint            // Number of desktop workspaces
-	CurrentDesk uint            // Current desktop
-	ViewPorts   Head            // Physical monitors
-	Windows     []xproto.Window // List of client windows
-	ActiveWin   xproto.Window   // Current active window
-	Corners     []*Corner       // Corners for pointer events
-	Pointer     Position        // Pointer position
+	X           *xgbutil.XUtil            // X connection object
+	DeskCount   uint                      // Number of desktop workspaces
+	CurrentDesk uint                      // Current desktop
+	ViewPorts   Head                      // Physical monitors
+	Windows     []xproto.Window           // List of client windows
+	ActiveWin   xproto.Window             // Current active window
+	Corners     []*Corner                 // Corners for pointer events
+	Pointer     *xproto.QueryPointerReply // Pointer position and state
 )
 
 type Head struct {
@@ -31,15 +31,11 @@ type Head struct {
 	Desktops xinerama.Heads // Desktop size (workarea without panels)
 }
 
-type Position struct {
-	X int // X position
-	Y int // Y position
-}
-
 func InitState() {
 	var err error
 
 	X := Connect()
+	root := xwindow.New(X, X.RootWin())
 
 	DeskCount, err = ewmh.NumberOfDesktopsGet(X)
 	checkFatal(err)
@@ -57,10 +53,9 @@ func InitState() {
 	checkFatal(err)
 
 	Corners = CreateCorners()
+	Pointer, _ = xproto.QueryPointer(X.Conn(), X.RootWin()).Reply()
 
-	root := xwindow.New(X, X.RootWin())
 	root.Listen(xproto.EventMaskPropertyChange)
-
 	xevent.PropertyNotifyFun(stateUpdate).Connect(X, X.RootWin())
 }
 

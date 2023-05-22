@@ -1,6 +1,9 @@
 package common
 
-import "github.com/BurntSushi/xgbutil/xrect"
+import (
+	"github.com/BurntSushi/xgb/xproto"
+	"github.com/BurntSushi/xgbutil/xrect"
+)
 
 type Corner struct {
 	Name   string     // Corner name used in config
@@ -36,7 +39,7 @@ func CreateCorners() []*Corner {
 	return []*Corner{tl, tc, tr, cr, br, bc, bl, cl}
 }
 
-func (c *Corner) IsActive(p Position) bool {
+func (c *Corner) IsActive(p *xproto.QueryPointerReply) bool {
 
 	// Check if pointer is inside rectangle
 	c.Active = IsInsideRect(p, c.Area)
@@ -44,12 +47,12 @@ func (c *Corner) IsActive(p Position) bool {
 	return c.Active
 }
 
-func IsInsideRect(p Position, r xrect.Rect) bool {
-	xc, yc, wc, hc := r.Pieces()
+func IsInsideRect(p *xproto.QueryPointerReply, r xrect.Rect) bool {
+	x, y, w, h := r.Pieces()
 
 	// Check if x and y are inside rectangle
-	xInRect := p.X >= xc && p.X <= (xc+wc)
-	yInRect := p.Y >= yc && p.Y <= (yc+hc)
+	xInRect := int(p.RootX) >= x && int(p.RootX) <= (x+w)
+	yInRect := int(p.RootY) >= y && int(p.RootY) <= (y+h)
 
 	return xInRect && yInRect
 }

@@ -17,10 +17,7 @@ func BindMouse(tr *desktop.Tracker) {
 
 		// Update pointer position
 		p, _ := xproto.QueryPointer(common.X.Conn(), common.X.RootWin()).Reply()
-		common.Pointer = common.Position{
-			X: int(p.RootX),
-			Y: int(p.RootY),
-		}
+		common.Pointer = p
 
 		// Evaluate corner states
 		for i := range common.Corners {
