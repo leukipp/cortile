@@ -18,8 +18,7 @@ import (
 )
 
 var (
-	timer *time.Timer // Tiling timer after window resize
-	swap  *Swap       // Stores clients to swap after move
+	swap *Swap // Stores clients to swap after move
 )
 
 type Tracker struct {

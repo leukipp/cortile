@@ -36,24 +36,24 @@ type ConfigMapper struct {
 	Corners          map[string]string `toml:"corners"`            // Event bindings for hot-corners
 }
 
-func InitConfig(defaultConfig []byte, configFilePath string) {
+func InitConfig(defaultConfig []byte) {
 
 	// Create config folder if not exists
-	configFolderPath := filepath.Dir(configFilePath)
+	configFolderPath := filepath.Dir(Args.Config)
 	if _, err := os.Stat(configFolderPath); os.IsNotExist(err) {
 		os.MkdirAll(configFolderPath, 0700)
 	}
 
 	// Write default config if not exists
-	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
-		ioutil.WriteFile(configFilePath, defaultConfig, 0644)
+	if _, err := os.Stat(Args.Config); os.IsNotExist(err) {
+		ioutil.WriteFile(Args.Config, defaultConfig, 0644)
 	}
 
 	// Read config file into memory
-	readConfig(configFilePath)
+	readConfig(Args.Config)
 
 	// Config file watcher
-	watchConfig(configFilePath)
+	watchConfig(Args.Config)
 }
 
 func ConfigFilePath() string {

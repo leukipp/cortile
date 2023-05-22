@@ -2,7 +2,6 @@ package main
 
 import (
 	_ "embed"
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -26,38 +25,17 @@ var (
 	date    = "unknown" // Build date
 )
 
-type Args struct {
-	config string // Argument for config file path
-	lock   string // Argument for lock file path
-	log    string // Argument for log file path
-	vvv    bool   // Argument for very very verbose mode
-	vv     bool   // Argument for very verbose mode
-	v      bool   // Argument for verbose mode
-}
-
 func main() {
-	var args Args
 
-	// Command line arguments
-	flag.StringVar(&args.config, "config", common.ConfigFilePath(), "config file path")
-	flag.StringVar(&args.lock, "lock", "/tmp/cortile.lock", "lock file path")
-	flag.StringVar(&args.log, "log", "/tmp/cortile.log", "log file path")
-	flag.BoolVar(&args.vvv, "vvv", false, "very very verbose mode")
-	flag.BoolVar(&args.vv, "vv", false, "very verbose mode")
-	flag.BoolVar(&args.v, "v", false, "verbose mode")
-	flag.CommandLine.Usage = func() {
-		title := fmt.Sprintf("cortile v%s, built on %s (%s)", version, date, commit)
-		fmt.Fprintf(flag.CommandLine.Output(), "%s\n\nUsage:\n", title)
-		flag.PrintDefaults()
-	}
-	flag.Parse()
+	// Init command line arguments
+	common.InitArgs(version, commit, date)
 
-	// Init lock and log
-	defer initLock(args).Close()
-	initLog(args)
+	// Init lock and log files
+	defer InitLock().Close()
+	InitLog()
 
 	// Init config and state
-	common.InitConfig(defaultConfig, args.config)
+	common.InitConfig(defaultConfig)
 	common.InitState()
 
 	// Init workspace and tracker
@@ -65,20 +43,48 @@ func main() {
 	tracker := desktop.CreateTracker(workspaces)
 
 	// Bind input events
+	input.BindSignal(tracker)
+	input.BindSocket(tracker)
 	input.BindMouse(tracker)
 	input.BindKeys(tracker)
-	input.BindSig(tracker)
 
 	// Run X event loop
 	xevent.Main(common.X)
 }
 
-func initLock(args Args) *os.File {
-	file, err := createLockFile(args.lock)
+func InitLock() *os.File {
+	file, err := createLockFile(common.Args.Lock)
 	if err != nil {
 		fmt.Println(fmt.Errorf("cortile already running (%s)", err))
 		os.Exit(1)
 	}
+	return file
+}
+
+func InitLog() *os.File {
+	if common.Args.VVV {
+		log.SetLevel(log.TraceLevel)
+	} else if common.Args.VV {
+		log.SetLevel(log.DebugLevel)
+	} else if common.Args.V {
+		log.SetLevel(log.InfoLevel)
+	} else {
+		log.SetLevel(log.WarnLevel)
+	}
+	log.SetFormatter(&log.TextFormatter{ForceColors: true, FullTimestamp: true})
+
+	file, err := createLogFile(common.Args.Log)
+	if err != nil {
+		return file
+	}
+
+	log.SetOutput(io.MultiWriter(os.Stderr, file))
+	log.RegisterExitHandler(func() {
+		if file != nil {
+			file.Close()
+		}
+	})
+
 	return file
 }
 
@@ -96,33 +102,6 @@ func createLockFile(filename string) (*os.File, error) {
 	}
 
 	return file, nil
-}
-
-func initLog(args Args) *os.File {
-	if args.vvv {
-		log.SetLevel(log.TraceLevel)
-	} else if args.vv {
-		log.SetLevel(log.DebugLevel)
-	} else if args.v {
-		log.SetLevel(log.InfoLevel)
-	} else {
-		log.SetLevel(log.WarnLevel)
-	}
-	log.SetFormatter(&log.TextFormatter{ForceColors: true, FullTimestamp: true})
-
-	file, err := createLogFile(args.log)
-	if err != nil {
-		return file
-	}
-
-	log.SetOutput(io.MultiWriter(os.Stderr, file))
-	log.RegisterExitHandler(func() {
-		if file != nil {
-			file.Close()
-		}
-	})
-
-	return file
 }
 
 func createLogFile(filename string) (*os.File, error) {

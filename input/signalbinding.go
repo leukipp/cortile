@@ -8,7 +8,7 @@ import (
 	"github.com/leukipp/cortile/desktop"
 )
 
-func BindSig(tr *desktop.Tracker) {
+func BindSignal(tr *desktop.Tracker) {
 	c := make(chan os.Signal, 1)
 
 	// Bind signal events
