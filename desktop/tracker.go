@@ -220,10 +220,10 @@ func (tr *Tracker) handleSwapClient(c *store.Client) {
 		// Swap clients
 		mg.SwapClient(swap.Client1, swap.Client2)
 		swap = nil
-
-		// Tile workspace
-		tr.tileWorkspace(c)
 	}
+
+	// Tile workspace
+	tr.tileWorkspace(c)
 }
 
 func (tr *Tracker) handleMaximizedClient(c *store.Client) {
@@ -297,16 +297,19 @@ func (tr *Tracker) handleWorkspaceUpdates(X *xgbutil.XUtil, ev xevent.PropertyNo
 	aname, _ := xprop.AtomName(common.X, ev.Atom)
 	log.Trace("Workspace update event ", aname)
 
-	workspaceChanged := aname == "_NET_WORKAREA"
-	desktopChanged := aname == "_NET_DESKTOP_LAYOUT" || aname == "_NET_DESKTOP_VIEWPORT"
 	clientAdded := aname == "_NET_CLIENT_LIST" || aname == "_NET_CLIENT_LIST_STACKING"
+	workspaceChanged := aname == "_NET_DESKTOP_LAYOUT" || aname == "_NET_DESKTOP_VIEWPORT" || aname == "_NET_WORKAREA"
 
-	// Layout changed or client added
-	if workspaceChanged || desktopChanged || clientAdded {
+	// Client added or workspace changed
+	if clientAdded || workspaceChanged {
 		tr.Update()
 
 		// Re-update as some wm minimize to outside
-		time.AfterFunc(200*time.Millisecond, tr.Update)
+		time.AfterFunc(200*time.Millisecond, func() {
+			if !tr.isTracked(common.ActiveWin) {
+				tr.Update()
+			}
+		})
 	}
 }
 
@@ -321,6 +324,8 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 		if tr.isTrackable(c.Win.Id) {
 			tr.handleResizeClient(c)
 			tr.handleMoveClient(c)
+		} else {
+			tr.Update()
 		}
 	}).Connect(common.X, c.Win.Id)
 
@@ -337,6 +342,8 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 			} else if aname == "_NET_WM_DESKTOP" {
 				tr.handleDesktopChange(c)
 			}
+		} else {
+			tr.Update()
 		}
 	}).Connect(common.X, c.Win.Id)
 
@@ -349,7 +356,6 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 			if ev.Mode == xproto.NotifyModeUngrab {
 				tr.handleSwapClient(c)
 			}
-			tr.Update()
 		})
 	}).Connect(common.X, c.Win.Id)
 }
