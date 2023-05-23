@@ -1,7 +1,6 @@
 package input
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -72,7 +71,47 @@ func Execute(a string, tr *desktop.Tracker) bool {
 
 	// Notify socket
 	if success {
-		Notify(fmt.Sprintf("event: %s\n", a))
+		type Action struct{ Workspace uint }
+		NotifySocket(Message[Action]{
+			Type: "Action",
+			Name: a,
+			Data: Action{Workspace: common.CurrentDesk},
+		})
+	}
+
+	return success
+}
+
+func Query(s string, tr *desktop.Tracker) bool {
+	success := false
+	if len(strings.TrimSpace(s)) == 0 {
+		return false
+	}
+
+	log.Info("Query state [", s, "]")
+
+	switch s {
+	case "workspaces":
+		NotifySocket(Message[map[uint]*desktop.Workspace]{
+			Type: "State",
+			Name: s,
+			Data: tr.Workspaces,
+		})
+		success = true
+	case "arguments":
+		NotifySocket(Message[common.Arguments]{
+			Type: "State",
+			Name: s,
+			Data: common.Args,
+		})
+		success = true
+	case "configs":
+		NotifySocket(Message[common.ConfigMapper]{
+			Type: "State",
+			Name: s,
+			Data: common.Config,
+		})
+		success = true
 	}
 
 	return success
@@ -309,7 +348,10 @@ func Exit(tr *desktop.Tracker) bool {
 		ws.Enable(false)
 		ws.UnTile()
 	}
-	os.Remove(common.Args.Sock)
+
+	os.Remove(common.Args.Sock + ".in")
+	os.Remove(common.Args.Sock + ".out")
+
 	os.Exit(1)
 
 	return true

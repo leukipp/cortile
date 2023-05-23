@@ -25,7 +25,7 @@ const (
 )
 
 type Client struct {
-	Win      *xwindow.Window // X window object
+	Win      *xwindow.Window `json:"-"` // X window object
 	Created  time.Time       // Internal client creation time
 	Latest   Info            // Latest client window information
 	Original Info            // Original client window information

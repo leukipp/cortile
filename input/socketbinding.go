@@ -1,6 +1,7 @@
 package input
 
 import (
+	"encoding/json"
 	"net"
 	"os"
 	"strings"
@@ -11,13 +12,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type Message[T any] struct {
+	Type string // Socket message type
+	Name string // Socket message name
+	Data T      // Socket message data
+}
+
 func BindSocket(tr *desktop.Tracker) {
-	os.Remove(common.Args.Sock)
 
 	// Create a unix domain socket listener
-	listener, err := net.Listen("unix", common.Args.Sock)
+	listener, err := net.Listen("unix", common.Args.Sock+".in")
 	if err != nil {
-		log.Error("Listener connection error: ", err)
+		os.Remove(common.Args.Sock + ".in")
+		log.Warn("Listener connection error: ", err)
 		return
 	}
 	go listen(listener, tr)
@@ -29,7 +36,7 @@ func listen(listener net.Listener, tr *desktop.Tracker) {
 		// Listen for incoming data
 		connection, err := listener.Accept()
 		if err != nil {
-			log.Error("Listener accept error: ", err)
+			log.Warn("Listener accept error: ", err)
 			return
 		}
 
@@ -37,36 +44,59 @@ func listen(listener net.Listener, tr *desktop.Tracker) {
 		data := make([]byte, 4096)
 		n, err := connection.Read(data)
 		if err != nil {
-			log.Error("Listener read error: ", err)
+			log.Warn("Listener read error: ", err)
+			return
 		}
 
-		msg := string(data[:n])
-		log.Info("Receive socket message \"", msg, "\"")
+		msg := strings.TrimSpace(string(data[:n]))
+		log.Info("Receive socket message ", msg)
 
-		// Check socket message
-		if strings.HasPrefix(msg, "command:") {
-			cmd := strings.TrimSpace(strings.Split(msg, "command:")[1])
+		// Parse incoming data
+		var kv map[string]string
+		err = json.Unmarshal(data[:n], &kv)
+		if err != nil {
+			log.Warn("Listener parse error: ", err)
+			return
+		}
 
-			// Execute command
-			Execute(cmd, tr)
+		// Execute action
+		if v, ok := kv["Action"]; ok {
+			Execute(v, tr)
+		}
+
+		// Query state
+		if v, ok := kv["State"]; ok {
+			Query(v, tr)
 		}
 	}
 }
 
-func Notify(msg string) {
-
-	// Create a unix domain socket dialer
-	dialer, err := net.Dial("unix", common.Args.Sock)
-	if err != nil {
-		log.Error("Dealer connection error: ", err)
+func NotifySocket[T any](m Message[T]) {
+	if _, err := os.Stat(common.Args.Sock + ".out"); os.IsNotExist(err) {
 		return
 	}
 
-	log.Info("Send socket message \"", msg, "\"")
+	// Create a unix domain socket dialer
+	dialer, err := net.Dial("unix", common.Args.Sock+".out")
+	if err != nil {
+		os.Remove(common.Args.Sock + ".out")
+		log.Warn("Dealer connection error: ", err)
+		return
+	}
+
+	// Parse outgoing data
+	data, err := json.Marshal(m)
+	if err != nil {
+		log.Warn("Dealer parse error: ", err)
+		return
+	}
+
+	msg := string(data)
+	log.Info("Send socket message ", msg)
 
 	// Write outgoing data
 	_, err = dialer.Write([]byte(msg))
 	if err != nil {
-		log.Error("Dealer write error: ", err)
+		log.Warn("Dealer write error: ", err)
 	}
 }
