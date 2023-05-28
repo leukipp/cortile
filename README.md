@@ -1,5 +1,5 @@
 # Cortile
-<a href="https://github.com/leukipp/cortile"><img src="https://raw.githubusercontent.com/leukipp/cortile/main/assets/logo.png" style="display:inline-block;width:75px;margin-right:10px;" align="left"/></a>
+<a href="https://github.com/leukipp/cortile"><img src="https://raw.githubusercontent.com/leukipp/cortile/main/assets/images/logo.png" style="display:inline-block;width:75px;margin-right:10px;" align="left"/></a>
 Linux auto tiling manager with hot corner support for [Xfce](https://en.wikipedia.org/wiki/Xfce), [Openbox](https://en.wikipedia.org/wiki/Openbox) and other [EWMH](https://en.wikipedia.org/wiki/Extended_Window_Manager_Hints#List_of_window_managers_that_support_Extended_Window_Manager_Hints) compliant window managers using the [X11](https://en.wikipedia.org/wiki/X_Window_System) window system.
 
 Simply keep your current window manager and **install cortile on top** of it.
@@ -10,19 +10,20 @@ Once enabled, the tiling manager will handle _resizing_ and _positioning_ of _ex
 - [x] Tiling mode gui.
 - [x] Workspace based tiling.
 - [x] Keyboard and hot corner events.
-- [x] Vertical, horizontal and fullscreen mode.
-- [x] Persistent windows via "Always on Visible Workspace".
+- [x] Socket communication commands.
 - [x] Floating windows via "Always on Top".
-- [x] Resize of layout proportions.
+- [x] Persistent windows via "Always on Visible Workspace".
+- [x] Vertical, horizontal and fullscreen mode.
+- [x] Adjustments of layout proportions.
 - [x] Drag & drop window swap.
 - [x] Auto detection of panels.
-- [x] Selective tiling areas.
 - [x] Multi monitor support.
+- [x] Selective tiling areas.
 
 Support for **keyboard and mouse navigation** sets cortile apart from other tiling solutions.
 The _go_ implementation ensures a fast and responsive system, where _multiple layouts_, _keyboard shortcuts_, _drag & drop_ and _hot corner_ events simplify and speed up your daily work.
 
-[![demo](https://raw.githubusercontent.com/leukipp/cortile/main/assets/demo.gif)](https://github.com/leukipp/cortile/blob/main/assets/demo.gif)
+[![demo](https://raw.githubusercontent.com/leukipp/cortile/main/assets/images/demo.gif)](https://github.com/leukipp/cortile/blob/main/assets/images/demo.gif)
 
 ## Installation [![installation](https://img.shields.io/github/v/release/leukipp/cortile)](#installation-)
 Download the latest binary file from the [releases](https://github.com/leukipp/cortile/releases/latest):
@@ -49,11 +50,11 @@ Adjustments to window sizes are considered to be proportion changes of the under
 Windows placed on the master side are static and the layout will only change as long the space is not fully occupied.
 Once the master area is full, the slave area is used, where the layout changes dynamically based on available space and configuration settings.
 
-## Configuration [![configuration](https://img.shields.io/badge/platform-linux%20amd64%20|%20arm64%20|%20armv6%20|%20386%20-lightgrey)](#configuration-)
-The configuration file is located at `~/.config/cortile/config.toml` and is created with default values during the first startup.
+## Configuration [![configuration](https://img.shields.io/github/last-commit/leukipp/cortile)](#configuration-)
+The configuration file is located at `~/.config/cortile/config.toml` (or `XDG_CONFIG_HOME`) and is created with default values during the first startup.
 Additional information about individual entries can be found in the comments section of the [config.toml](https://github.com/leukipp/cortile/blob/main/config.toml) file.
 
-[![config](https://raw.githubusercontent.com/leukipp/cortile/main/assets/config.gif)](https://github.com/leukipp/cortile/blob/main/assets/config.gif)
+[![config](https://raw.githubusercontent.com/leukipp/cortile/main/assets/images/config.gif)](https://github.com/leukipp/cortile/blob/main/assets/images/config.gif)
 
 ### Shortcuts
 The default keyboard shortcuts are assigned as shown below.
@@ -95,8 +96,36 @@ Useful mouse shortcuts in Xfce environments:
 - Resize window: <kbd>Alt</kbd>+<kbd>Right-Click</kbd>.
 - Maximize window: <kbd>Alt</kbd>+<kbd>Double-Click</kbd>.
 
+## Communication [![communication](https://img.shields.io/badge/platform-%20amd64%20|%20arm64%20|%20armv6%20|%20386%20-lightgrey)](#communication-)
+External processes may communicate directly with cortile using [unix domain sockets](https://en.wikipedia.org/wiki/Unix_domain_socket).
+The sock parameter (defaults to `-sock /tmp/cortile.sock`) defines a path for a socket file that can be used to exchange data between processes.
+Internally however, two socket files are used.
+One is for incoming (`/tmp/cortile.sock.in`) and one for outgoing (`/tmp/cortile.sock.out`) communication.
+
+User triggered events (e.g. tile workspace) are broadcasted to the outgoing socket as json string.
+One can listen to them by using [netcat](https://en.wikipedia.org/wiki/Netcat) or similar [alternatives](https://en.wikipedia.org/wiki/Netcat#Ports_and_reimplementations):
+```bash
+# Netcat
+nc -Ulk /tmp/cortile.sock.out
+
+# Socat
+socat UNIX-LISTEN:/tmp/cortile.sock.out,reuseaddr,fork STDOUT
+```
+
+Similarly, requests about the status of cortile can be sent to the incoming socket:
+```bash
+# Netcat
+echo '{"State":"workspaces"}' | nc -U /tmp/cortile.sock.in
+
+# Socat
+echo '{"State":"workspaces"}' | socat STDIN UNIX-CONNECT:/tmp/cortile.sock.in
+```
+
+Since the communication is asynchronous, it is necessary to listen to the outgoing socket at the same time in order to receive the response.
+Example files for sending commands and receiving states can be found in the [scripts](https://github.com/leukipp/cortile/tree/main/assets/scripts) folder.
+
 ## Development [![development](https://img.shields.io/github/go-mod/go-version/leukipp/cortile)](#development-)
-You need [go >= 1.17](https://go.dev/dl/) to compile cortile.
+You need [go >= 1.18](https://go.dev/dl/) to compile cortile.
 
 <details><summary>Install - go</summary><div>
 
@@ -119,8 +148,8 @@ sudo pacman -S go
 ### Option 2: Install go via archive download:
 Download a binary release suitable for your system:
 ```bash
-cd /tmp/ && wget https://dl.google.com/go/go1.17.linux-amd64.tar.gz
-sudo tar -xvf go1.17.linux-amd64.tar.gz
+cd /tmp/ && wget https://dl.google.com/go/go1.18.linux-amd64.tar.gz
+sudo tar -xvf go1.18.linux-amd64.tar.gz
 sudo mv -fi go /usr/local
 ```
 
