@@ -240,7 +240,7 @@ func MakeMaster(tr *desktop.Tracker) bool {
 	if !ws.IsEnabled() {
 		return false
 	}
-	ws.ActiveLayout().MakeMaster(tr.Clients[common.ActiveWin])
+	ws.ActiveLayout().MakeMaster(tr.Clients[common.ActiveWindow])
 	ws.Tile()
 
 	return true

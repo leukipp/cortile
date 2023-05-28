@@ -49,7 +49,7 @@ func listen(listener net.Listener, tr *desktop.Tracker) {
 		}
 
 		msg := strings.TrimSpace(string(data[:n]))
-		log.Info("Receive socket message ", msg)
+		log.Info("Receive socket message ", truncate(msg, 100))
 
 		// Parse incoming data
 		var kv map[string]string
@@ -69,6 +69,13 @@ func listen(listener net.Listener, tr *desktop.Tracker) {
 			Query(v, tr)
 		}
 	}
+}
+
+func truncate(s string, max int) string {
+	if max > len(s) {
+		return s
+	}
+	return s[:max] + "..."
 }
 
 func NotifySocket[T any](m Message[T]) {
@@ -92,7 +99,7 @@ func NotifySocket[T any](m Message[T]) {
 	}
 
 	msg := string(data)
-	log.Info("Send socket message ", msg)
+	log.Info("Send socket message ", truncate(msg, 100))
 
 	// Write outgoing data
 	_, err = dialer.Write([]byte(msg))

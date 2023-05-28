@@ -40,8 +40,8 @@ func (l *HorizontalLayout) Do() {
 	dx, dy, dw, dh := common.DesktopDimensions()
 	gap := common.Config.WindowGapSize
 
-	mmax := l.Masters.Allowed
-	smax := l.Slaves.Allowed
+	mmax := l.Masters.MaxAllowed
+	smax := l.Slaves.MaxAllowed
 
 	msize := int(math.Min(float64(len(l.Masters.Clients)), float64(mmax)))
 	ssize := int(math.Min(float64(len(l.Slaves.Clients)), float64(smax)))
@@ -151,8 +151,8 @@ func (l *HorizontalLayout) UpdateProportions(c *store.Client, d *store.Direction
 
 	gap := common.Config.WindowGapSize
 
-	mmax := l.Masters.Allowed
-	smax := l.Slaves.Allowed
+	mmax := l.Masters.MaxAllowed
+	smax := l.Slaves.MaxAllowed
 
 	msize := int(math.Min(float64(len(l.Masters.Clients)), float64(mmax)))
 	ssize := int(math.Min(float64(len(l.Slaves.Clients)), float64(smax)))

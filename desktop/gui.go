@@ -70,7 +70,7 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 	for _, c := range clients {
 		for _, state := range c.Latest.States {
 			if state == "_NET_WM_STATE_FULLSCREEN" || layout == "fullscreen" {
-				clients = mg.Visible(&store.Windows{Clients: mg.Clients(true), Allowed: 1})
+				clients = mg.Visible(&store.Windows{Clients: mg.Clients(true), MaxAllowed: 1})
 				break
 			}
 		}

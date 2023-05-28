@@ -16,14 +16,14 @@ import (
 )
 
 var (
-	X           *xgbutil.XUtil            // X connection object
-	DeskCount   uint                      // Number of desktop workspaces
-	CurrentDesk uint                      // Current desktop
-	ViewPorts   Head                      // Physical monitors
-	Windows     []xproto.Window           // List of client windows
-	ActiveWin   xproto.Window             // Current active window
-	Corners     []*Corner                 // Corners for pointer events
-	Pointer     *xproto.QueryPointerReply // Pointer position and state
+	X            *xgbutil.XUtil            // X connection object
+	DeskCount    uint                      // Number of desktop workspaces
+	CurrentDesk  uint                      // Current desktop
+	ViewPorts    Head                      // Physical monitors
+	Windows      []xproto.Window           // List of client windows
+	ActiveWindow xproto.Window             // Current active window
+	Corners      []*Corner                 // Corners for pointer events
+	Pointer      *xproto.QueryPointerReply // Pointer position and state
 )
 
 type Head struct {
@@ -49,7 +49,7 @@ func InitState() {
 	Windows, err = ewmh.ClientListGet(X)
 	checkFatal(err)
 
-	ActiveWin, err = ewmh.ActiveWindowGet(X)
+	ActiveWindow, err = ewmh.ActiveWindowGet(X)
 	checkFatal(err)
 
 	Corners = CreateCorners()
@@ -185,7 +185,7 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	} else if aname == "_NET_CLIENT_LIST" {
 		Windows, err = ewmh.ClientListGet(X)
 	} else if aname == "_NET_ACTIVE_WINDOW" {
-		ActiveWin, err = ewmh.ActiveWindowGet(X)
+		ActiveWindow, err = ewmh.ActiveWindowGet(X)
 	}
 
 	if err != nil {

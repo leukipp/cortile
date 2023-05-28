@@ -34,7 +34,7 @@ type Client struct {
 type Info struct {
 	Class      string     // Client window application name
 	Name       string     // Client window title name
-	Desk       uint       // Client window desktop
+	DeskNum    uint       // Client window desktop
 	Types      []string   // Client window types
 	States     []string   // Client window states
 	Dimensions Dimensions // Client window dimensions
@@ -294,7 +294,7 @@ func GetInfo(w xproto.Window) (info Info) {
 	return Info{
 		Class:      class,
 		Name:       name,
-		Desk:       desk,
+		DeskNum:    desk,
 		Types:      types,
 		States:     states,
 		Dimensions: dimensions,
@@ -423,7 +423,7 @@ func IsSpecial(w xproto.Window) bool {
 	}
 
 	// Check pinned windows
-	if info.Desk > common.DeskCount {
+	if info.DeskNum > common.DeskCount {
 		log.Info("Ignore pinned window [", info.Class, "]")
 		return true
 	}

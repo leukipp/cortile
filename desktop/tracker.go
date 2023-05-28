@@ -91,7 +91,7 @@ func (tr *Tracker) trackWindow(w xproto.Window) {
 	// Add new client
 	c := store.CreateClient(w)
 	tr.Clients[c.Win.Id] = c
-	ws := tr.Workspaces[c.Latest.Desk]
+	ws := tr.Workspaces[c.Latest.DeskNum]
 	ws.AddClient(c)
 
 	// Attach handlers and tile
@@ -102,7 +102,7 @@ func (tr *Tracker) trackWindow(w xproto.Window) {
 func (tr *Tracker) untrackWindow(w xproto.Window) {
 	if tr.isTracked(w) {
 		c := tr.Clients[w]
-		ws := tr.Workspaces[c.Latest.Desk]
+		ws := tr.Workspaces[c.Latest.DeskNum]
 
 		// Detach events
 		xevent.Detach(common.X, w)
@@ -117,14 +117,14 @@ func (tr *Tracker) untrackWindow(w xproto.Window) {
 }
 
 func (tr *Tracker) tileWorkspace(c *store.Client) {
-	ws := tr.Workspaces[c.Latest.Desk]
+	ws := tr.Workspaces[c.Latest.DeskNum]
 
 	// Tile workspace
 	ws.Tile()
 }
 
 func (tr *Tracker) handleResizeClient(c *store.Client) {
-	ws := tr.Workspaces[c.Latest.Desk]
+	ws := tr.Workspaces[c.Latest.DeskNum]
 	if !ws.IsEnabled() || store.IsMaximized(c.Win.Id) {
 		return
 	}
@@ -162,7 +162,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 }
 
 func (tr *Tracker) handleMoveClient(c *store.Client) {
-	ws := tr.Workspaces[c.Latest.Desk]
+	ws := tr.Workspaces[c.Latest.DeskNum]
 	if !ws.IsEnabled() || store.IsMaximized(c.Win.Id) {
 		return
 	}
@@ -179,7 +179,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 	cx, cy, cw, ch := cGeom.Pieces()
 
 	// Check position change
-	active := c.Win.Id == common.ActiveWin
+	active := c.Win.Id == common.ActiveWindow
 	moved := math.Abs(float64(cx-px)) > 0.0 || math.Abs(float64(cy-py)) > 0.0
 	resized := math.Abs(float64(cw-pw)) > 0.0 || math.Abs(float64(ch-ph)) > 0.0
 
@@ -207,7 +207,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 }
 
 func (tr *Tracker) handleSwapClient(c *store.Client) {
-	ws := tr.Workspaces[c.Latest.Desk]
+	ws := tr.Workspaces[c.Latest.DeskNum]
 	if !ws.IsEnabled() || store.IsMaximized(c.Win.Id) {
 		return
 	}
@@ -230,7 +230,7 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 	// Client maximized
 	for _, state := range states {
 		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
-			ws := tr.Workspaces[c.Latest.Desk]
+			ws := tr.Workspaces[c.Latest.DeskNum]
 			if !ws.IsEnabled() {
 				return
 			}
@@ -255,7 +255,7 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 	// Client minimized
 	for _, state := range states {
 		if state == "_NET_WM_STATE_HIDDEN" {
-			ws := tr.Workspaces[c.Latest.Desk]
+			ws := tr.Workspaces[c.Latest.DeskNum]
 			if !ws.IsEnabled() {
 				return
 			}
@@ -271,8 +271,8 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 func (tr *Tracker) handleDesktopChange(c *store.Client) {
 
 	// Remove client from current workspace
-	tr.Workspaces[c.Latest.Desk].RemoveClient(c)
-	if tr.Workspaces[c.Latest.Desk].IsEnabled() {
+	tr.Workspaces[c.Latest.DeskNum].RemoveClient(c)
+	if tr.Workspaces[c.Latest.DeskNum].IsEnabled() {
 		tr.tileWorkspace(c)
 	}
 
@@ -283,8 +283,8 @@ func (tr *Tracker) handleDesktopChange(c *store.Client) {
 	}
 
 	// Add client to new workspace
-	tr.Workspaces[c.Latest.Desk].AddClient(c)
-	if tr.Workspaces[c.Latest.Desk].IsEnabled() {
+	tr.Workspaces[c.Latest.DeskNum].AddClient(c)
+	if tr.Workspaces[c.Latest.DeskNum].IsEnabled() {
 		tr.tileWorkspace(c)
 	} else {
 		c.Restore()
@@ -304,7 +304,7 @@ func (tr *Tracker) handleWorkspaceUpdates(X *xgbutil.XUtil, ev xevent.PropertyNo
 
 		// Re-update as some wm minimize to outside
 		time.AfterFunc(200*time.Millisecond, func() {
-			if !tr.isTracked(common.ActiveWin) {
+			if !tr.isTracked(common.ActiveWindow) {
 				tr.Update()
 			}
 		})
