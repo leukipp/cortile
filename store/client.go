@@ -2,7 +2,6 @@ package store
 
 import (
 	"math"
-	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -20,10 +19,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	UNKNOWN = "<UNKNOWN>"
-)
-
 type Client struct {
 	Win      *xwindow.Window `json:"-"` // X window object
 	Created  time.Time       // Internal client creation time
@@ -35,6 +30,7 @@ type Info struct {
 	Class      string     // Client window application name
 	Name       string     // Client window title name
 	DeskNum    uint       // Client window desktop
+	ScreenNum  uint       // Client window screen
 	Types      []string   // Client window types
 	States     []string   // Client window states
 	Dimensions Dimensions // Client window dimensions
@@ -44,8 +40,8 @@ type Dimensions struct {
 	Geometry xrect.Rect        // Client window geometry
 	Hints    Hints             // Client window dimension hints
 	Extents  ewmh.FrameExtents // Client window geometry extents
-	Position bool              // Adjust position on move/resize
-	Size     bool              // Adjust size on move/resize
+	AdjPos   bool              // Adjust position on move/resize
+	AdjSize  bool              // Adjust size on move/resize
 }
 
 type Hints struct {
@@ -65,46 +61,6 @@ func CreateClient(w xproto.Window) (c *Client) {
 
 func (c *Client) Activate() {
 	ewmh.ActiveWindowReq(common.X, c.Win.Id)
-}
-
-func (c *Client) MoveResize(x, y, w, h int) {
-	c.UnDecorate()
-	c.UnMaximize()
-
-	// Decoration extents
-	extents := c.Latest.Dimensions.Extents
-
-	// Calculate dimensions offsets
-	dx, dy, dw, dh := 0, 0, 0, 0
-	if c.Latest.Dimensions.Position {
-		dx, dy = extents.Left, extents.Top
-	}
-	if c.Latest.Dimensions.Size {
-		dw, dh = extents.Left+extents.Right, extents.Top+extents.Bottom
-	}
-
-	// Move and resize window
-	err := ewmh.MoveresizeWindow(common.X, c.Win.Id, x+dx, y+dy, w-dw, h-dh)
-	if err != nil {
-		log.Warn("Error when moving window [", c.Latest.Class, "]")
-	}
-
-	// Update stored dimensions
-	c.Update()
-}
-
-func (c *Client) LimitDim(w, h int) {
-
-	// Decoration extents
-	extents := c.Latest.Dimensions.Extents
-	dw, dh := extents.Left+extents.Right, extents.Top+extents.Bottom
-
-	// Set window size limits
-	icccm.WmNormalHintsSet(common.X, c.Win.Id, &icccm.NormalHints{
-		Flags:     icccm.SizeHintPMinSize,
-		MinWidth:  uint(w - dw),
-		MinHeight: uint(h - dh),
-	})
 }
 
 func (c *Client) UnDecorate() {
@@ -131,30 +87,73 @@ func (c *Client) UnMaximize() {
 	}
 }
 
-func (c *Client) Update() (success bool) {
-	info := GetInfo(c.Win.Id)
-	if info.Class == UNKNOWN {
-		return false
+func (c *Client) MoveResize(x, y, w, h int) {
+	c.UnDecorate()
+	c.UnMaximize()
+
+	// Decoration extents
+	ext := c.Latest.Dimensions.Extents
+
+	// Calculate dimensions offsets
+	dx, dy, dw, dh := 0, 0, 0, 0
+	if c.Latest.Dimensions.AdjPos {
+		dx, dy = ext.Left, ext.Top
 	}
+	if c.Latest.Dimensions.AdjSize {
+		dw, dh = ext.Left+ext.Right, ext.Top+ext.Bottom
+	}
+
+	// Move and resize window
+	err := ewmh.MoveresizeWindow(common.X, c.Win.Id, x+dx, y+dy, w-dw, h-dh)
+	if err != nil {
+		log.Warn("Error when moving window [", c.Latest.Class, "]")
+	}
+
+	// Update stored dimensions
+	c.Update()
+}
+
+func (c *Client) LimitDimensions(w, h int) {
+
+	// Decoration extents
+	ext := c.Latest.Dimensions.Extents
+	dw, dh := ext.Left+ext.Right, ext.Top+ext.Bottom
+
+	// Set window size limits
+	icccm.WmNormalHintsSet(common.X, c.Win.Id, &icccm.NormalHints{
+		Flags:     icccm.SizeHintPMinSize,
+		MinWidth:  uint(w - dw),
+		MinHeight: uint(h - dh),
+	})
+}
+
+func (c *Client) Update() {
+	info := GetInfo(c.Win.Id)
 
 	// Update client info
 	log.Debug("Update client info [", info.Class, "]")
 	c.Latest = info
-
-	return true
 }
 
 func (c *Client) Restore() {
-
-	// Calculate decoration extents
 	dw, dh := 0, 0
+
+	// Obtain decoration motif
 	decoration := motif.DecorationNone
 	if motif.Decor(&c.Original.Dimensions.Hints.Motif) {
 		decoration = motif.DecorationAll
+
+		// Obtain decoration extents
 		if !common.Config.WindowDecoration {
-			extents := c.Original.Dimensions.Extents
-			dw, dh = extents.Left+extents.Right, extents.Top+extents.Bottom
+			ext := c.Original.Dimensions.Extents
+			dw, dh = ext.Left+ext.Right, ext.Top+ext.Bottom
 		}
+	}
+
+	// Obtain dimension adjustments
+	if c.Latest.Dimensions.AdjPos && c.Latest.Dimensions.AdjSize {
+		c.Latest.Dimensions.AdjPos = false
+		c.Latest.Dimensions.AdjSize = false
 	}
 
 	// Restore window decorations
@@ -166,8 +165,8 @@ func (c *Client) Restore() {
 	// Restore window size limits
 	icccm.WmNormalHintsSet(common.X, c.Win.Id, &c.Original.Dimensions.Hints.Normal)
 
-	// Move window to original position
-	geom := c.Original.Dimensions.Geometry
+	// Move window to latest position considering decoration adjustments
+	geom := c.Latest.Dimensions.Geometry
 	c.MoveResize(geom.X(), geom.Y(), geom.Width()-dw, geom.Height()-dh)
 }
 
@@ -188,8 +187,8 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 	}
 
 	// Decoration extents (l/r/t/b relative to outer window dimensions)
-	extents := c.Latest.Dimensions.Extents
-	dx, dy, dw, dh := extents.Left, extents.Top, extents.Left+extents.Right, extents.Top+extents.Bottom
+	ext := c.Latest.Dimensions.Extents
+	dx, dy, dw, dh := ext.Left, ext.Top, ext.Left+ext.Right, ext.Top+ext.Bottom
 
 	// Calculate outer geometry (including server and client decorations)
 	x, y, w, h = oGeom.X()+iGeom.X()-dx, oGeom.Y()+iGeom.Y()-dy, iGeom.Width()+dw, iGeom.Height()+dh
@@ -197,12 +196,103 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 	return
 }
 
+func IsSpecial(info Info) bool {
+
+	// Check window types
+	types := []string{
+		"_NET_WM_WINDOW_TYPE_DOCK",
+		"_NET_WM_WINDOW_TYPE_DESKTOP",
+		"_NET_WM_WINDOW_TYPE_TOOLBAR",
+		"_NET_WM_WINDOW_TYPE_UTILITY",
+		"_NET_WM_WINDOW_TYPE_TOOLTIP",
+		"_NET_WM_WINDOW_TYPE_SPLASH",
+		"_NET_WM_WINDOW_TYPE_DIALOG",
+		"_NET_WM_WINDOW_TYPE_COMBO",
+		"_NET_WM_WINDOW_TYPE_NOTIFICATION",
+		"_NET_WM_WINDOW_TYPE_DROPDOWN_MENU",
+		"_NET_WM_WINDOW_TYPE_POPUP_MENU",
+		"_NET_WM_WINDOW_TYPE_MENU",
+		"_NET_WM_WINDOW_TYPE_DND",
+	}
+	for _, typ := range info.Types {
+		if common.IsInList(typ, types) {
+			log.Info("Ignore window with type ", typ, " [", info.Class, "]")
+			return true
+		}
+	}
+
+	// Check window states
+	states := []string{
+		"_NET_WM_STATE_HIDDEN",
+		"_NET_WM_STATE_STICKY",
+		"_NET_WM_STATE_MODAL",
+		"_NET_WM_STATE_ABOVE",
+		"_NET_WM_STATE_BELOW",
+		"_NET_WM_STATE_SKIP_PAGER",
+		"_NET_WM_STATE_SKIP_TASKBAR",
+	}
+	for _, state := range info.States {
+		if common.IsInList(state, states) {
+			log.Info("Ignore window with state ", state, " [", info.Class, "]")
+			return true
+		}
+	}
+
+	// Check pinned windows
+	if info.DeskNum > common.DeskCount {
+		log.Info("Ignore pinned window [", info.Class, "]")
+		return true
+	}
+
+	return false
+}
+
+func IsIgnored(info Info) bool {
+
+	// Check ignored windows
+	for _, s := range common.Config.WindowIgnore {
+		conf_class := s[0]
+		conf_name := s[1]
+
+		reg_class := regexp.MustCompile(strings.ToLower(conf_class))
+		reg_name := regexp.MustCompile(strings.ToLower(conf_name))
+
+		// Ignore all windows with this class
+		class_match := reg_class.MatchString(strings.ToLower(info.Class))
+
+		// But allow the window with a special name
+		name_match := conf_name != "" && reg_name.MatchString(strings.ToLower(info.Name))
+
+		if class_match && !name_match {
+			log.Info("Ignore window with ", strings.TrimSpace(strings.Join(s, " ")), " from config [", info.Class, "]")
+			return true
+		}
+	}
+
+	return false
+}
+
+func IsMaximized(w xproto.Window) bool {
+	info := GetInfo(w)
+
+	// Check maximized windows
+	for _, state := range info.States {
+		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
+			log.Info("Ignore maximized window [", info.Class, "]")
+			return true
+		}
+	}
+
+	return false
+}
+
 func GetInfo(w xproto.Window) (info Info) {
 	var err error
 
 	var class string
 	var name string
-	var desk uint
+	var deskNum uint
+	var screenNum uint
 	var types []string
 	var states []string
 	var dimensions Dimensions
@@ -210,8 +300,8 @@ func GetInfo(w xproto.Window) (info Info) {
 	// Window class (internal class name of the window)
 	cls, err := icccm.WmClassGet(common.X, w)
 	if err != nil {
-		log.Trace(err)
-		class = UNKNOWN
+		class = "UNKNOWN"
+		log.Trace(err, " [", class, "]")
 	} else if cls != nil {
 		class = cls.Class
 	}
@@ -220,15 +310,16 @@ func GetInfo(w xproto.Window) (info Info) {
 	name, err = icccm.WmNameGet(common.X, w)
 	if err != nil {
 		log.Trace(err, " [", class, "]")
-		name = UNKNOWN
+		name = class
 	}
 
-	// Window desktop (desktop workspace where the window is visible)
-	desk, err = ewmh.WmDesktopGet(common.X, w)
+	// Window desktop and screen (workspace where the window is located)
+	deskNum, err = ewmh.WmDesktopGet(common.X, w)
 	if err != nil {
 		log.Trace(err, " [", class, "]")
-		desk = math.MaxUint
+		deskNum = math.MaxUint
 	}
+	screenNum = getScreenNum(w)
 
 	// Window types (types of the window)
 	types, err = ewmh.WmWindowTypeGet(common.X, w)
@@ -287,146 +378,34 @@ func GetInfo(w xproto.Window) (info Info) {
 			Top:    int(ext[2]),
 			Bottom: int(ext[3]),
 		},
-		Position: (extNet != nil && mhints.Flags&motif.HintDecorations > 0 && mhints.Decoration > 1) || (extGtk != nil),
-		Size:     (extNet != nil) || (extGtk != nil),
+		AdjPos:  (extNet != nil && mhints.Flags&motif.HintDecorations > 0 && mhints.Decoration > 1) || (extGtk != nil),
+		AdjSize: (extNet != nil) || (extGtk != nil),
 	}
 
 	return Info{
 		Class:      class,
 		Name:       name,
-		DeskNum:    desk,
+		DeskNum:    deskNum,
+		ScreenNum:  screenNum,
 		Types:      types,
 		States:     states,
 		Dimensions: dimensions,
 	}
 }
 
-func IsMaximized(w xproto.Window) bool {
-	info := GetInfo(w)
-	if info.Class == UNKNOWN {
-		return false
+func getScreenNum(w xproto.Window) uint {
+
+	// Outer window dimensions
+	geom, err := xwindow.New(common.X, w).DecorGeometry()
+	if err != nil {
+		return 0
 	}
 
-	// Check maximized windows
-	for _, state := range info.States {
-		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
-			log.Info("Ignore maximized window [", info.Class, "]")
-			return true
-		}
+	// Window center position
+	center := &xproto.QueryPointerReply{
+		RootX: int16(geom.X() + (geom.Width() / 2)),
+		RootY: int16(geom.Y() + (geom.Height() / 2)),
 	}
 
-	return false
-}
-
-func IsInsideViewPort(w xproto.Window) bool {
-	info := GetInfo(w)
-	if info.Class == UNKNOWN {
-		return false
-	}
-
-	// Viewport dimensions
-	vRect := xrect.New(common.DesktopDimensions())
-
-	// Substract viewport rectangle (r2) from window rectangle (r1)
-	sRects := xrect.Subtract(info.Dimensions.Geometry, vRect)
-
-	// If r1 does not overlap r2, then only one rectangle is returned which is equivalent to r1
-	isOutsideViewport := false
-	if len(sRects) == 1 {
-		isOutsideViewport = reflect.DeepEqual(sRects[0], info.Dimensions.Geometry)
-	}
-
-	if isOutsideViewport {
-		log.Info("Ignore window outside viewport [", info.Class, "]")
-	}
-
-	return !isOutsideViewport
-}
-
-func IsIgnored(w xproto.Window) bool {
-	info := GetInfo(w)
-	if info.Class == UNKNOWN {
-		return true
-	}
-
-	// Check ignored windows
-	for _, s := range common.Config.WindowIgnore {
-		conf_class := s[0]
-		conf_name := s[1]
-
-		reg_class := regexp.MustCompile(strings.ToLower(conf_class))
-		reg_name := regexp.MustCompile(strings.ToLower(conf_name))
-
-		// Ignore all windows with this class
-		class_match := reg_class.MatchString(strings.ToLower(info.Class))
-
-		// But allow the window with a special name
-		name_match := conf_name != "" && reg_name.MatchString(strings.ToLower(info.Name))
-
-		if class_match && !name_match {
-			log.Info("Ignore window with ", strings.TrimSpace(strings.Join(s, " ")), " from config [", info.Class, "]")
-			return true
-		}
-	}
-
-	return false
-}
-
-func IsSpecial(w xproto.Window) bool {
-	info := GetInfo(w)
-	if info.Class == UNKNOWN {
-		return true
-	}
-
-	// Check window types
-	types := map[string]bool{}
-	for _, typ := range []string{
-		"_NET_WM_WINDOW_TYPE_DOCK",
-		"_NET_WM_WINDOW_TYPE_DESKTOP",
-		"_NET_WM_WINDOW_TYPE_TOOLBAR",
-		"_NET_WM_WINDOW_TYPE_UTILITY",
-		"_NET_WM_WINDOW_TYPE_TOOLTIP",
-		"_NET_WM_WINDOW_TYPE_SPLASH",
-		"_NET_WM_WINDOW_TYPE_DIALOG",
-		"_NET_WM_WINDOW_TYPE_COMBO",
-		"_NET_WM_WINDOW_TYPE_NOTIFICATION",
-		"_NET_WM_WINDOW_TYPE_DROPDOWN_MENU",
-		"_NET_WM_WINDOW_TYPE_POPUP_MENU",
-		"_NET_WM_WINDOW_TYPE_MENU",
-		"_NET_WM_WINDOW_TYPE_DND"} {
-		types[typ] = true
-	}
-	for _, typ := range info.Types {
-		if types[typ] {
-			log.Info("Ignore window with type ", typ, " [", info.Class, "]")
-			return true
-		}
-	}
-
-	// Check window states
-	states := map[string]bool{}
-	for _, state := range []string{
-		"_NET_WM_STATE_HIDDEN",
-		"_NET_WM_STATE_STICKY",
-		"_NET_WM_STATE_MODAL",
-		"_NET_WM_STATE_ABOVE",
-		"_NET_WM_STATE_BELOW",
-		"_NET_WM_STATE_SKIP_PAGER",
-		"_NET_WM_STATE_SKIP_TASKBAR"} {
-		states[state] = true
-	}
-	for _, state := range info.States {
-		if states[state] {
-			log.Info("Ignore window with state ", state, " [", info.Class, "]")
-			return true
-		}
-	}
-
-	// Check pinned windows
-	if info.DeskNum > common.DeskCount {
-		log.Info("Ignore pinned window [", info.Class, "]")
-		return true
-	}
-
-	return false
+	return common.ScreenNumGet(center)
 }

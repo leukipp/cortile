@@ -6,37 +6,45 @@ import (
 )
 
 type Corner struct {
-	Name   string     // Corner name used in config
-	Active bool       // Mouse pointer is in this corner
-	Area   xrect.Rect // Rectangle area of the corner section
+	Name      string     // Corner name used in config
+	Active    bool       // Mouse pointer is in this corner
+	ScreenNum uint       // Screen number the corner is located
+	Area      xrect.Rect // Rectangle area of the corner section
 }
 
-func CreateCorner(name string, x int, y int, w int, h int) *Corner {
+func CreateCorner(name string, screenNum uint, x int, y int, w int, h int) *Corner {
 	return &Corner{
-		Name:   name,
-		Active: false,
-		Area:   xrect.New(x, y, w, h),
+		Name:      name,
+		ScreenNum: screenNum,
+		Area:      xrect.New(x, y, w, h),
+		Active:    false,
 	}
 }
 
 func CreateCorners() []*Corner {
-	xw, yw, ww, hw := ScreenDimensions()
+	corners := []*Corner{}
 
-	// Corner dimensions
-	wcs, hcs := Config.EdgeCornerSize, Config.EdgeCornerSize
-	wcl, hcl := Config.EdgeCenterSize, Config.EdgeCenterSize
+	for i, s := range ViewPorts.Screens {
+		xw, yw, ww, hw := s.Pieces()
 
-	// Define corners and positions
-	tl := CreateCorner("top_left", xw, yw, wcs, hcs)
-	tc := CreateCorner("top_center", (xw+ww)/2-wcl/2, yw, wcl, hcs)
-	tr := CreateCorner("top_right", xw+ww-wcs, yw, wcs, hcs)
-	cr := CreateCorner("center_right", xw+ww-wcs, (yw+hw)/2-hcl/2, wcs, hcl)
-	br := CreateCorner("bottom_right", xw+ww-wcs, yw+hw-hcs, wcs, hcs)
-	bc := CreateCorner("bottom_center", (xw+ww)/2-wcl/2, yw+hw-hcs, wcl, hcl)
-	bl := CreateCorner("bottom_left", xw, yw+hw-hcs, wcs, hcs)
-	cl := CreateCorner("center_left", xw, (yw+hw)/2-hcl/2, wcs, hcl)
+		// Corner dimensions
+		wcs, hcs := Config.EdgeCornerSize, Config.EdgeCornerSize
+		wcl, hcl := Config.EdgeCenterSize, Config.EdgeCenterSize
 
-	return []*Corner{tl, tc, tr, cr, br, bc, bl, cl}
+		// Define corners and positions
+		tl := CreateCorner("top_left", uint(i), xw, yw, wcs, hcs)
+		tc := CreateCorner("top_center", uint(i), (xw+ww)/2-wcl/2, yw, wcl, hcs)
+		tr := CreateCorner("top_right", uint(i), xw+ww-wcs, yw, wcs, hcs)
+		cr := CreateCorner("center_right", uint(i), xw+ww-wcs, (yw+hw)/2-hcl/2, wcs, hcl)
+		br := CreateCorner("bottom_right", uint(i), xw+ww-wcs, yw+hw-hcs, wcs, hcs)
+		bc := CreateCorner("bottom_center", uint(i), (xw+ww)/2-wcl/2, yw+hw-hcs, wcl, hcl)
+		bl := CreateCorner("bottom_left", uint(i), xw, yw+hw-hcs, wcs, hcs)
+		cl := CreateCorner("center_left", uint(i), xw, (yw+hw)/2-hcl/2, wcs, hcl)
+
+		corners = append(corners, []*Corner{tl, tc, tr, cr, br, bc, bl, cl}...)
+	}
+
+	return corners
 }
 
 func (c *Corner) IsActive(p *xproto.QueryPointerReply) bool {
@@ -45,14 +53,4 @@ func (c *Corner) IsActive(p *xproto.QueryPointerReply) bool {
 	c.Active = IsInsideRect(p, c.Area)
 
 	return c.Active
-}
-
-func IsInsideRect(p *xproto.QueryPointerReply, r xrect.Rect) bool {
-	x, y, w, h := r.Pieces()
-
-	// Check if x and y are inside rectangle
-	xInRect := int(p.RootX) >= x && int(p.RootX) <= (x+w)
-	yInRect := int(p.RootY) >= y && int(p.RootY) <= (y+h)
-
-	return xInRect && yInRect
 }

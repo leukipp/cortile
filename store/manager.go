@@ -11,6 +11,7 @@ import (
 
 type Manager struct {
 	DeskNum     uint         // Index of managed desktop
+	ScreenNum   uint         // Index of managed screen
 	Proportions *Proportions // Layout proportions of window clients
 	Masters     *Windows     // List of master window clients
 	Slaves      *Windows     // List of slave window clients
@@ -34,9 +35,10 @@ type Windows struct {
 	MaxAllowed int       // Number of maximal allowed clients
 }
 
-func CreateManager(deskNum uint) *Manager {
+func CreateManager(deskNum uint, screenNum uint) *Manager {
 	return &Manager{
-		DeskNum: deskNum,
+		DeskNum:   deskNum,
+		ScreenNum: screenNum,
 		Proportions: &Proportions{
 			MasterSlave:  calcProportions(2),
 			MasterMaster: calcProportions(common.Config.WindowMastersMax),
@@ -56,7 +58,7 @@ func CreateManager(deskNum uint) *Manager {
 func (mg *Manager) Undo() {
 	clients := mg.Clients(true)
 
-	log.Info("Untile ", len(clients), " windows [workspace-", mg.DeskNum, "]")
+	log.Info("Untile ", len(clients), " windows [workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
 
 	for _, c := range clients {
 		c.Restore()
@@ -64,11 +66,7 @@ func (mg *Manager) Undo() {
 }
 
 func (mg *Manager) AddClient(c *Client) {
-	if c == nil {
-		return
-	}
-
-	log.Debug("Add client for manager [", c.Latest.Class, "]")
+	log.Debug("Add client for manager [", c.Latest.Class, ", workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
 
 	// Fill up master area then slave area
 	if len(mg.Masters.Clients) < mg.Masters.MaxAllowed {
@@ -79,11 +77,7 @@ func (mg *Manager) AddClient(c *Client) {
 }
 
 func (mg *Manager) RemoveClient(c *Client) {
-	if c == nil {
-		return
-	}
-
-	log.Debug("Remove client from manager [", c.Latest.Class, "]")
+	log.Debug("Remove client from manager [", c.Latest.Class, ", workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
 
 	// Remove master window
 	mi := mg.Index(mg.Masters, c)
@@ -106,11 +100,7 @@ func (mg *Manager) RemoveClient(c *Client) {
 }
 
 func (mg *Manager) MakeMaster(c *Client) {
-	if c == nil {
-		return
-	}
-
-	log.Info("Make window master [", c.Latest.Class, "]")
+	log.Info("Make window master [", c.Latest.Class, ", workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
 
 	// Swap window with first master
 	if len(mg.Masters.Clients) > 0 {
@@ -119,11 +109,7 @@ func (mg *Manager) MakeMaster(c *Client) {
 }
 
 func (mg *Manager) SwapClient(c1 *Client, c2 *Client) {
-	if c1 == nil || c2 == nil {
-		return
-	}
-
-	log.Info("Swap clients [", c1.Latest.Class, " - ", c2.Latest.Class, "]")
+	log.Info("Swap clients [", c1.Latest.Class, "-", c2.Latest.Class, ", workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
 
 	mIndex1 := mg.Index(mg.Masters, c1)
 	sIndex1 := mg.Index(mg.Slaves, c1)
@@ -280,18 +266,18 @@ func (mg *Manager) SetProportions(ps []float64, pi float64, i int, j int) bool {
 }
 
 func (mg *Manager) IsMaster(c *Client) bool {
-	if c == nil {
-		return false
-	}
 
 	// Check if window is master
 	return mg.Index(mg.Masters, c) >= 0
 }
 
+func (mg *Manager) IsSlave(c *Client) bool {
+
+	// Check if window is slave
+	return mg.Index(mg.Slaves, c) >= 0
+}
+
 func (mg *Manager) Index(windows *Windows, c *Client) int {
-	if c == nil {
-		return -1
-	}
 
 	// Traverse client list
 	for i, m := range windows.Clients {

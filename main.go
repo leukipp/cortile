@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 	"syscall"
 
 	"github.com/BurntSushi/xgbutil/xevent"
@@ -34,11 +35,22 @@ func main() {
 	defer InitLock().Close()
 	InitLog()
 
-	// Init config and state
+	// Init config and root
 	common.InitConfig(defaultConfig)
-	common.InitState()
+	common.InitRoot()
 
-	// Init workspace and tracker
+	// Run cortile
+	run()
+}
+
+func run() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Fatal(fmt.Errorf("%s\n%s", err, debug.Stack()))
+		}
+	}()
+
+	// Create workspaces and tracker
 	workspaces := desktop.CreateWorkspaces()
 	tracker := desktop.CreateTracker(workspaces)
 
@@ -58,6 +70,7 @@ func InitLock() *os.File {
 		fmt.Println(fmt.Errorf("cortile already running (%s)", err))
 		os.Exit(1)
 	}
+
 	return file
 }
 
@@ -110,5 +123,6 @@ func createLogFile(filename string) (*os.File, error) {
 		fmt.Println(fmt.Errorf("FILE error (%s)", err))
 		return nil, err
 	}
+
 	return file, nil
 }

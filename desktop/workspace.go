@@ -14,38 +14,42 @@ type Workspace struct {
 	ActiveLayoutNum uint     // Active layout index
 }
 
-func CreateWorkspaces() map[uint]*Workspace {
-	workspaces := make(map[uint]*Workspace)
+func CreateWorkspaces() map[Location]*Workspace {
+	workspaces := make(map[Location]*Workspace)
 
-	for i := uint(0); i < common.DeskCount; i++ {
+	for deskNum := uint(0); deskNum < common.DeskCount; deskNum++ {
+		for screenNum := uint(0); screenNum < common.ScreenCount; screenNum++ {
+			location := Location{DeskNum: deskNum, ScreenNum: screenNum}
 
-		// Create layouts for each workspace
-		layouts := CreateLayouts(i)
-		ws := &Workspace{
-			Layouts:       layouts,
-			TilingEnabled: common.Config.TilingEnabled,
-		}
-
-		// Activate default layout
-		for i, l := range layouts {
-			if l.GetName() == common.Config.TilingLayout {
-				ws.SetLayout(uint(i))
+			// Create layouts for each desktop and screen
+			layouts := CreateLayouts(location)
+			ws := &Workspace{
+				Layouts:       layouts,
+				TilingEnabled: common.Config.TilingEnabled,
 			}
-		}
 
-		workspaces[i] = ws
+			// Activate default layout
+			for i, l := range layouts {
+				if l.GetName() == common.Config.TilingLayout {
+					ws.SetLayout(uint(i))
+				}
+			}
+
+			// Map location to workspace
+			workspaces[location] = ws
+		}
 	}
 
 	return workspaces
 }
 
-func CreateLayouts(deskNum uint) []Layout {
+func CreateLayouts(l Location) []Layout {
 	return []Layout{
-		layout.CreateFullscreenLayout(deskNum),
-		layout.CreateVerticalLeftLayout(deskNum),
-		layout.CreateVerticalRightLayout(deskNum),
-		layout.CreateHorizontalTopLayout(deskNum),
-		layout.CreateHorizontalBottomLayout(deskNum),
+		layout.CreateFullscreenLayout(l.DeskNum, l.ScreenNum),
+		layout.CreateVerticalLeftLayout(l.DeskNum, l.ScreenNum),
+		layout.CreateVerticalRightLayout(l.DeskNum, l.ScreenNum),
+		layout.CreateHorizontalTopLayout(l.DeskNum, l.ScreenNum),
+		layout.CreateHorizontalBottomLayout(l.DeskNum, l.ScreenNum),
 	}
 }
 
@@ -77,10 +81,6 @@ func (ws *Workspace) UnTile() {
 }
 
 func (ws *Workspace) AddClient(c *store.Client) {
-	if c == nil {
-		return
-	}
-
 	log.Info("Add client for each layout [", c.Latest.Class, "]")
 
 	// Add client to all layouts
@@ -90,10 +90,6 @@ func (ws *Workspace) AddClient(c *store.Client) {
 }
 
 func (ws *Workspace) RemoveClient(c *store.Client) {
-	if c == nil {
-		return
-	}
-
 	log.Info("Remove client from each layout [", c.Latest.Class, "]")
 
 	// Remove client from all layouts
@@ -107,8 +103,5 @@ func (ws *Workspace) Enable(enable bool) {
 }
 
 func (ws *Workspace) IsEnabled() bool {
-	if ws == nil {
-		return false
-	}
 	return ws.TilingEnabled
 }

@@ -71,11 +71,11 @@ func Execute(a string, tr *desktop.Tracker) bool {
 
 	// Notify socket
 	if success {
-		type Action struct{ Workspace uint }
+		type Action struct{ Workspace, Screen uint }
 		NotifySocket(Message[Action]{
 			Type: "Action",
 			Name: a,
-			Data: Action{Workspace: common.CurrentDesk},
+			Data: Action{Workspace: common.CurrentDesk, Screen: common.CurrentScreen},
 		})
 	}
 
@@ -92,7 +92,7 @@ func Query(s string, tr *desktop.Tracker) bool {
 
 	switch s {
 	case "workspaces":
-		NotifySocket(Message[map[uint]*desktop.Workspace]{
+		NotifySocket(Message[map[desktop.Location]*desktop.Workspace]{
 			Type: "State",
 			Name: s,
 			Data: tr.Workspaces,
@@ -118,7 +118,7 @@ func Query(s string, tr *desktop.Tracker) bool {
 }
 
 func Tile(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	ws.Enable(true)
 	tr.Update()
 
@@ -128,7 +128,7 @@ func Tile(tr *desktop.Tracker) bool {
 }
 
 func UnTile(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -139,7 +139,7 @@ func UnTile(tr *desktop.Tracker) bool {
 }
 
 func SwitchLayout(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -151,7 +151,7 @@ func SwitchLayout(tr *desktop.Tracker) bool {
 }
 
 func FullscreenLayout(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -168,7 +168,7 @@ func FullscreenLayout(tr *desktop.Tracker) bool {
 }
 
 func VerticalLeftLayout(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -185,7 +185,7 @@ func VerticalLeftLayout(tr *desktop.Tracker) bool {
 }
 
 func VerticalRightLayout(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -202,7 +202,7 @@ func VerticalRightLayout(tr *desktop.Tracker) bool {
 }
 
 func HorizontalTopLayout(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -219,7 +219,7 @@ func HorizontalTopLayout(tr *desktop.Tracker) bool {
 }
 
 func HorizontalBottomLayout(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -236,18 +236,20 @@ func HorizontalBottomLayout(tr *desktop.Tracker) bool {
 }
 
 func MakeMaster(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
-	ws.ActiveLayout().MakeMaster(tr.Clients[common.ActiveWindow])
-	ws.Tile()
-
-	return true
+	if c, ok := tr.Clients[common.ActiveWindow]; ok {
+		ws.ActiveLayout().MakeMaster(c)
+		ws.Tile()
+		return true
+	}
+	return false
 }
 
 func IncreaseMaster(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -260,7 +262,7 @@ func IncreaseMaster(tr *desktop.Tracker) bool {
 }
 
 func DecreaseMaster(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -273,7 +275,7 @@ func DecreaseMaster(tr *desktop.Tracker) bool {
 }
 
 func IncreaseSlave(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -286,7 +288,7 @@ func IncreaseSlave(tr *desktop.Tracker) bool {
 }
 
 func DecreaseSlave(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -299,7 +301,7 @@ func DecreaseSlave(tr *desktop.Tracker) bool {
 }
 
 func IncreaseProportion(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -310,7 +312,7 @@ func IncreaseProportion(tr *desktop.Tracker) bool {
 }
 
 func DecreaseProportion(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -321,7 +323,7 @@ func DecreaseProportion(tr *desktop.Tracker) bool {
 }
 
 func NextWindow(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
@@ -331,7 +333,7 @@ func NextWindow(tr *desktop.Tracker) bool {
 }
 
 func PreviousWindow(tr *desktop.Tracker) bool {
-	ws := tr.Workspaces[common.CurrentDesk]
+	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}

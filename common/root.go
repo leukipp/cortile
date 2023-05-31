@@ -16,14 +16,17 @@ import (
 )
 
 var (
-	X            *xgbutil.XUtil            // X connection object
-	DeskCount    uint                      // Number of desktop workspaces
-	CurrentDesk  uint                      // Current desktop
-	ViewPorts    Head                      // Physical monitors
-	Windows      []xproto.Window           // List of client windows
-	ActiveWindow xproto.Window             // Current active window
-	Corners      []*Corner                 // Corners for pointer events
-	Pointer      *xproto.QueryPointerReply // Pointer position and state
+	X             *xgbutil.XUtil            // X connection object
+	DeskCount     uint                      // Number of desktops
+	ScreenCount   uint                      // Number of screens
+	CurrentDesk   uint                      // Current desktop number
+	CurrentScreen uint                      // Current screen number
+	ViewPorts     Head                      // Physical monitors
+	Windows       []xproto.Window           // List of client windows
+	ActiveWindow  xproto.Window             // Current active window
+	Corners       []*Corner                 // Corners for pointer events
+	Pointer       *xproto.QueryPointerReply // Pointer position and state
+	callbacks     []func(string)            // State event callback functions
 )
 
 type Head struct {
@@ -31,7 +34,7 @@ type Head struct {
 	Desktops xinerama.Heads // Desktop size (workarea without panels)
 }
 
-func InitState() {
+func InitRoot() {
 	var err error
 
 	X := Connect()
@@ -53,7 +56,6 @@ func InitState() {
 	checkFatal(err)
 
 	Corners = CreateCorners()
-	Pointer, _ = xproto.QueryPointer(X.Conn(), X.RootWin()).Reply()
 
 	root.Listen(xproto.EventMaskPropertyChange)
 	xevent.PropertyNotifyFun(stateUpdate).Connect(X, X.RootWin())
@@ -62,26 +64,28 @@ func InitState() {
 func Connect() *xgbutil.XUtil {
 	var err error
 
-	// connect to X server
+	// Connect to X server
 	X, err = xgbutil.NewConn()
 	checkFatal(err)
 
-	// check ewmh compliance
+	// Check ewmh compliance
 	_, err = ewmh.GetEwmhWM(X)
 	if err != nil {
-		log.Fatal("Window manager is not ewmh complaint ", err)
+		log.Fatal("Window manager is not EWMH compliant ", err)
 	}
 
-	// wait for client list availability
+	// Wait for client list availability
 	i, j := 0, 100
 	for i < j {
-		_, err = ewmh.ClientListGet(X)
+		_, err = ewmh.ClientListStackingGet(X)
 		if err == nil {
 			break
 		}
 		i += 1
 		time.Sleep(100 * time.Millisecond)
 	}
+
+	log.Info("Connected to X server")
 
 	return X
 }
@@ -108,14 +112,14 @@ func ViewPortsGet(X *xgbutil.XUtil) (Head, error) {
 	desktops := PhysicalHeadsGet(rGeom)
 
 	// Adjust desktops geometry
-	clients, err := ewmh.ClientListGet(X)
+	clients, err := ewmh.ClientListStackingGet(X)
 	for _, id := range clients {
 		strut, err := ewmh.WmStrutPartialGet(X, id)
 		if err != nil {
 			continue
 		}
 
-		// Apply in place struts to our desktops
+		// Apply in place struts to desktops
 		xrect.ApplyStrut(desktops, uint(rGeom.Width()), uint(rGeom.Height()),
 			strut.Left, strut.Right, strut.Top, strut.Bottom,
 			strut.LeftStartY, strut.LeftEndY,
@@ -124,21 +128,29 @@ func ViewPortsGet(X *xgbutil.XUtil) (Head, error) {
 			strut.BottomStartX, strut.BottomEndX)
 	}
 
+	// Update screen count
+	ScreenCount = uint(len(screens))
+
 	log.Info("Screens ", screens)
 	log.Info("Desktops ", desktops)
 
 	return Head{Screens: screens, Desktops: desktops}, err
 }
 
-func DesktopDimensions() (x, y, w, h int) {
-	for _, d := range ViewPorts.Desktops {
-		hx, hy, hw, hh := d.Pieces()
+func ScreenNumGet(p *xproto.QueryPointerReply) uint {
 
-		// Use biggest head (monitor) as desktop area
-		if hw*hh > w*h {
-			x, y, w, h = hx, hy, hw, hh
+	// Check if point is inside screen rectangle
+	for screenNum, rect := range ViewPorts.Screens {
+		if IsInsideRect(p, rect) {
+			return uint(screenNum)
 		}
 	}
+
+	return 0
+}
+
+func DesktopDimensions(screenNum uint) (x, y, w, h int) {
+	x, y, w, h = ViewPorts.Desktops[screenNum].Pieces()
 
 	// Add desktop margin
 	x += Config.EdgeMargin[3]
@@ -149,47 +161,43 @@ func DesktopDimensions() (x, y, w, h int) {
 	return
 }
 
-func ScreenDimensions() (x, y, w, h int) {
-	for _, s := range ViewPorts.Screens {
-		hx, hy, hw, hh := s.Pieces()
-
-		// Use biggest head (monitor) as screen area
-		if hw*hh > w*h {
-			x, y, w, h = hx, hy, hw, hh
-		}
-	}
-
-	return
+func OnStateUpdate(fun func(string)) {
+	callbacks = append(callbacks, fun)
 }
 
 func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	var err error
 
 	aname, _ := xprop.AtomName(X, e.Atom)
-	log.Trace("State event ", aname)
+	log.Info("State event ", aname)
 
 	// Update common state variables
-	if aname == "_NET_NUMBER_OF_DESKTOPS" {
+	if IsInList(aname, []string{"_NET_NUMBER_OF_DESKTOPS"}) {
 		DeskCount, err = ewmh.NumberOfDesktopsGet(X)
-	} else if aname == "_NET_CURRENT_DESKTOP" {
+		stateCallbacks(aname)
+	} else if IsInList(aname, []string{"_NET_CURRENT_DESKTOP"}) {
 		CurrentDesk, err = ewmh.CurrentDesktopGet(X)
-	} else if aname == "_NET_DESKTOP_LAYOUT" {
+		stateCallbacks(aname)
+	} else if IsInList(aname, []string{"_NET_DESKTOP_LAYOUT", "_NET_DESKTOP_GEOMETRY", "_NET_DESKTOP_VIEWPORT", "_NET_WORKAREA"}) {
 		ViewPorts, err = ViewPortsGet(X)
 		Corners = CreateCorners()
-	} else if aname == "_NET_DESKTOP_VIEWPORT" {
-		ViewPorts, err = ViewPortsGet(X)
-		Corners = CreateCorners()
-	} else if aname == "_NET_WORKAREA" {
-		ViewPorts, err = ViewPortsGet(X)
-		Corners = CreateCorners()
-	} else if aname == "_NET_CLIENT_LIST" {
-		Windows, err = ewmh.ClientListGet(X)
-	} else if aname == "_NET_ACTIVE_WINDOW" {
+		stateCallbacks(aname)
+	} else if IsInList(aname, []string{"_NET_CLIENT_LIST_STACKING"}) {
+		Windows, err = ewmh.ClientListStackingGet(X)
+		stateCallbacks(aname)
+	} else if IsInList(aname, []string{"_NET_ACTIVE_WINDOW"}) {
 		ActiveWindow, err = ewmh.ActiveWindowGet(X)
+		stateCallbacks(aname)
 	}
 
 	if err != nil {
 		log.Warn("Error updating state ", err)
+	}
+}
+
+func stateCallbacks(aname string) {
+	for _, fun := range callbacks {
+		fun(aname)
 	}
 }
 

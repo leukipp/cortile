@@ -14,8 +14,8 @@ type HorizontalLayout struct {
 	Name           string // Layout name
 }
 
-func CreateHorizontalTopLayout(deskNum uint) *HorizontalLayout {
-	manager := store.CreateManager(deskNum)
+func CreateHorizontalTopLayout(deskNum uint, screenNum uint) *HorizontalLayout {
+	manager := store.CreateManager(deskNum, screenNum)
 	manager.SetProportions(manager.Proportions.MasterSlave, common.Config.Proportion, 0, 1)
 
 	return &HorizontalLayout{
@@ -24,8 +24,8 @@ func CreateHorizontalTopLayout(deskNum uint) *HorizontalLayout {
 	}
 }
 
-func CreateHorizontalBottomLayout(deskNum uint) *HorizontalLayout {
-	manager := store.CreateManager(deskNum)
+func CreateHorizontalBottomLayout(deskNum uint, screenNum uint) *HorizontalLayout {
+	manager := store.CreateManager(deskNum, screenNum)
 	manager.SetProportions(manager.Proportions.MasterSlave, common.Config.Proportion, 1, 0)
 
 	return &HorizontalLayout{
@@ -37,7 +37,7 @@ func CreateHorizontalBottomLayout(deskNum uint) *HorizontalLayout {
 func (l *HorizontalLayout) Do() {
 	clients := l.Clients(true)
 
-	dx, dy, dw, dh := common.DesktopDimensions()
+	dx, dy, dw, dh := common.DesktopDimensions(l.ScreenNum)
 	gap := common.Config.WindowGapSize
 
 	mmax := l.Masters.MaxAllowed
@@ -52,7 +52,7 @@ func (l *HorizontalLayout) Do() {
 	sy := my + mh
 	sh := dh - mh
 
-	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.DeskNum, "]")
+	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.DeskNum, "-", l.ScreenNum, "]")
 
 	// Swap values if master is on bottom
 	if l.Name == "horizontal-bottom" && csize > mmax {
@@ -92,7 +92,7 @@ func (l *HorizontalLayout) Do() {
 			// Limit minimum dimensions
 			minw := int(math.Round(float64(dw-(msize+1)*gap) * minpw))
 			minh := int(math.Round(float64(dh-2*gap) * minph))
-			c.LimitDim(minw, minh)
+			c.LimitDimensions(minw, minh)
 
 			// Move and resize master
 			mp := l.Proportions.MasterMaster[i%msize]
@@ -130,7 +130,7 @@ func (l *HorizontalLayout) Do() {
 			// Limit minimum dimensions
 			minw := int(math.Round(float64(dw-(ssize+1)*gap) * minpw))
 			minh := int(math.Round(float64(dh-2*gap) * minph))
-			c.LimitDim(minw, minh)
+			c.LimitDimensions(minw, minh)
 
 			// Move and resize slave
 			sp := l.Proportions.SlaveSlave[i%ssize]
@@ -146,7 +146,7 @@ func (l *HorizontalLayout) Do() {
 }
 
 func (l *HorizontalLayout) UpdateProportions(c *store.Client, d *store.Directions) {
-	_, _, dw, dh := common.DesktopDimensions()
+	_, _, dw, dh := common.DesktopDimensions(l.ScreenNum)
 	_, _, cw, ch := c.OuterGeometry()
 
 	gap := common.Config.WindowGapSize

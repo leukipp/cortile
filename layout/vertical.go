@@ -14,8 +14,8 @@ type VerticalLayout struct {
 	Name           string // Layout name
 }
 
-func CreateVerticalLeftLayout(deskNum uint) *VerticalLayout {
-	manager := store.CreateManager(deskNum)
+func CreateVerticalLeftLayout(deskNum uint, screenNum uint) *VerticalLayout {
+	manager := store.CreateManager(deskNum, screenNum)
 	manager.SetProportions(manager.Proportions.MasterSlave, common.Config.Proportion, 0, 1)
 
 	return &VerticalLayout{
@@ -24,8 +24,8 @@ func CreateVerticalLeftLayout(deskNum uint) *VerticalLayout {
 	}
 }
 
-func CreateVerticalRightLayout(deskNum uint) *VerticalLayout {
-	manager := store.CreateManager(deskNum)
+func CreateVerticalRightLayout(deskNum uint, screenNum uint) *VerticalLayout {
+	manager := store.CreateManager(deskNum, screenNum)
 	manager.SetProportions(manager.Proportions.MasterSlave, common.Config.Proportion, 1, 0)
 
 	return &VerticalLayout{
@@ -37,7 +37,7 @@ func CreateVerticalRightLayout(deskNum uint) *VerticalLayout {
 func (l *VerticalLayout) Do() {
 	clients := l.Clients(true)
 
-	dx, dy, dw, dh := common.DesktopDimensions()
+	dx, dy, dw, dh := common.DesktopDimensions(l.ScreenNum)
 	gap := common.Config.WindowGapSize
 
 	mmax := l.Masters.MaxAllowed
@@ -52,7 +52,7 @@ func (l *VerticalLayout) Do() {
 	sx := mx + mw
 	sw := dw - mw
 
-	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.DeskNum, "]")
+	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.DeskNum, "-", l.ScreenNum, "]")
 
 	// Swap values if master is on right
 	if l.Name == "vertical-right" && csize > mmax {
@@ -92,7 +92,7 @@ func (l *VerticalLayout) Do() {
 			// Limit minimum dimensions
 			minw := int(math.Round(float64(dw-2*gap) * minpw))
 			minh := int(math.Round(float64(dh-(msize+1)*gap) * minph))
-			c.LimitDim(minw, minh)
+			c.LimitDimensions(minw, minh)
 
 			// Move and resize master
 			mp := l.Proportions.MasterMaster[i%msize]
@@ -130,7 +130,7 @@ func (l *VerticalLayout) Do() {
 			// Limit minimum dimensions
 			minw := int(math.Round(float64(dw-2*gap) * minpw))
 			minh := int(math.Round(float64(dh-(ssize+1)*gap) * minph))
-			c.LimitDim(minw, minh)
+			c.LimitDimensions(minw, minh)
 
 			// Move and resize slave
 			sp := l.Proportions.SlaveSlave[i%ssize]
@@ -146,7 +146,7 @@ func (l *VerticalLayout) Do() {
 }
 
 func (l *VerticalLayout) UpdateProportions(c *store.Client, d *store.Directions) {
-	_, _, dw, dh := common.DesktopDimensions()
+	_, _, dw, dh := common.DesktopDimensions(l.ScreenNum)
 	_, _, cw, ch := c.OuterGeometry()
 
 	gap := common.Config.WindowGapSize

@@ -18,7 +18,6 @@ Once enabled, the tiling manager will handle _resizing_ and _positioning_ of _ex
 - [x] Drag & drop window swap.
 - [x] Auto detection of panels.
 - [x] Multi monitor support.
-- [x] Selective tiling areas.
 
 Support for **keyboard and mouse navigation** sets cortile apart from other tiling solutions.
 The _go_ implementation ensures a fast and responsive system, where _multiple layouts_, _keyboard shortcuts_, _drag & drop_ and _hot corner_ events simplify and speed up your daily work.
@@ -184,7 +183,7 @@ cd cortile
 
 If necessary you can make local changes, then execute:
 ```bash
-go build && go install
+go install -ldflags="-X 'main.date=$(date --iso-8601=seconds)'"
 ```
 
 </div></details>
@@ -198,8 +197,6 @@ $GOPATH/bin/cortile -v
 Special settings:
 - Use the `edge_margin` property to account for additional spaces.
   - e.g. for deskbar panels or conky infographics.
-- Use the `edge_margin` property to enable tiling only for parts of the monitor. 
-  - e.g. use a margin that is half the resolution of a large screen to tile only windows that are moved within a specified area.
 - Use the `window_slaves_max` property to limit the number of windows.
   - e.g. with one active master and `window_slaves_max = 2`, all windows following the third window are stacked behind the two slaves.
 
@@ -218,9 +215,6 @@ In Xfce environments, they can be found under "Window Manager" > "Advanced" > "W
 
 If you encounter problems start the process with `cortile -vv`, which provides additional verbose outputs.
 A log file is created by default under `/tmp/cortile.log`.
-
-Known limitations:
-- Only the biggest monitor is used for tiling.
 
 ## Credits [![credits](https://img.shields.io/github/contributors/leukipp/cortile)](#credits-)
 Based on [zentile](https://github.com/blrsn/zentile) from [Berin Larson](https://github.com/blrsn).
