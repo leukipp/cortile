@@ -97,9 +97,13 @@ Useful mouse shortcuts in Xfce environments:
 
 ## Communication [![communication](https://img.shields.io/badge/platform-%20amd64%20|%20arm64%20|%20armv6%20|%20386%20-lightgrey)](#communication-)
 External processes may communicate directly with cortile using [unix domain sockets](https://en.wikipedia.org/wiki/Unix_domain_socket).
-The sock parameter (defaults to `-sock /tmp/cortile.sock`) defines a path for a socket file that can be used to exchange data between processes.
+The sock parameter (`-sock /tmp/cortile.sock`) defines a path for a socket file that can be used to exchange data between processes.
 Internally however, two socket files are used.
 One is for incoming (`/tmp/cortile.sock.in`) and one for outgoing (`/tmp/cortile.sock.out`) communication.
+
+<details><summary>Communication - Outgoing</summary><div>
+
+### Outgoing events and states
 
 User triggered events (e.g. tile workspace) are broadcasted to the outgoing socket as json string.
 One can listen to them by using [netcat](https://en.wikipedia.org/wiki/Netcat) or similar [alternatives](https://en.wikipedia.org/wiki/Netcat#Ports_and_reimplementations):
@@ -120,7 +124,13 @@ nc -Ulk /tmp/cortile.sock.out 2>&1 | tee /tmp/cortile.json
 socat -v UNIX-LISTEN:/tmp/cortile.sock.out,reuseaddr,fork OPEN:/tmp/cortile.json,create,truncate
 ```
 
-Similarly, requests about the status of cortile can be sent to the incoming socket:
+</div></details>
+
+<details><summary>Communication - Incoming</summary><div>
+
+### Incoming commands and requests
+
+Similarly, requests about the internal state of cortile can be sent to the incoming socket:
 ```bash
 # Netcat
 echo '{"State":"workspaces"}' | nc -U /tmp/cortile.sock.in
@@ -128,16 +138,19 @@ echo '{"State":"workspaces"}' | nc -U /tmp/cortile.sock.in
 # Socat
 echo '{"State":"workspaces"}' | socat STDIN UNIX-CONNECT:/tmp/cortile.sock.in
 ```
-
 Since the communication is asynchronous, it is necessary to listen to the outgoing socket at the same time in order to receive the response.
+
+</div></details>
+
 Example files for sending commands and receiving states can be found in the [scripts](https://github.com/leukipp/cortile/tree/main/assets/scripts) folder.
+
 
 ## Development [![development](https://img.shields.io/github/go-mod/go-version/leukipp/cortile)](#development-)
 You need [go >= 1.18](https://go.dev/dl/) to compile cortile.
 
 <details><summary>Install - go</summary><div>
 
-### Option 1: Install go via package manager:
+### Option 1: Install go via package manager
 Use a package manager supported on your system:
 ```bash
 # apt
@@ -153,7 +166,7 @@ sudo dnf install golang
 sudo pacman -S go
 ```
 
-### Option 2: Install go via archive download:
+### Option 2: Install go via archive download
 Download a binary release suitable for your system:
 ```bash
 cd /tmp/ && wget https://dl.google.com/go/go1.18.linux-amd64.tar.gz
