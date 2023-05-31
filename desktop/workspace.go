@@ -9,6 +9,7 @@ import (
 )
 
 type Workspace struct {
+	Location        Location // Desktop and screen location
 	Layouts         []Layout // List of available layouts
 	TilingEnabled   bool     // Tiling is enabled or not
 	ActiveLayoutNum uint     // Active layout index
@@ -24,8 +25,10 @@ func CreateWorkspaces() map[Location]*Workspace {
 			// Create layouts for each desktop and screen
 			layouts := CreateLayouts(location)
 			ws := &Workspace{
-				Layouts:       layouts,
-				TilingEnabled: common.Config.TilingEnabled,
+				Location:        location,
+				Layouts:         layouts,
+				TilingEnabled:   common.Config.TilingEnabled,
+				ActiveLayoutNum: 0,
 			}
 
 			// Activate default layout

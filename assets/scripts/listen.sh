@@ -58,19 +58,22 @@ while json=$(nc -Ulw 1 $sockout | jq -r "."); do
 
     case ${type} in
         "Action")
-            ws=$(echo $data | jq -r ".Workspace")
+            desk=$(echo $data | jq -r ".Desk")
+            screen=$(echo $data | jq -r ".Screen")
 
             # EXAMPLE: retrieve action event on active workspace
-            echo "Received 'action' with name '$name' on 'workspace = $ws'";;
+            echo "Received 'action' with name '$name' on 'desktop = $desk' and 'screen = $screen'";;
         "State")
             case ${name} in
                 "workspaces")
-                    ws=$(xprop -root -notype _NET_CURRENT_DESKTOP | awk -F " = " '{print $2}')
-                    enabled=$(echo $data | jq -r ".\"$ws\".TilingEnabled")
-                    layout=$(echo $data | jq -r ".\"$ws\".ActiveLayoutNum")
+                    desk=$(echo $data | jq -r ".Desk")
+                    screen=$(echo $data | jq -r ".Screen")                    
+                    workspace=$(echo $data | jq -r ".Workspaces[] | select((.Location.DeskNum==$desk) and (.Location.ScreenNum==$screen))")
+                    enabled=$(echo $workspace | jq -r ".TilingEnabled")
+                    layout=$(echo $workspace | jq -r ".ActiveLayoutNum")
 
                     # EXAMPLE: retrieve tiling state and layout on active workspace
-                    echo "Received '$name' with tiling 'enabled = $enabled' on 'workspace = $ws' with 'layout = $layout'";;
+                    echo "Received '$name' with tiling 'enabled = $enabled' on 'desktop = $desk' and 'screen = $screen' with 'layout = $layout'";;
                 "arguments")
                     config=$(echo $data | jq -r ".Config")
 

@@ -71,11 +71,14 @@ func Execute(a string, tr *desktop.Tracker) bool {
 
 	// Notify socket
 	if success {
-		type Action struct{ Workspace, Screen uint }
+		type Action struct {
+			Desk   uint
+			Screen uint
+		}
 		NotifySocket(Message[Action]{
 			Type: "Action",
 			Name: a,
-			Data: Action{Workspace: common.CurrentDesk, Screen: common.CurrentScreen},
+			Data: Action{Desk: common.CurrentDesk, Screen: common.CurrentScreen},
 		})
 	}
 
@@ -92,10 +95,19 @@ func Query(s string, tr *desktop.Tracker) bool {
 
 	switch s {
 	case "workspaces":
-		NotifySocket(Message[map[desktop.Location]*desktop.Workspace]{
+		type Workspaces struct {
+			Desk       uint
+			Screen     uint
+			Workspaces []*desktop.Workspace
+		}
+		ws := Workspaces{Desk: common.CurrentDesk, Screen: common.CurrentScreen}
+		for _, v := range tr.Workspaces {
+			ws.Workspaces = append(ws.Workspaces, v)
+		}
+		NotifySocket(Message[Workspaces]{
 			Type: "State",
 			Name: s,
-			Data: tr.Workspaces,
+			Data: ws,
 		})
 		success = true
 	case "arguments":

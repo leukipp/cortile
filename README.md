@@ -111,6 +111,15 @@ nc -Ulk /tmp/cortile.sock.out
 socat UNIX-LISTEN:/tmp/cortile.sock.out,reuseaddr,fork STDOUT
 ```
 
+For debugging purposes, you can also dump the json messages into a file:
+```bash
+# Netcat
+nc -Ulk /tmp/cortile.sock.out 2>&1 | tee /tmp/cortile.json
+
+# Socat
+socat -v UNIX-LISTEN:/tmp/cortile.sock.out,reuseaddr,fork OPEN:/tmp/cortile.json,create,truncate
+```
+
 Similarly, requests about the status of cortile can be sent to the incoming socket:
 ```bash
 # Netcat
