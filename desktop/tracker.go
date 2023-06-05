@@ -79,11 +79,9 @@ func CreateTracker(ws map[Location]*Workspace) *Tracker {
 	common.OnStateUpdate(tr.onStateUpdate)
 	common.OnPointerUpdate(tr.onPointerUpdate)
 
-	// Populate clients
-	tr.Update(true)
-
-	// Startup tiling
+	// Populate clients on startup
 	if common.Config.TilingEnabled {
+		tr.Update(true)
 		ShowLayout(tr.ActiveWorkspace())
 	}
 

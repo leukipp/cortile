@@ -30,7 +30,7 @@ var (
 
 var (
 	pointerCallbacksFun []func(uint16) // Pointer events callback functions
-	stateCallbacksFun   []func(string) // State event callback functions
+	stateCallbacksFun   []func(string) // State events callback functions
 )
 
 type Head struct {
