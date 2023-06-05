@@ -141,8 +141,6 @@ func (l *VerticalLayout) Do() {
 			sy += sh + gap
 		}
 	}
-
-	common.X.Conn().Sync()
 }
 
 func (l *VerticalLayout) UpdateProportions(c *store.Client, d *store.Directions) {

@@ -30,6 +30,36 @@ func BindSocket(tr *desktop.Tracker) {
 	go listen(listener, tr)
 }
 
+func NotifySocket[T any](m Message[T]) {
+	if _, err := os.Stat(common.Args.Sock + ".out"); os.IsNotExist(err) {
+		return
+	}
+
+	// Create a unix domain socket dialer
+	dialer, err := net.Dial("unix", common.Args.Sock+".out")
+	if err != nil {
+		os.Remove(common.Args.Sock + ".out")
+		log.Warn("Dealer connection error: ", err)
+		return
+	}
+
+	// Parse outgoing data
+	data, err := json.Marshal(m)
+	if err != nil {
+		log.Warn("Dealer parse error: ", err)
+		return
+	}
+
+	msg := string(data)
+	log.Info("Send socket message ", truncate(msg, 100))
+
+	// Write outgoing data
+	_, err = dialer.Write([]byte(msg))
+	if err != nil {
+		log.Warn("Dealer write error: ", err)
+	}
+}
+
 func listen(listener net.Listener, tr *desktop.Tracker) {
 	for {
 
@@ -76,34 +106,4 @@ func truncate(s string, max int) string {
 		return s
 	}
 	return s[:max] + "..."
-}
-
-func NotifySocket[T any](m Message[T]) {
-	if _, err := os.Stat(common.Args.Sock + ".out"); os.IsNotExist(err) {
-		return
-	}
-
-	// Create a unix domain socket dialer
-	dialer, err := net.Dial("unix", common.Args.Sock+".out")
-	if err != nil {
-		os.Remove(common.Args.Sock + ".out")
-		log.Warn("Dealer connection error: ", err)
-		return
-	}
-
-	// Parse outgoing data
-	data, err := json.Marshal(m)
-	if err != nil {
-		log.Warn("Dealer parse error: ", err)
-		return
-	}
-
-	msg := string(data)
-	log.Info("Send socket message ", truncate(msg, 100))
-
-	// Write outgoing data
-	_, err = dialer.Write([]byte(msg))
-	if err != nil {
-		log.Warn("Dealer write error: ", err)
-	}
 }

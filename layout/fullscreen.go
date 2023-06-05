@@ -42,8 +42,6 @@ func (l *FullscreenLayout) Do() {
 		// Move and resize client
 		c.MoveResize(dx+gap, dy+gap, dw-2*gap, dh-2*gap)
 	}
-
-	common.X.Conn().Sync()
 }
 
 func (l *FullscreenLayout) UpdateProportions(c *store.Client, d *store.Directions) {

@@ -1,7 +1,6 @@
 package common
 
 import (
-	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil/xrect"
 )
 
@@ -47,7 +46,7 @@ func CreateCorners() []*Corner {
 	return corners
 }
 
-func (c *Corner) IsActive(p *xproto.QueryPointerReply) bool {
+func (c *Corner) IsActive(p *Pointer) bool {
 
 	// Check if pointer is inside rectangle
 	c.Active = IsInsideRect(p, c.Area)

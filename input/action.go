@@ -132,7 +132,7 @@ func Query(s string, tr *desktop.Tracker) bool {
 func Tile(tr *desktop.Tracker) bool {
 	ws := tr.ActiveWorkspace()
 	ws.Enable(true)
-	tr.Update()
+	tr.Update(true)
 
 	desktop.ShowLayout(ws)
 

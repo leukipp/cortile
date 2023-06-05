@@ -22,8 +22,8 @@ import (
 type Client struct {
 	Win      *xwindow.Window `json:"-"` // X window object
 	Created  time.Time       // Internal client creation time
-	Latest   Info            // Latest client window information
-	Original Info            // Original client window information
+	Latest   *Info           // Latest client window information
+	Original *Info           // Original client window information
 }
 
 type Info struct {
@@ -49,14 +49,19 @@ type Hints struct {
 	Motif  motif.Hints       // Client window decoration hints
 }
 
-func CreateClient(w xproto.Window) (c *Client) {
-	info := GetInfo(w)
-	return &Client{
+func CreateClient(w xproto.Window) *Client {
+	i := GetInfo(w)
+	c := &Client{
 		Win:      xwindow.New(common.X, w),
 		Created:  time.Now(),
-		Latest:   info,
-		Original: info,
+		Latest:   i,
+		Original: i,
 	}
+
+	// Restore window decorations
+	c.Restore()
+
+	return c
 }
 
 func (c *Client) Activate() {
@@ -129,6 +134,9 @@ func (c *Client) LimitDimensions(w, h int) {
 
 func (c *Client) Update() {
 	info := GetInfo(c.Win.Id)
+	if len(info.Class) == 0 {
+		return
+	}
 
 	// Update client info
 	log.Debug("Update client info [", info.Class, "]")
@@ -173,16 +181,14 @@ func (c *Client) Restore() {
 func (c *Client) OuterGeometry() (x, y, w, h int) {
 
 	// Outer window dimensions (x/y relative to workspace)
-	oGeom, err2 := c.Win.DecorGeometry()
-	if err2 != nil {
-		log.Warn(err2)
+	oGeom, err := c.Win.DecorGeometry()
+	if err != nil {
 		return
 	}
 
 	// Inner window dimensions (x/y relative to outer window)
-	iGeom, err1 := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
-	if err1 != nil {
-		log.Warn(err1)
+	iGeom, err := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
+	if err != nil {
 		return
 	}
 
@@ -196,7 +202,7 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 	return
 }
 
-func IsSpecial(info Info) bool {
+func IsSpecial(info *Info) bool {
 
 	// Check window types
 	types := []string{
@@ -247,7 +253,7 @@ func IsSpecial(info Info) bool {
 	return false
 }
 
-func IsIgnored(info Info) bool {
+func IsIgnored(info *Info) bool {
 
 	// Check ignored windows
 	for _, s := range common.Config.WindowIgnore {
@@ -286,7 +292,7 @@ func IsMaximized(w xproto.Window) bool {
 	return false
 }
 
-func GetInfo(w xproto.Window) (info Info) {
+func GetInfo(w xproto.Window) *Info {
 	var err error
 
 	var class string
@@ -300,8 +306,7 @@ func GetInfo(w xproto.Window) (info Info) {
 	// Window class (internal class name of the window)
 	cls, err := icccm.WmClassGet(common.X, w)
 	if err != nil {
-		class = "UNKNOWN"
-		log.Trace(err, " [", class, "]")
+		log.Trace("Error on request ", err)
 	} else if cls != nil {
 		class = cls.Class
 	}
@@ -309,29 +314,25 @@ func GetInfo(w xproto.Window) (info Info) {
 	// Window name (title on top of the window)
 	name, err = icccm.WmNameGet(common.X, w)
 	if err != nil {
-		log.Trace(err, " [", class, "]")
 		name = class
 	}
 
 	// Window desktop and screen (workspace where the window is located)
 	deskNum, err = ewmh.WmDesktopGet(common.X, w)
 	if err != nil {
-		log.Trace(err, " [", class, "]")
 		deskNum = math.MaxUint
 	}
-	screenNum = getScreenNum(w)
+	screenNum = GetScreenNum(w)
 
 	// Window types (types of the window)
 	types, err = ewmh.WmWindowTypeGet(common.X, w)
 	if err != nil {
-		log.Trace(err, " [", class, "]")
 		types = []string{}
 	}
 
 	// Window states (states of the window)
 	states, err = ewmh.WmStateGet(common.X, w)
 	if err != nil {
-		log.Trace(err, " [", class, "]")
 		states = []string{}
 	}
 
@@ -382,7 +383,7 @@ func GetInfo(w xproto.Window) (info Info) {
 		AdjSize: (extNet != nil) || (extGtk != nil),
 	}
 
-	return Info{
+	return &Info{
 		Class:      class,
 		Name:       name,
 		DeskNum:    deskNum,
@@ -393,7 +394,7 @@ func GetInfo(w xproto.Window) (info Info) {
 	}
 }
 
-func getScreenNum(w xproto.Window) uint {
+func GetScreenNum(w xproto.Window) uint {
 
 	// Outer window dimensions
 	geom, err := xwindow.New(common.X, w).DecorGeometry()
@@ -402,9 +403,9 @@ func getScreenNum(w xproto.Window) uint {
 	}
 
 	// Window center position
-	center := &xproto.QueryPointerReply{
-		RootX: int16(geom.X() + (geom.Width() / 2)),
-		RootY: int16(geom.Y() + (geom.Height() / 2)),
+	center := &common.Pointer{
+		X: int16(geom.X() + (geom.Width() / 2)),
+		Y: int16(geom.Y() + (geom.Height() / 2)),
 	}
 
 	return common.ScreenNumGet(center)

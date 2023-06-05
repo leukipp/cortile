@@ -16,22 +16,32 @@ import (
 )
 
 var (
-	X             *xgbutil.XUtil            // X connection object
-	DeskCount     uint                      // Number of desktops
-	ScreenCount   uint                      // Number of screens
-	CurrentDesk   uint                      // Current desktop number
-	CurrentScreen uint                      // Current screen number
-	ViewPorts     Head                      // Physical monitors
-	Windows       []xproto.Window           // List of client windows
-	ActiveWindow  xproto.Window             // Current active window
-	Corners       []*Corner                 // Corners for pointer events
-	Pointer       *xproto.QueryPointerReply // Pointer position and state
-	callbacks     []func(string)            // State event callback functions
+	X              *xgbutil.XUtil  // X connection object
+	DeskCount      uint            // Number of desktops
+	ScreenCount    uint            // Number of screens
+	CurrentDesk    uint            // Current desktop number
+	CurrentScreen  uint            // Current screen number
+	CurrentPointer *Pointer        // Pointer position
+	ViewPorts      Head            // Physical monitors
+	ActiveWindow   xproto.Window   // Current active window
+	Windows        []xproto.Window // List of client windows
+	Corners        []*Corner       // Corners for pointer events
+)
+
+var (
+	pointerCallbacksFun []func(uint16) // Pointer events callback functions
+	stateCallbacksFun   []func(string) // State event callback functions
 )
 
 type Head struct {
 	Screens  xinerama.Heads // Screen size (full monitor size)
 	Desktops xinerama.Heads // Desktop size (workarea without panels)
+}
+
+type Pointer struct {
+	X      int16  // X position relative to root
+	Y      int16  // Y position relative to root
+	Button uint16 // Button states of pointer device
 }
 
 func InitRoot() {
@@ -49,16 +59,16 @@ func InitRoot() {
 	ViewPorts, err = ViewPortsGet(X)
 	checkFatal(err)
 
-	Windows, err = ewmh.ClientListGet(X)
+	ActiveWindow, err = ewmh.ActiveWindowGet(X)
 	checkFatal(err)
 
-	ActiveWindow, err = ewmh.ActiveWindowGet(X)
+	Windows, err = ewmh.ClientListGet(X)
 	checkFatal(err)
 
 	Corners = CreateCorners()
 
 	root.Listen(xproto.EventMaskPropertyChange)
-	xevent.PropertyNotifyFun(stateUpdate).Connect(X, X.RootWin())
+	xevent.PropertyNotifyFun(StateUpdate).Connect(X, X.RootWin())
 }
 
 func Connect() *xgbutil.XUtil {
@@ -137,7 +147,7 @@ func ViewPortsGet(X *xgbutil.XUtil) (Head, error) {
 	return Head{Screens: screens, Desktops: desktops}, err
 }
 
-func ScreenNumGet(p *xproto.QueryPointerReply) uint {
+func ScreenNumGet(p *Pointer) uint {
 
 	// Check if point is inside screen rectangle
 	for screenNum, rect := range ViewPorts.Screens {
@@ -161,15 +171,35 @@ func DesktopDimensions(screenNum uint) (x, y, w, h int) {
 	return
 }
 
-func OnStateUpdate(fun func(string)) {
-	callbacks = append(callbacks, fun)
-}
-
-func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
+func PointerUpdate(X *xgbutil.XUtil) {
 	var err error
 
-	aname, _ := xprop.AtomName(X, e.Atom)
-	log.Info("State event ", aname)
+	// Obtain pointer position and button states
+	p, err := xproto.QueryPointer(X.Conn(), X.RootWin()).Reply()
+	if err != nil {
+		log.Warn("Error on pointer update ", err)
+		return
+	}
+
+	// Update current pointer
+	previousButton := uint16(0)
+	if CurrentPointer != nil {
+		previousButton = CurrentPointer.Button
+	}
+	CurrentPointer = &Pointer{X: p.RootX, Y: p.RootY, Button: p.Mask&xproto.ButtonMask1 | p.Mask&xproto.ButtonMask2 | p.Mask&xproto.ButtonMask3}
+	if previousButton != CurrentPointer.Button {
+		pointerCallbacks(CurrentPointer.Button)
+	}
+
+	// Update current screen
+	CurrentScreen = ScreenNumGet(CurrentPointer)
+}
+
+func StateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
+	var err error
+
+	// Obtain atom name from notify event
+	aname, err := xprop.AtomName(X, e.Atom)
 
 	// Update common state variables
 	if IsInList(aname, []string{"_NET_NUMBER_OF_DESKTOPS"}) {
@@ -191,13 +221,32 @@ func stateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	}
 
 	if err != nil {
-		log.Warn("Error updating state ", err)
+		log.Warn("Error on state update ", err)
+		return
 	}
 }
 
-func stateCallbacks(aname string) {
-	for _, fun := range callbacks {
-		fun(aname)
+func OnPointerUpdate(fun func(uint16)) {
+	pointerCallbacksFun = append(pointerCallbacksFun, fun)
+}
+
+func OnStateUpdate(fun func(string)) {
+	stateCallbacksFun = append(stateCallbacksFun, fun)
+}
+
+func pointerCallbacks(arg uint16) {
+	log.Info("Pointer event ", arg)
+
+	for _, fun := range pointerCallbacksFun {
+		fun(arg)
+	}
+}
+
+func stateCallbacks(arg string) {
+	log.Info("State event ", arg)
+
+	for _, fun := range stateCallbacksFun {
+		fun(arg)
 	}
 }
 
