@@ -34,7 +34,13 @@ type Handler struct {
 }
 
 type ResizeHandler struct {
-	Fired bool // Indicates fired resize event
+	Fired  bool          // Indicates fired resize event
+	Client *ResizeClient // Stores client for proportion change
+}
+
+type ResizeClient struct {
+	Active bool          // Indicates active client resize
+	Source *store.Client // Stores user resized client
 }
 
 type MoveHandler struct {
@@ -59,7 +65,9 @@ func CreateTracker(ws map[Location]*Workspace) *Tracker {
 		Clients:    make(map[xproto.Window]*store.Client),
 		Workspaces: ws,
 		Handler: &Handler{
-			Resize: &ResizeHandler{},
+			Resize: &ResizeHandler{
+				Client: &ResizeClient{},
+			},
 			Move: &MoveHandler{
 				Client: &SwapClient{},
 				Screen: &SwapScreen{},
@@ -260,10 +268,19 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		al := ws.ActiveLayout()
 
 		// Set client resize event
+		if !tr.Handler.Resize.Fired {
+			tr.Handler.Resize.Client = &ResizeClient{Active: true, Source: c}
+		}
 		tr.Handler.Resize.Fired = true
 
-		// Update proportions
 		if !added {
+
+			// Set client resize lock
+			if tr.Handler.Resize.Client.Active {
+				tr.Handler.Resize.Client.Source.Lock()
+			}
+
+			// Update proportions
 			al.UpdateProportions(c, directions)
 		}
 
@@ -387,24 +404,23 @@ func (tr *Tracker) onStateUpdate(aname string) {
 }
 
 func (tr *Tracker) onPointerUpdate(button uint16) {
-	buttonReleased := button == 0
-	if !buttonReleased {
-		return
+
+	// Window resized
+	if tr.Handler.Resize.Client.Active {
+		tr.Handler.Resize.Client.Active = false
 	}
 
 	// Window moved over another window
 	if tr.Handler.Move.Client.Active {
 		tr.handleSwapClient(tr.Handler.Move.Client.Source)
-		return
 	}
 
 	// Window moved to another screen
 	if tr.Handler.Move.Screen.Active {
 		tr.handleWorkspaceChange(tr.Handler.Move.Screen.Source)
-		return
 	}
 
-	// Reset client resize amd move events
+	// Reset client resize and move events
 	if tr.Handler.Resize.Fired || tr.Handler.Move.Fired {
 		tr.Handler.Resize.Fired = false
 		tr.Handler.Move.Fired = false

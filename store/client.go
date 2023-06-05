@@ -2,6 +2,7 @@ package store
 
 import (
 	"math"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -22,8 +23,9 @@ import (
 type Client struct {
 	Win      *xwindow.Window `json:"-"` // X window object
 	Created  time.Time       // Internal client creation time
-	Latest   *Info           // Latest client window information
+	Locked   bool            // Internal client move/resize lock
 	Original *Info           // Original client window information
+	Latest   *Info           // Latest client window information
 }
 
 type Info struct {
@@ -54,8 +56,9 @@ func CreateClient(w xproto.Window) *Client {
 	c := &Client{
 		Win:      xwindow.New(common.X, w),
 		Created:  time.Now(),
-		Latest:   i,
+		Locked:   false,
 		Original: i,
+		Latest:   i,
 	}
 
 	// Restore window decorations
@@ -66,6 +69,14 @@ func CreateClient(w xproto.Window) *Client {
 
 func (c *Client) Activate() {
 	ewmh.ActiveWindowReq(common.X, c.Win.Id)
+}
+
+func (c *Client) Lock() {
+	c.Locked = true
+}
+
+func (c *Client) UnLock() {
+	c.Locked = false
 }
 
 func (c *Client) UnDecorate() {
@@ -93,14 +104,22 @@ func (c *Client) UnMaximize() {
 }
 
 func (c *Client) MoveResize(x, y, w, h int) {
+	if c.Locked {
+		log.Info("Reject window resize [", c.Latest.Class, "]")
+
+		// Remove lock
+		c.UnLock()
+		return
+	}
+
+	// Remove unwanted
 	c.UnDecorate()
 	c.UnMaximize()
 
-	// Decoration extents
+	// Calculate dimension offsets
 	ext := c.Latest.Dimensions.Extents
-
-	// Calculate dimensions offsets
 	dx, dy, dw, dh := 0, 0, 0, 0
+
 	if c.Latest.Dimensions.AdjPos {
 		dx, dy = ext.Left, ext.Top
 	}
@@ -190,6 +209,12 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 	iGeom, err := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
 	if err != nil {
 		return
+	}
+
+	// Reset inner window positions (some wm won't return x/y relative to outer window)
+	if reflect.DeepEqual(oGeom, iGeom) {
+		iGeom.XSet(0)
+		iGeom.YSet(0)
 	}
 
 	// Decoration extents (l/r/t/b relative to outer window dimensions)
