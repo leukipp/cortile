@@ -147,6 +147,8 @@ func UnTile(tr *desktop.Tracker) bool {
 	ws.Enable(false)
 	ws.UnTile()
 
+	desktop.ShowLayout(ws)
+
 	return true
 }
 

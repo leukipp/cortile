@@ -41,7 +41,12 @@ func ShowLayout(ws *Workspace) {
 	time.AfterFunc(100*time.Millisecond, func() {
 		al := ws.ActiveLayout()
 		mg := al.GetManager()
+
+		// Obtain layout name
 		name := al.GetName()
+		if !ws.IsEnabled() {
+			name = "disabled"
+		}
 
 		// Calculate scaled desktop dimensions
 		dx, dy, dw, dh := common.DesktopDimensions(common.CurrentScreen)
@@ -75,7 +80,7 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 	}
 
 	// Draw default rectangle
-	if len(clients) == 0 {
+	if len(clients) == 0 || layout == "disabled" {
 
 		// Calculate scaled desktop dimensions
 		_, _, dw, dh := common.DesktopDimensions(common.CurrentScreen)
