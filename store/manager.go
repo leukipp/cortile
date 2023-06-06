@@ -66,6 +66,10 @@ func (mg *Manager) Undo() {
 }
 
 func (mg *Manager) AddClient(c *Client) {
+	if mg.IsMaster(c) || mg.IsSlave(c) {
+		return
+	}
+
 	log.Debug("Add client for manager [", c.Latest.Class, ", workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
 
 	// Fill up master area then slave area
@@ -88,14 +92,12 @@ func (mg *Manager) RemoveClient(c *Client) {
 		} else {
 			mg.updateMasters(removeClient(mg.Masters.Clients, mi))
 		}
-		return
 	}
 
 	// Remove slave window
 	si := mg.Index(mg.Slaves, c)
 	if si >= 0 {
 		mg.updateSlaves(removeClient(mg.Slaves.Clients, si))
-		return
 	}
 }
 

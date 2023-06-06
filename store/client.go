@@ -105,7 +105,7 @@ func (c *Client) UnMaximize() {
 
 func (c *Client) MoveResize(x, y, w, h int) {
 	if c.Locked {
-		log.Info("Reject window resize [", c.Latest.Class, "]")
+		log.Info("Reject window move/resize [", c.Latest.Class, "]")
 
 		// Remove lock
 		c.UnLock()
@@ -130,7 +130,7 @@ func (c *Client) MoveResize(x, y, w, h int) {
 	// Move and resize window
 	err := ewmh.MoveresizeWindow(common.X, c.Win.Id, x+dx, y+dy, w-dw, h-dh)
 	if err != nil {
-		log.Warn("Error when moving window [", c.Latest.Class, "]")
+		log.Warn("Error on window move/resize [", c.Latest.Class, "]")
 	}
 
 	// Update stored dimensions
@@ -229,6 +229,18 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 
 func IsSpecial(info *Info) bool {
 
+	// Check internal windows
+	if info.Class == "cortile" {
+		log.Info("Ignore internal window [", info.Class, "]")
+		return true
+	}
+
+	// Check pinned windows
+	if info.DeskNum > common.DeskCount {
+		log.Info("Ignore pinned window [", info.Class, "]")
+		return true
+	}
+
 	// Check window types
 	types := []string{
 		"_NET_WM_WINDOW_TYPE_DOCK",
@@ -267,12 +279,6 @@ func IsSpecial(info *Info) bool {
 			log.Info("Ignore window with state ", state, " [", info.Class, "]")
 			return true
 		}
-	}
-
-	// Check pinned windows
-	if info.DeskNum > common.DeskCount {
-		log.Info("Ignore pinned window [", info.Class, "]")
-		return true
 	}
 
 	return false

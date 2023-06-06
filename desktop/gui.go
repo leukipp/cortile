@@ -161,7 +161,13 @@ func showGraphics(img *xgraphics.Image, duration time.Duration) *xwindow.Window 
 
 	// Create the graphics window
 	win.Create(img.X.RootWin(), x, y, w, h, 0)
-	ewmh.WmNameSet(win.X, win.Id, "cortile")
+
+	// Set class and name
+	icccm.WmClassSet(win.X, win.Id, &icccm.WmClass{
+		Instance: "cortile",
+		Class:    "cortile",
+	})
+	icccm.WmNameSet(win.X, win.Id, "cortile - gui")
 
 	// Set states for modal like behavior
 	icccm.WmStateSet(win.X, win.Id, &icccm.WmState{
@@ -171,6 +177,7 @@ func showGraphics(img *xgraphics.Image, duration time.Duration) *xwindow.Window 
 		"_NET_WM_STATE_SKIP_TASKBAR",
 		"_NET_WM_STATE_SKIP_PAGER",
 		"_NET_WM_STATE_ABOVE",
+		"_NET_WM_STATE_MODAL",
 	})
 
 	// Set hints for size and decorations

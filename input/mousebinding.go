@@ -12,7 +12,7 @@ import (
 )
 
 func BindMouse(tr *desktop.Tracker) {
-	poll(common.X, 50, func() {
+	poll(common.X, 100, func() {
 		common.PointerUpdate(common.X)
 
 		// Evaluate corner states

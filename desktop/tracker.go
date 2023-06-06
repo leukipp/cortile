@@ -81,18 +81,19 @@ func CreateTracker(ws map[Location]*Workspace) *Tracker {
 
 	// Populate clients on startup
 	if common.Config.TilingEnabled {
-		tr.Update(true)
+		tr.Update()
 		ShowLayout(tr.ActiveWorkspace())
 	}
 
 	return &tr
 }
 
-func (tr *Tracker) Update(tile bool) {
+func (tr *Tracker) Update() {
 	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return
 	}
+	log.Debug("Update trackable clients [", len(tr.Clients), "/", len(common.Windows), "]")
 
 	// Map trackable windows
 	trackable := make(map[xproto.Window]bool)
@@ -103,28 +104,20 @@ func (tr *Tracker) Update(tile bool) {
 	// Remove untrackable windows
 	for w := range tr.Clients {
 		if !trackable[w] {
-			if tr.untrackWindow(w) {
-				tile = true
-			}
+			tr.untrackWindow(w)
 		}
 	}
 
 	// Add trackable windows
 	for _, w := range common.Windows {
 		if trackable[w] {
-			if tr.trackWindow(w) {
-				tile = true
-			}
+			tr.trackWindow(w)
 		}
-	}
-
-	// Tile workspace
-	if tile {
-		ws.Tile()
 	}
 }
 
 func (tr *Tracker) Reset() {
+	log.Debug("Reset trackable clients [", len(tr.Clients), "/", len(common.Windows), "]")
 
 	// Reset client list
 	for w := range tr.Clients {
@@ -179,6 +172,7 @@ func (tr *Tracker) untrackWindow(w xproto.Window) bool {
 	// Remove client
 	ws.RemoveClient(c)
 	delete(tr.Clients, w)
+	ws.Tile()
 
 	return true
 }
@@ -196,6 +190,7 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 			if !ws.IsEnabled() {
 				return
 			}
+			log.Debug("Client maximized handler fired [", c.Latest.Class, "]")
 
 			// Set fullscreen layout
 			for i, l := range ws.Layouts {
@@ -226,10 +221,10 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 			if !ws.IsEnabled() {
 				return
 			}
+			log.Debug("Client minimized handler fired [", c.Latest.Class, "]")
 
 			// Untrack client
 			tr.untrackWindow(c.Win.Id)
-			ws.Tile()
 			break
 		}
 	}
@@ -270,12 +265,14 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 			tr.Handler.Resize.Client = &ResizeClient{Active: true, Source: c}
 		}
 		tr.Handler.Resize.Fired = true
+		log.Debug("Client resize handler fired [", c.Latest.Class, "]")
 
 		if !added {
 
 			// Set client resize lock
 			if tr.Handler.Resize.Client.Active {
 				tr.Handler.Resize.Client.Source.Lock()
+				log.Debug("Client resize handler active [", c.Latest.Class, "]")
 			}
 
 			// Update proportions
@@ -314,6 +311,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 		// Set client move event
 		tr.Handler.Move.Fired = true
+		log.Debug("Client move handler fired [", c.Latest.Class, "]")
 
 		// Check if pointer hovers another client
 		tr.Handler.Move.Client.Active = false
@@ -325,6 +323,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 			// Store moved client and hovered client
 			if common.IsInsideRect(common.CurrentPointer, co.Latest.Dimensions.Geometry) {
 				tr.Handler.Move.Client = &SwapClient{Active: true, Source: c, Target: co}
+				log.Debug("Client move handler active [", c.Latest.Class, "-", co.Latest.Class, "]")
 				break
 			}
 		}
@@ -342,6 +341,7 @@ func (tr *Tracker) handleSwapClient(c *store.Client) {
 	if !tr.isTracked(c.Win.Id) || !ws.IsEnabled() || store.IsMaximized(c.Win.Id) {
 		return
 	}
+	log.Debug("Client swap handler fired [", tr.Handler.Move.Client.Source.Latest.Class, "-", tr.Handler.Move.Client.Target.Latest.Class, "]")
 
 	// Swap clients on same desktop and screen
 	mg := ws.ActiveLayout().GetManager()
@@ -358,6 +358,7 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 	if !tr.isTracked(c.Win.Id) {
 		return
 	}
+	log.Debug("Client workspace handler fired [", c.Latest.Class, "]")
 
 	// Remove client from current workspace
 	ws := tr.ClientWorkspace(c)
@@ -397,7 +398,7 @@ func (tr *Tracker) onStateUpdate(aname string) {
 
 	// Viewport changed or clients changed
 	if viewportChanged || clientsChanged {
-		tr.Update(viewportChanged)
+		tr.Update()
 	}
 }
 
