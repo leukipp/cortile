@@ -308,6 +308,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 	if active && moved && !resized {
 		mg := ws.ActiveLayout().GetManager()
+		pt := common.PointerGet(common.X)
 
 		// Set client move event
 		tr.Handler.Move.Fired = true
@@ -316,12 +317,12 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 		// Check if pointer hovers another client
 		tr.Handler.Move.Client.Active = false
 		for _, co := range mg.Clients(false) {
-			if c == nil || co == nil || c.Win.Id == co.Win.Id {
+			if co == nil || c.Win.Id == co.Win.Id {
 				continue
 			}
 
 			// Store moved client and hovered client
-			if common.IsInsideRect(common.CurrentPointer, co.Latest.Dimensions.Geometry) {
+			if common.IsInsideRect(pt, co.Latest.Dimensions.Geometry) {
 				tr.Handler.Move.Client = &SwapClient{Active: true, Source: c, Target: co}
 				log.Debug("Client move handler active [", c.Latest.Class, "-", co.Latest.Class, "]")
 				break

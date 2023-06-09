@@ -147,6 +147,22 @@ func ViewPortsGet(X *xgbutil.XUtil) (Head, error) {
 	return Head{Screens: screens, Desktops: desktops}, err
 }
 
+func PointerGet(X *xgbutil.XUtil) *Pointer {
+
+	// Get current pointer position and button states
+	p, err := xproto.QueryPointer(X.Conn(), X.RootWin()).Reply()
+	if err != nil {
+		log.Warn("Error on pointer update ", err)
+		return CurrentPointer
+	}
+
+	return &Pointer{
+		X:      p.RootX,
+		Y:      p.RootY,
+		Button: p.Mask&xproto.ButtonMask1 | p.Mask&xproto.ButtonMask2 | p.Mask&xproto.ButtonMask3,
+	}
+}
+
 func ScreenNumGet(p *Pointer) uint {
 
 	// Check if point is inside screen rectangle
@@ -172,21 +188,13 @@ func DesktopDimensions(screenNum uint) (x, y, w, h int) {
 }
 
 func PointerUpdate(X *xgbutil.XUtil) {
-	var err error
-
-	// Obtain pointer position and button states
-	p, err := xproto.QueryPointer(X.Conn(), X.RootWin()).Reply()
-	if err != nil {
-		log.Warn("Error on pointer update ", err)
-		return
-	}
 
 	// Update current pointer
 	previousButton := uint16(0)
 	if CurrentPointer != nil {
 		previousButton = CurrentPointer.Button
 	}
-	CurrentPointer = &Pointer{X: p.RootX, Y: p.RootY, Button: p.Mask&xproto.ButtonMask1 | p.Mask&xproto.ButtonMask2 | p.Mask&xproto.ButtonMask3}
+	CurrentPointer = PointerGet(X)
 	if previousButton != CurrentPointer.Button {
 		pointerCallbacks(CurrentPointer.Button)
 	}
