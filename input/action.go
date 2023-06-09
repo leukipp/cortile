@@ -7,6 +7,7 @@ import (
 
 	"github.com/leukipp/cortile/common"
 	"github.com/leukipp/cortile/desktop"
+	"github.com/leukipp/cortile/store"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -78,7 +79,7 @@ func Execute(a string, tr *desktop.Tracker) bool {
 		NotifySocket(Message[Action]{
 			Type: "Action",
 			Name: a,
-			Data: Action{Desk: common.CurrentDesk, Screen: common.CurrentScreen},
+			Data: Action{Desk: store.CurrentDesk, Screen: store.CurrentScreen},
 		})
 	}
 
@@ -100,7 +101,7 @@ func Query(s string, tr *desktop.Tracker) bool {
 			Screen     uint
 			Workspaces []*desktop.Workspace
 		}
-		ws := Workspaces{Desk: common.CurrentDesk, Screen: common.CurrentScreen}
+		ws := Workspaces{Desk: store.CurrentDesk, Screen: store.CurrentScreen}
 		for _, v := range tr.Workspaces {
 			ws.Workspaces = append(ws.Workspaces, v)
 		}
@@ -118,7 +119,7 @@ func Query(s string, tr *desktop.Tracker) bool {
 		})
 		success = true
 	case "configs":
-		NotifySocket(Message[common.ConfigMapper]{
+		NotifySocket(Message[common.Configuration]{
 			Type: "State",
 			Name: s,
 			Data: common.Config,
@@ -254,7 +255,7 @@ func MakeMaster(tr *desktop.Tracker) bool {
 	if !ws.IsEnabled() {
 		return false
 	}
-	if c, ok := tr.Clients[common.ActiveWindow]; ok {
+	if c, ok := tr.Clients[store.ActiveWindow]; ok {
 		ws.ActiveLayout().MakeMaster(c)
 		ws.Tile()
 		return true

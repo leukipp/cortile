@@ -7,20 +7,21 @@ import (
 
 	"github.com/leukipp/cortile/common"
 	"github.com/leukipp/cortile/desktop"
+	"github.com/leukipp/cortile/store"
 
 	log "github.com/sirupsen/logrus"
 )
 
 func BindMouse(tr *desktop.Tracker) {
-	poll(common.X, 100, func() {
-		common.PointerUpdate(common.X)
+	poll(store.X, 100, func() {
+		store.PointerUpdate(store.X)
 
 		// Evaluate corner states
-		for i := range common.Corners {
-			hc := common.Corners[i]
+		for i := range store.Corners {
+			hc := store.Corners[i]
 
 			wasActive := hc.Active
-			isActive := hc.IsActive(common.CurrentPointer)
+			isActive := hc.IsActive(store.CurrentPointer)
 
 			if !wasActive && isActive {
 				log.Debug("Corner at position ", hc.Area, " is hot [", hc.Name, "]")

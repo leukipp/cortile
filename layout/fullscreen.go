@@ -24,7 +24,7 @@ func CreateFullscreenLayout(deskNum uint, screenNum uint) *FullscreenLayout {
 func (l *FullscreenLayout) Do() {
 	clients := l.Clients(true)
 
-	dx, dy, dw, dh := common.DesktopDimensions(l.ScreenNum)
+	dx, dy, dw, dh := store.DesktopDimensions(l.ScreenNum)
 	gap := common.Config.WindowGapSize
 
 	csize := len(clients)

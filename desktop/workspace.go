@@ -18,8 +18,8 @@ type Workspace struct {
 func CreateWorkspaces() map[Location]*Workspace {
 	workspaces := make(map[Location]*Workspace)
 
-	for deskNum := uint(0); deskNum < common.DeskCount; deskNum++ {
-		for screenNum := uint(0); screenNum < common.ScreenCount; screenNum++ {
+	for deskNum := uint(0); deskNum < store.DeskCount; deskNum++ {
+		for screenNum := uint(0); screenNum < store.ScreenCount; screenNum++ {
 			location := Location{DeskNum: deskNum, ScreenNum: screenNum}
 
 			// Create layouts for each desktop and screen

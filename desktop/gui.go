@@ -49,12 +49,12 @@ func ShowLayout(ws *Workspace) {
 		}
 
 		// Calculate scaled desktop dimensions
-		dx, dy, dw, dh := common.DesktopDimensions(common.CurrentScreen)
+		dx, dy, dw, dh := store.DesktopDimensions(store.CurrentScreen)
 		_, _, width, height := scale(dx, dy, dw, dh)
 
 		// Create an empty canvas image
 		bg := bgra("gui_background")
-		cv := xgraphics.New(common.X, image.Rect(0, 0, width+rectMargin, height+fontSize+2*fontMargin+2*rectMargin))
+		cv := xgraphics.New(store.X, image.Rect(0, 0, width+rectMargin, height+fontSize+2*fontMargin+2*rectMargin))
 		cv.For(func(x int, y int) xgraphics.BGRA { return bg })
 
 		// Draw client rectangles
@@ -73,7 +73,7 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 	for _, c := range clients {
 		for _, state := range c.Latest.States {
 			if state == "_NET_WM_STATE_FULLSCREEN" || layout == "fullscreen" {
-				clients = mg.Visible(&store.Windows{Clients: mg.Clients(true), MaxAllowed: 1})
+				clients = mg.Visible(&store.Clients{Items: mg.Clients(true), MaxAllowed: 1})
 				break
 			}
 		}
@@ -83,7 +83,7 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 	if len(clients) == 0 || layout == "disabled" {
 
 		// Calculate scaled desktop dimensions
-		_, _, dw, dh := common.DesktopDimensions(common.CurrentScreen)
+		_, _, dw, dh := store.DesktopDimensions(store.CurrentScreen)
 		x, y, width, height := scale(0, 0, dw, dh)
 
 		// Draw client rectangle onto canvas
@@ -99,7 +99,7 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 
 		// Calculate scaled client dimensions
 		cx, cy, cw, ch := c.OuterGeometry()
-		dx, dy, _, _ := common.DesktopDimensions(common.CurrentScreen)
+		dx, dy, _, _ := store.DesktopDimensions(store.CurrentScreen)
 		x, y, width, height := scale(cx-dx, cy-dy, cw, ch)
 
 		// Calculate icon size
@@ -123,7 +123,7 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 		drawImage(cv, rect, color, x+rectMargin, y+rectMargin, x+width, y+height)
 
 		// Draw client icon onto canvas
-		ico, err := xgraphics.FindIcon(common.X, c.Win.Id, iconSize, iconSize)
+		ico, err := xgraphics.FindIcon(store.X, c.Win.Id, iconSize, iconSize)
 		if err == nil {
 			drawImage(cv, ico, color, x+rectMargin/2+width/2-iconSize/2, y+rectMargin/2+height/2-iconSize/2, x+width, y+height)
 		}
@@ -155,7 +155,7 @@ func showGraphics(img *xgraphics.Image, duration time.Duration) *xwindow.Window 
 	}
 
 	// Calculate window dimensions
-	dx, dy, dw, dh := common.DesktopDimensions(common.CurrentScreen)
+	dx, dy, dw, dh := store.DesktopDimensions(store.CurrentScreen)
 	w, h := img.Rect.Dx(), img.Rect.Dy()
 	x, y := dx+dw/2-w/2, dy+dh/2-h/2
 

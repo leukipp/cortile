@@ -1,7 +1,8 @@
-package common
+package store
 
 import (
 	"github.com/BurntSushi/xgbutil/xrect"
+	"github.com/leukipp/cortile/common"
 )
 
 type Corner struct {
@@ -27,8 +28,8 @@ func CreateCorners() []*Corner {
 		xw, yw, ww, hw := s.Pieces()
 
 		// Corner dimensions
-		wcs, hcs := Config.EdgeCornerSize, Config.EdgeCornerSize
-		wcl, hcl := Config.EdgeCenterSize, Config.EdgeCenterSize
+		wcs, hcs := common.Config.EdgeCornerSize, common.Config.EdgeCornerSize
+		wcl, hcl := common.Config.EdgeCenterSize, common.Config.EdgeCenterSize
 
 		// Define corners and positions
 		tl := CreateCorner("top_left", uint(i), xw, yw, wcs, hcs)
@@ -46,10 +47,10 @@ func CreateCorners() []*Corner {
 	return corners
 }
 
-func (c *Corner) IsActive(p *Pointer) bool {
+func (c *Corner) IsActive(p *common.Pointer) bool {
 
 	// Check if pointer is inside rectangle
-	c.Active = IsInsideRect(p, c.Area)
+	c.Active = common.IsInsideRect(p, c.Area)
 
 	return c.Active
 }

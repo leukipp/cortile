@@ -1,12 +1,13 @@
 package common
 
 import (
-	_ "embed"
 	"flag"
 	"fmt"
 )
 
-var Args Arguments
+var (
+	Args Arguments // Parsed arguments
+)
 
 type Arguments struct {
 	Config string // Argument for config file path

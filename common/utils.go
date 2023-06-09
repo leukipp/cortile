@@ -4,6 +4,12 @@ import (
 	"github.com/BurntSushi/xgbutil/xrect"
 )
 
+type Pointer struct {
+	X      int16  // Pointer X position relative to root
+	Y      int16  // Pointer Y position relative to root
+	Button uint16 // Pointer button states of device
+}
+
 func IsInList(item string, items []string) bool {
 	for i := 0; i < len(items); i++ {
 		if items[i] == item {

@@ -37,14 +37,14 @@ func CreateHorizontalBottomLayout(deskNum uint, screenNum uint) *HorizontalLayou
 func (l *HorizontalLayout) Do() {
 	clients := l.Clients(true)
 
-	dx, dy, dw, dh := common.DesktopDimensions(l.ScreenNum)
+	dx, dy, dw, dh := store.DesktopDimensions(l.ScreenNum)
 	gap := common.Config.WindowGapSize
 
 	mmax := l.Masters.MaxAllowed
 	smax := l.Slaves.MaxAllowed
 
-	msize := int(math.Min(float64(len(l.Masters.Clients)), float64(mmax)))
-	ssize := int(math.Min(float64(len(l.Slaves.Clients)), float64(smax)))
+	msize := int(math.Min(float64(len(l.Masters.Items)), float64(mmax)))
+	ssize := int(math.Min(float64(len(l.Slaves.Items)), float64(smax)))
 	csize := len(clients)
 
 	my := dy
@@ -82,7 +82,7 @@ func (l *HorizontalLayout) Do() {
 		}
 
 		mx := 0
-		for i, c := range l.Masters.Clients {
+		for i, c := range l.Masters.Items {
 
 			// Reset x position
 			if i%mmax == 0 {
@@ -120,7 +120,7 @@ func (l *HorizontalLayout) Do() {
 		}
 
 		sx := 0
-		for i, c := range l.Slaves.Clients {
+		for i, c := range l.Slaves.Items {
 
 			// Reset x position
 			if i%smax == 0 {
@@ -144,7 +144,7 @@ func (l *HorizontalLayout) Do() {
 }
 
 func (l *HorizontalLayout) UpdateProportions(c *store.Client, d *store.Directions) {
-	_, _, dw, dh := common.DesktopDimensions(l.ScreenNum)
+	_, _, dw, dh := store.DesktopDimensions(l.ScreenNum)
 	_, _, cw, ch := c.OuterGeometry()
 
 	gap := common.Config.WindowGapSize
@@ -152,8 +152,8 @@ func (l *HorizontalLayout) UpdateProportions(c *store.Client, d *store.Direction
 	mmax := l.Masters.MaxAllowed
 	smax := l.Slaves.MaxAllowed
 
-	msize := int(math.Min(float64(len(l.Masters.Clients)), float64(mmax)))
-	ssize := int(math.Min(float64(len(l.Slaves.Clients)), float64(smax)))
+	msize := int(math.Min(float64(len(l.Masters.Items)), float64(mmax)))
+	ssize := int(math.Min(float64(len(l.Slaves.Items)), float64(smax)))
 
 	// Swap values if master is on top
 	idxms := 0

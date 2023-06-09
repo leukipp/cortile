@@ -7,6 +7,7 @@ import (
 
 	"github.com/leukipp/cortile/common"
 	"github.com/leukipp/cortile/desktop"
+	"github.com/leukipp/cortile/store"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -14,7 +15,7 @@ import (
 type KeyMapper struct{}
 
 func BindKeys(tr *desktop.Tracker) {
-	keybind.Initialize(common.X)
+	keybind.Initialize(store.X)
 
 	// Bind keyboard shortcuts
 	k := KeyMapper{}
@@ -40,7 +41,7 @@ func BindKeys(tr *desktop.Tracker) {
 func (k KeyMapper) bind(a string, tr *desktop.Tracker) {
 	err := keybind.KeyPressFun(func(X *xgbutil.XUtil, ev xevent.KeyPressEvent) {
 		Execute(a, tr)
-	}).Connect(common.X, common.X.RootWin(), common.Config.Keys[a], true)
+	}).Connect(store.X, store.X.RootWin(), common.Config.Keys[a], true)
 	if err != nil {
 		log.Warn("Error on action for ", a, ": ", err)
 	}

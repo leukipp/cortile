@@ -1,7 +1,6 @@
 package common
 
 import (
-	_ "embed"
 	"fmt"
 
 	"io/ioutil"
@@ -14,9 +13,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var Config ConfigMapper
+var (
+	Config Configuration // Decoded config values
+)
 
-type ConfigMapper struct {
+type Configuration struct {
 	TilingEnabled    bool              `toml:"tiling_enabled"`     // Tile windows on startup
 	TilingLayout     string            `toml:"tiling_layout"`      // Initial tiling layout
 	TilingGui        int               `toml:"tiling_gui"`         // Time duration of gui
@@ -36,7 +37,7 @@ type ConfigMapper struct {
 	Corners          map[string]string `toml:"corners"`            // Event bindings for hot-corners
 }
 
-func InitConfig(defaultConfig []byte) {
+func InitConfig() {
 
 	// Create config folder if not exists
 	configFolderPath := filepath.Dir(Args.Config)
@@ -46,7 +47,7 @@ func InitConfig(defaultConfig []byte) {
 
 	// Write default config if not exists
 	if _, err := os.Stat(Args.Config); os.IsNotExist(err) {
-		ioutil.WriteFile(Args.Config, defaultConfig, 0644)
+		ioutil.WriteFile(Args.Config, File.Toml, 0644)
 	}
 
 	// Read config file into memory

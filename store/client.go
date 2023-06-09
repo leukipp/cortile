@@ -54,7 +54,7 @@ type Hints struct {
 func CreateClient(w xproto.Window) *Client {
 	i := GetInfo(w)
 	c := &Client{
-		Win:      xwindow.New(common.X, w),
+		Win:      xwindow.New(X, w),
 		Created:  time.Now(),
 		Locked:   false,
 		Original: i,
@@ -68,7 +68,7 @@ func CreateClient(w xproto.Window) *Client {
 }
 
 func (c *Client) Activate() {
-	ewmh.ActiveWindowReq(common.X, c.Win.Id)
+	ewmh.ActiveWindowReq(X, c.Win.Id)
 }
 
 func (c *Client) Lock() {
@@ -85,7 +85,7 @@ func (c *Client) UnDecorate() {
 	}
 
 	// Remove window decorations
-	motif.WmHintsSet(common.X, c.Win.Id, &motif.Hints{
+	motif.WmHintsSet(X, c.Win.Id, &motif.Hints{
 		Flags:      motif.HintDecorations,
 		Decoration: motif.DecorationNone,
 	})
@@ -96,8 +96,8 @@ func (c *Client) UnMaximize() {
 	// Unmaximize window
 	for _, state := range c.Latest.States {
 		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
-			ewmh.WmStateReq(common.X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_VERT")
-			ewmh.WmStateReq(common.X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_HORZ")
+			ewmh.WmStateReq(X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_VERT")
+			ewmh.WmStateReq(X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_HORZ")
 			break
 		}
 	}
@@ -128,7 +128,7 @@ func (c *Client) MoveResize(x, y, w, h int) {
 	}
 
 	// Move and resize window
-	err := ewmh.MoveresizeWindow(common.X, c.Win.Id, x+dx, y+dy, w-dw, h-dh)
+	err := ewmh.MoveresizeWindow(X, c.Win.Id, x+dx, y+dy, w-dw, h-dh)
 	if err != nil {
 		log.Warn("Error on window move/resize [", c.Latest.Class, "]")
 	}
@@ -144,7 +144,7 @@ func (c *Client) LimitDimensions(w, h int) {
 	dw, dh := ext.Left+ext.Right, ext.Top+ext.Bottom
 
 	// Set window size limits
-	icccm.WmNormalHintsSet(common.X, c.Win.Id, &icccm.NormalHints{
+	icccm.WmNormalHintsSet(X, c.Win.Id, &icccm.NormalHints{
 		Flags:     icccm.SizeHintPMinSize,
 		MinWidth:  uint(w - dw),
 		MinHeight: uint(h - dh),
@@ -184,13 +184,13 @@ func (c *Client) Restore() {
 	}
 
 	// Restore window decorations
-	motif.WmHintsSet(common.X, c.Win.Id, &motif.Hints{
+	motif.WmHintsSet(X, c.Win.Id, &motif.Hints{
 		Flags:      motif.HintDecorations,
 		Decoration: uint(decoration),
 	})
 
 	// Restore window size limits
-	icccm.WmNormalHintsSet(common.X, c.Win.Id, &c.Original.Dimensions.Hints.Normal)
+	icccm.WmNormalHintsSet(X, c.Win.Id, &c.Original.Dimensions.Hints.Normal)
 
 	// Move window to latest position considering decoration adjustments
 	geom := c.Latest.Dimensions.Geometry
@@ -206,7 +206,7 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 	}
 
 	// Inner window dimensions (x/y relative to outer window)
-	iGeom, err := xwindow.RawGeometry(common.X, xproto.Drawable(c.Win.Id))
+	iGeom, err := xwindow.RawGeometry(X, xproto.Drawable(c.Win.Id))
 	if err != nil {
 		return
 	}
@@ -236,7 +236,7 @@ func IsSpecial(info *Info) bool {
 	}
 
 	// Check pinned windows
-	if info.DeskNum > common.DeskCount {
+	if info.DeskNum > DeskCount {
 		log.Info("Ignore pinned window [", info.Class, "]")
 		return true
 	}
@@ -335,7 +335,7 @@ func GetInfo(w xproto.Window) *Info {
 	var dimensions Dimensions
 
 	// Window class (internal class name of the window)
-	cls, err := icccm.WmClassGet(common.X, w)
+	cls, err := icccm.WmClassGet(X, w)
 	if err != nil {
 		log.Trace("Error on request ", err)
 	} else if cls != nil {
@@ -343,51 +343,51 @@ func GetInfo(w xproto.Window) *Info {
 	}
 
 	// Window name (title on top of the window)
-	name, err = icccm.WmNameGet(common.X, w)
+	name, err = icccm.WmNameGet(X, w)
 	if err != nil {
 		name = class
 	}
 
 	// Window desktop and screen (workspace where the window is located)
-	deskNum, err = ewmh.WmDesktopGet(common.X, w)
+	deskNum, err = ewmh.WmDesktopGet(X, w)
 	if err != nil {
 		deskNum = math.MaxUint
 	}
 	screenNum = GetScreenNum(w)
 
 	// Window types (types of the window)
-	types, err = ewmh.WmWindowTypeGet(common.X, w)
+	types, err = ewmh.WmWindowTypeGet(X, w)
 	if err != nil {
 		types = []string{}
 	}
 
 	// Window states (states of the window)
-	states, err = ewmh.WmStateGet(common.X, w)
+	states, err = ewmh.WmStateGet(X, w)
 	if err != nil {
 		states = []string{}
 	}
 
 	// Window geometry (dimensions of the window)
-	geometry, err := xwindow.New(common.X, w).DecorGeometry()
+	geometry, err := xwindow.New(X, w).DecorGeometry()
 	if err != nil {
 		geometry = &xrect.XRect{}
 	}
 
 	// Window normal hints (normal hints of the window)
-	nhints, err := icccm.WmNormalHintsGet(common.X, w)
+	nhints, err := icccm.WmNormalHintsGet(X, w)
 	if err != nil {
 		nhints = &icccm.NormalHints{}
 	}
 
 	// Window motif hints (hints of the window)
-	mhints, err := motif.WmHintsGet(common.X, w)
+	mhints, err := motif.WmHintsGet(X, w)
 	if err != nil {
 		mhints = &motif.Hints{}
 	}
 
 	// Window extents (server/client decorations of the window)
-	extNet, _ := xprop.PropValNums(xprop.GetProperty(common.X, w, "_NET_FRAME_EXTENTS"))
-	extGtk, _ := xprop.PropValNums(xprop.GetProperty(common.X, w, "_GTK_FRAME_EXTENTS"))
+	extNet, _ := xprop.PropValNums(xprop.GetProperty(X, w, "_NET_FRAME_EXTENTS"))
+	extGtk, _ := xprop.PropValNums(xprop.GetProperty(X, w, "_GTK_FRAME_EXTENTS"))
 
 	ext := make([]uint, 4)
 	for i, e := range extNet {
@@ -428,7 +428,7 @@ func GetInfo(w xproto.Window) *Info {
 func GetScreenNum(w xproto.Window) uint {
 
 	// Outer window dimensions
-	geom, err := xwindow.New(common.X, w).DecorGeometry()
+	geom, err := xwindow.New(X, w).DecorGeometry()
 	if err != nil {
 		return 0
 	}
@@ -439,5 +439,5 @@ func GetScreenNum(w xproto.Window) uint {
 		Y: int16(geom.Y() + (geom.Height() / 2)),
 	}
 
-	return common.ScreenNumGet(center)
+	return ScreenNumGet(center)
 }

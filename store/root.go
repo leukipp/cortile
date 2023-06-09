@@ -1,4 +1,4 @@
-package common
+package store
 
 import (
 	"time"
@@ -11,6 +11,7 @@ import (
 	"github.com/BurntSushi/xgbutil/xprop"
 	"github.com/BurntSushi/xgbutil/xrect"
 	"github.com/BurntSushi/xgbutil/xwindow"
+	"github.com/leukipp/cortile/common"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -21,7 +22,7 @@ var (
 	ScreenCount    uint            // Number of screens
 	CurrentDesk    uint            // Current desktop number
 	CurrentScreen  uint            // Current screen number
-	CurrentPointer *Pointer        // Pointer position
+	CurrentPointer *common.Pointer // Pointer position
 	ViewPorts      Head            // Physical monitors
 	ActiveWindow   xproto.Window   // Current active window
 	Windows        []xproto.Window // List of client windows
@@ -36,12 +37,6 @@ var (
 type Head struct {
 	Screens  xinerama.Heads // Screen size (full monitor size)
 	Desktops xinerama.Heads // Desktop size (workarea without panels)
-}
-
-type Pointer struct {
-	X      int16  // X position relative to root
-	Y      int16  // Y position relative to root
-	Button uint16 // Button states of pointer device
 }
 
 func InitRoot() {
@@ -147,7 +142,7 @@ func ViewPortsGet(X *xgbutil.XUtil) (Head, error) {
 	return Head{Screens: screens, Desktops: desktops}, err
 }
 
-func PointerGet(X *xgbutil.XUtil) *Pointer {
+func PointerGet(X *xgbutil.XUtil) *common.Pointer {
 
 	// Get current pointer position and button states
 	p, err := xproto.QueryPointer(X.Conn(), X.RootWin()).Reply()
@@ -156,18 +151,18 @@ func PointerGet(X *xgbutil.XUtil) *Pointer {
 		return CurrentPointer
 	}
 
-	return &Pointer{
+	return &common.Pointer{
 		X:      p.RootX,
 		Y:      p.RootY,
 		Button: p.Mask&xproto.ButtonMask1 | p.Mask&xproto.ButtonMask2 | p.Mask&xproto.ButtonMask3,
 	}
 }
 
-func ScreenNumGet(p *Pointer) uint {
+func ScreenNumGet(p *common.Pointer) uint {
 
 	// Check if point is inside screen rectangle
 	for screenNum, rect := range ViewPorts.Screens {
-		if IsInsideRect(p, rect) {
+		if common.IsInsideRect(p, rect) {
 			return uint(screenNum)
 		}
 	}
@@ -179,10 +174,10 @@ func DesktopDimensions(screenNum uint) (x, y, w, h int) {
 	x, y, w, h = ViewPorts.Desktops[screenNum].Pieces()
 
 	// Add desktop margin
-	x += Config.EdgeMargin[3]
-	y += Config.EdgeMargin[0]
-	w -= Config.EdgeMargin[1] + Config.EdgeMargin[3]
-	h -= Config.EdgeMargin[2] + Config.EdgeMargin[0]
+	x += common.Config.EdgeMargin[3]
+	y += common.Config.EdgeMargin[0]
+	w -= common.Config.EdgeMargin[1] + common.Config.EdgeMargin[3]
+	h -= common.Config.EdgeMargin[2] + common.Config.EdgeMargin[0]
 
 	return
 }
@@ -210,20 +205,20 @@ func StateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	aname, err := xprop.AtomName(X, e.Atom)
 
 	// Update common state variables
-	if IsInList(aname, []string{"_NET_NUMBER_OF_DESKTOPS"}) {
+	if common.IsInList(aname, []string{"_NET_NUMBER_OF_DESKTOPS"}) {
 		DeskCount, err = ewmh.NumberOfDesktopsGet(X)
 		stateCallbacks(aname)
-	} else if IsInList(aname, []string{"_NET_CURRENT_DESKTOP"}) {
+	} else if common.IsInList(aname, []string{"_NET_CURRENT_DESKTOP"}) {
 		CurrentDesk, err = ewmh.CurrentDesktopGet(X)
 		stateCallbacks(aname)
-	} else if IsInList(aname, []string{"_NET_DESKTOP_LAYOUT", "_NET_DESKTOP_GEOMETRY", "_NET_DESKTOP_VIEWPORT", "_NET_WORKAREA"}) {
+	} else if common.IsInList(aname, []string{"_NET_DESKTOP_LAYOUT", "_NET_DESKTOP_GEOMETRY", "_NET_DESKTOP_VIEWPORT", "_NET_WORKAREA"}) {
 		ViewPorts, err = ViewPortsGet(X)
 		Corners = CreateCorners()
 		stateCallbacks(aname)
-	} else if IsInList(aname, []string{"_NET_CLIENT_LIST_STACKING"}) {
+	} else if common.IsInList(aname, []string{"_NET_CLIENT_LIST_STACKING"}) {
 		Windows, err = ewmh.ClientListStackingGet(X)
 		stateCallbacks(aname)
-	} else if IsInList(aname, []string{"_NET_ACTIVE_WINDOW"}) {
+	} else if common.IsInList(aname, []string{"_NET_ACTIVE_WINDOW"}) {
 		ActiveWindow, err = ewmh.ActiveWindowGet(X)
 		stateCallbacks(aname)
 	}
