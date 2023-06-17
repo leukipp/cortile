@@ -15,7 +15,7 @@ tiling_layout = "vertical-right"
 # An overlay window is displayed for this time period [ms] when the layout was changed (0 = disabled).
 tiling_gui = 1500
 
-# Menu entries in systray which indicates the tiling state as icon ([] = disabled).
+# Menu entries in systray which shows the tiling state as icon ([] = disabled).
 # tiling_icon = [
 #   ['ACTION', 'TEXT'] = ['action strings from [keys] section', 'text to show in the menu'],
 #   ['', ''] = 'render a separator',
@@ -110,13 +110,13 @@ icon_foreground = [255, 255, 255, 255]
 ################################################################################
 
 # Tile the current workspace.
-tile = "Control-Shift-T"
+tile = "Control-Shift-Home"
 
 # Untile the current workspace.
-untile = "Control-Shift-U"
+untile = "Control-Shift-End"
 
 # Toggle between tile and untile.
-toggle = "Control-Shift-KP_5"
+toggle = "Control-Shift-T"
 
 # Cycles through next layouts.
 cycle_next = "Control-Shift-Next"

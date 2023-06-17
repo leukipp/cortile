@@ -1,25 +1,27 @@
 # Cortile
 <a href="https://github.com/leukipp/cortile"><img src="https://raw.githubusercontent.com/leukipp/cortile/main/assets/images/logo.png" style="display:inline-block;width:75px;margin-right:10px;" align="left"/></a>
-Linux auto tiling manager with hot corner support for [Xfce](https://en.wikipedia.org/wiki/Xfce), [Openbox](https://en.wikipedia.org/wiki/Openbox) and other [EWMH](https://en.wikipedia.org/wiki/Extended_Window_Manager_Hints#List_of_window_managers_that_support_Extended_Window_Manager_Hints) compliant window managers using the [X11](https://en.wikipedia.org/wiki/X_Window_System) window system.
 
-Simply keep your current window manager and **install cortile on top** of it.
+Linux auto tiling manager with hot corner support for Openbox, Fluxbox, IceWM, Xfwm, KWin, Marco, Muffin, Mutter and other [EWMH](https://en.wikipedia.org/wiki/Extended_Window_Manager_Hints#List_of_window_managers_that_support_Extended_Window_Manager_Hints) compliant window managers using the [X11](https://en.wikipedia.org/wiki/X_Window_System) window system.
+Therefore, this project provides dynamic tiling for XFCE, LXDE, LXQt, KDE and GNOME (Mate, Deepin, Cinnamon, Budgie) based desktop environments.
+
+Simply keep your current window manager and install **cortile on top** of it.
 Once enabled, the tiling manager will handle _resizing_ and _positioning_ of _existing_ and _new_ windows.
 <br clear="left"/>
 
 ## Features [![features](https://img.shields.io/github/stars/leukipp/cortile)](#features-)
-- [x] Tiling mode gui.
 - [x] Workspace based tiling.
-- [x] Keyboard and hot corner events.
-- [x] Socket communication commands.
-- [x] Floating windows via "Always on Top".
-- [x] Persistent windows via "Always on Visible Workspace".
-- [x] Vertical, horizontal and fullscreen mode.
-- [x] Adjustments of layout proportions.
-- [x] Drag & drop window swap.
 - [x] Auto detection of panels.
+- [x] User interface for tiling mode.
+- [x] Systray icon indicator and menu.
+- [x] Keyboard, hot corner and systray events.
+- [x] Vertical, horizontal and fullscreen mode.
+- [x] Socket communication commands.
+- [x] Adjustment of layout proportions.
+- [x] Floating and persistent windows.
+- [x] Drag & drop window swap.
 - [x] Multi monitor support.
 
-Support for **keyboard and mouse navigation** sets cortile apart from other tiling solutions.
+Support for **keyboard and mouse** events sets cortile apart from other tiling solutions.
 The _go_ implementation ensures a fast and responsive system, where _multiple layouts_, _keyboard shortcuts_, _drag & drop_ and _hot corner_ events simplify and speed up your daily work.
 
 [![demo](https://raw.githubusercontent.com/leukipp/cortile/main/assets/images/demo.gif)](https://github.com/leukipp/cortile/blob/main/assets/images/demo.gif)
@@ -60,14 +62,16 @@ The default keyboard shortcuts are assigned as shown below.
 If some of them are already in use by your system, update the default values in the `[keys]` section of the configuration file:
 | Keys                                                    | Description                              |
 | ------------------------------------------------------- | ---------------------------------------- |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>           | Tile current workspace                   |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd>           | Untile current workspace                 |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>           | Cycle through layouts                    |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Home</kbd>        | Tile current workspace                   |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>End</kbd>         | Untile current workspace                 |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>           | Toggle between tile and untile           |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Next</kbd>        | Cycle through next layouts               |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Prior</kbd>       | Cycle through previous layouts           |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>       | Activate fullscreen layout               |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Left</kbd>        | Activate vertical-left layout            |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Right</kbd>       | Activate vertical-right layout           |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Top</kbd>         | Activate horizontal-top layout           |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Bottom</kbd>      | Activate horizontal-bottom layout        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Up</kbd>          | Activate horizontal-top layout           |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Down</kbd>        | Activate horizontal-bottom layout        |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>           | Make the active window master            |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Plus</kbd>        | Increase number of master windows        |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Minus</kbd>       | Decrease number of master windows        |
@@ -78,19 +82,30 @@ If some of them are already in use by your system, update the default values in 
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_2</kbd>        | Focus next window                        |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_8</kbd>        | Focus previous window                    |
 
-Hot corner events are defined under the `[corners]` section and will be triggered when the mouse enters one of the target areas:
+Hot corner events are defined under the `[corners]` section and will be triggered when the pointer enters one of the target areas:
 | Corners                             | Description                              |
 | ----------------------------------- | ---------------------------------------- |
 | <kbd>Top</kbd>-<kbd>Left</kbd>      | Focus previous window                    |
-| <kbd>Top</kbd>-<kbd>Center</kbd>    | Activate horizontal-top layout           |
+| <kbd>Top</kbd>-<kbd>Center</kbd>    | -                                        |
 | <kbd>Top</kbd>-<kbd>Right</kbd>     | Make the active window master            |
-| <kbd>Center</kbd>-<kbd>Right</kbd>  | Activate vertical-right layout           |
+| <kbd>Center</kbd>-<kbd>Right</kbd>  | -                                        |
 | <kbd>Bottom</kbd>-<kbd>Right</kbd>  | Increase proportion of master-slave area |
-| <kbd>Bottom</kbd>-<kbd>Center</kbd> | Activate horizontal-bottom layout        |
+| <kbd>Bottom</kbd>-<kbd>Center</kbd> | -                                        |
 | <kbd>Bottom</kbd>-<kbd>Left</kbd>   | Decrease proportion of master-slave area |
-| <kbd>Center</kbd>-<kbd>Left</kbd>   | Activate vertical-left layout            |
+| <kbd>Center</kbd>-<kbd>Left</kbd>   | -                                        |
 
-Useful mouse shortcuts in Xfce environments:
+Systray events are defined under the `[systray]` section and are triggered when the pointer keys are pressed while the mouse hovers the icon:
+| Pointer                            | Description                              |
+| ---------------------------------- | ---------------------------------------- |
+| <kbd>Left</kbd>-<kbd>Click</kbd>   | -                                        |
+| <kbd>Middle</kbd>-<kbd>Click</kbd> | Toggle between tile and untile           |
+| <kbd>Right</kbd>-<kbd>Click</kbd>  | -                                        |
+| <kbd>Scroll</kbd>-<kbd>Up</kbd>    | Cycle through previous layouts           |
+| <kbd>Scroll</kbd>-<kbd>Down</kbd>  | Cycle through next layouts               |
+| <kbd>Scroll</kbd>-<kbd>Left</kbd>  | Decrease proportion of master-slave area |
+| <kbd>Scroll</kbd>-<kbd>Right</kbd> | Increase proportion of master-slave area |
+
+Common pointer shortcuts used in some environments:
 - Move window: <kbd>Alt</kbd>+<kbd>Left-Click</kbd>.
 - Resize window: <kbd>Alt</kbd>+<kbd>Right-Click</kbd>.
 - Maximize window: <kbd>Alt</kbd>+<kbd>Double-Click</kbd>.
@@ -101,10 +116,9 @@ The sock parameter (`-sock /tmp/cortile.sock`) defines a path for a socket file 
 Internally however, two socket files are used.
 One is for incoming (`/tmp/cortile.sock.in`) and one for outgoing (`/tmp/cortile.sock.out`) communication.
 
-<details><summary>Communication - Outgoing</summary><div>
+<details><summary>Outgoing - Events</summary><div>
 
 ### Outgoing events and states
-
 User triggered events (e.g. tile workspace) are broadcasted to the outgoing socket as json string.
 One can listen to them by using [netcat](https://en.wikipedia.org/wiki/Netcat) or similar [alternatives](https://en.wikipedia.org/wiki/Netcat#Ports_and_reimplementations):
 ```bash
@@ -126,10 +140,9 @@ socat -v UNIX-LISTEN:/tmp/cortile.sock.out,reuseaddr,fork OPEN:/tmp/cortile.json
 
 </div></details>
 
-<details><summary>Communication - Incoming</summary><div>
+<details><summary>Incoming - Commands</summary><div>
 
 ### Incoming commands and requests
-
 Similarly, requests about the internal state of cortile can be sent to the incoming socket:
 ```bash
 # Netcat
@@ -143,7 +156,6 @@ Since the communication is asynchronous, it is necessary to listen to the outgoi
 </div></details>
 
 Example files for sending commands and receiving states can be found in the [scripts](https://github.com/leukipp/cortile/tree/main/assets/scripts) folder.
-
 
 ## Development [![development](https://img.shields.io/github/go-mod/go-version/leukipp/cortile)](#development-)
 You need [go >= 1.18](https://go.dev/dl/) to compile cortile.
@@ -191,15 +203,15 @@ go env | grep "GOPATH\|GOVERSION"
 <details><summary>Install - cortile</summary><div>
 
 ### Option 1: Install cortile via remote source
-Install directly from main branch:
+Install directly from develop branch:
 ```bash
-go install github.com/leukipp/cortile@main
+go install github.com/leukipp/cortile@develop
 ```
 
 ### Option 2: Install cortile via local source
-Clone source code from main branch:
+Clone source code from develop branch:
 ```bash
-git clone https://github.com/leukipp/cortile.git -b main
+git clone https://github.com/leukipp/cortile.git -b develop
 cd cortile
 ```
 
@@ -227,19 +239,20 @@ Hot corners:
 - Use the hot `[corners]` properties to execute any external command available on your system.
   - e.g. use `bottom_center = "firefox"` to open a web browser window.
 
-Companion tools:
-- You can install a [minimal-gtk](https://www.xfce-look.org/p/1016504) theme and leave `window_decoration = true`.
-- Simply add cortile to your startup applications to run it after login.
+Systray:
+- Use the `tiling_icon` property to add any external command to the systray menu.
+  - e.g. use `tiling_icon = [...,['firefox', 'Open Browser'],..]` to add a web browser entry.
 
 ## Issues [![issues](https://img.shields.io/github/issues-closed/leukipp/cortile)](#issues-)
-It's recommended to disable all build-in window snapping features.
-In Xfce environments, they can be found under "Window Manager" > "Advanced" > "Windows snapping".
-
-If you encounter problems start the process with `cortile -vv`, which provides additional verbose outputs.
-A log file is created by default under `/tmp/cortile.log`.
+- It's recommended to disable all build-in window snapping features (snap to other windows, snap to screen borders).
+- Window managers not supporting StatusNotifierItem for displaying system tray icons will need to install [snixembed](https://github.com/fyne-io/systray#linuxbsd).
+- Some GNOME based desktop environments (Mate, Deepin, Cinnamon, Budgie) may cause issues during resizing.
+- If you encounter problems start the process with `cortile -vv`, which provides additional debug outputs.
+- A log file is created by default under `/tmp/cortile.log`.
 
 ## Credits [![credits](https://img.shields.io/github/contributors/leukipp/cortile)](#credits-)
-Based on [zentile](https://github.com/blrsn/zentile) from [Berin Larson](https://github.com/blrsn).
+Based on [zentile](https://github.com/blrsn/zentile) ([Berin Larson](https://github.com/blrsn)) and [pytyle3](https://github.com/BurntSushi/pytyle3) ([Andrew Gallant](https://github.com/BurntSushi)).
+The main libraries used in this project are [xgbutil](https://github.com/BurntSushi/xgbutil), [toml](https://github.com/BurntSushi/toml), [systray](https://github.com/fyne-io/systray), [dbus](https://github.com/godbus/dbus), [fsnotify](https://github.com/fsnotify/fsnotify) and [logrus](https://github.com/sirupsen/logrus).
 
 ## License [![license](https://img.shields.io/github/license/leukipp/cortile)](#license-)
 [MIT](https://github.com/leukipp/cortile/blob/main/LICENSE)
