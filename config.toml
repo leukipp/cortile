@@ -12,8 +12,25 @@ tiling_enabled = true
 # Initial tiling layout ("fullscreen" | "vertical-left" | "vertical-right" | "horizontal-top" | "horizontal-bottom").
 tiling_layout = "vertical-right"
 
-# An overlay window is displayed for this time period when the layout was changed (0ms = disabled).
+# An overlay window is displayed for this time period [ms] when the layout was changed (0 = disabled).
 tiling_gui = 1500
+
+# Menu entries in systray which indicates the tiling state as icon ([] = disabled).
+# tiling_icon = [
+#   ['ACTION', 'TEXT'] = ['action strings from [keys] section', 'text to show in the menu'],
+#   ['', ''] = 'render a separator',
+# ]
+tiling_icon = [
+    ['toggle', 'Enabled'],
+    ['', ''],
+    ['master_increase', 'Add Master'],
+    ['master_decrease', 'Remove Master'],
+    ['', ''],
+    ['slave_increase', 'Add Slave'],
+    ['slave_decrease', 'Remove Slave'],
+    ['', ''],
+    ['exit', 'Exit'],
+]
 
 #################################### Window ####################################
 
@@ -39,7 +56,7 @@ window_masters_max = 3
 window_slaves_max = 3
 
 # How much space should be left between windows (0 - 100).
-window_gap_size = 4
+window_gap_size = 10
 
 # Window decorations will be removed if set to false (true | false).
 window_decoration = true
@@ -67,7 +84,7 @@ edge_corner_size = 10
 edge_center_size = 100
 
 ################################################################################
-[colors]                            # RGBA color values used for gui elements. #
+[colors]                             # RGBA color values used for ui elements. #
 ################################################################################
 
 # Layout window text color.
@@ -82,6 +99,12 @@ gui_client_slave = [58, 58, 78, 255]
 # Layout master client rectangle color.
 gui_client_master = [98, 98, 128, 255]
 
+# Systray icon background color.
+icon_background = [0, 0, 0, 0]
+
+# Systray icon foreground color.
+icon_foreground = [255, 255, 255, 255]
+
 ################################################################################
 [keys]                            # Key symbols can be found by running 'xev'. #
 ################################################################################
@@ -92,8 +115,14 @@ tile = "Control-Shift-T"
 # Untile the current workspace.
 untile = "Control-Shift-U"
 
-# Cycles through the available layouts.
-layout_cycle = "Control-Shift-L"
+# Toggle between tile and untile.
+toggle = "Control-Shift-KP_5"
+
+# Cycles through next layouts.
+cycle_next = "Control-Shift-Next"
+
+# Cycles through previous layouts.
+cycle_previous = "Control-Shift-Prior"
 
 # Activates the fullscreen layout.
 layout_fullscreen = "Control-Shift-Space"
@@ -138,29 +167,54 @@ window_next = "Control-Shift-KP_2"
 window_previous = "Control-Shift-KP_8"
 
 ################################################################################
-[corners]                    # Action strings from above or external commands. #
+[corners]                   # Action strings from [keys] or external commands. #
 ################################################################################
 
 # Corner at top left.
 top_left = "window_previous"
 
 # Corner at top center.
-top_center = "layout_horizontal_top"
+top_center = ""
 
 # Corner at top right.
 top_right = "master_make"
 
 # Corner at center right.
-center_right = "layout_vertical_right"
+center_right = ""
 
 # Corner at bottom right.
 bottom_right = "proportion_increase"
 
 # Corner at bottom center.
-bottom_center = "layout_horizontal_bottom"
+bottom_center = ""
 
 # Corner at bottom left.
 bottom_left = "proportion_decrease"
 
 # Corner at center left.
-center_left = "layout_vertical_left"
+center_left = ""
+
+################################################################################
+[systray]                   # Action strings from [keys] or external commands. #
+################################################################################
+
+# Icon left click with pointer.
+click_left = ""
+
+# Icon middle click with pointer.
+click_middle = "toggle"
+
+# Icon right click with pointer.
+click_right = ""
+
+# Icon vertical scroll up with pointer.
+scroll_up = "cycle_previous"
+
+# Icon vertical scroll down with pointer.
+scroll_down = "cycle_next"
+
+# Icon horizontal scroll left with pointer.
+scroll_left = "proportion_decrease"
+
+# Icon horizontal scroll right with pointer.
+scroll_right = "proportion_increase"
