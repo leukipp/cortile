@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+
 	"fmt"
 	"io"
 	"os"
@@ -13,37 +14,55 @@ import (
 	"github.com/leukipp/cortile/common"
 	"github.com/leukipp/cortile/desktop"
 	"github.com/leukipp/cortile/input"
+	"github.com/leukipp/cortile/store"
+	"github.com/leukipp/cortile/ui"
 
 	log "github.com/sirupsen/logrus"
 )
 
-//go:embed config.toml
-var defaultConfig []byte
+var (
+	// Build name
+	name = "cortile"
+
+	// Build version
+	version = "dev"
+
+	// Build commit
+	commit = "local"
+
+	// Build date
+	date = "unknown"
+)
 
 var (
-	version = "dev"     // Build version
-	commit  = "local"   // Build commit
-	date    = "unknown" // Build date
+	//go:embed config.toml
+	toml []byte
+
+	//go:embed assets/images/logo.png
+	icon []byte
 )
 
 func main() {
 
 	// Init command line arguments
-	common.InitArgs(version, commit, date)
+	common.InitArgs(name, version, commit, date)
+
+	// Init embedded files
+	common.InitFiles(toml, icon)
 
 	// Init lock and log files
 	defer InitLock().Close()
 	InitLog()
 
 	// Init config and root
-	common.InitConfig(defaultConfig)
-	common.InitRoot()
+	common.InitConfig()
+	store.InitRoot()
 
-	// Run cortile
-	run()
+	// Start main
+	start()
 }
 
-func run() {
+func start() {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Fatal(fmt.Errorf("%s\n%s", err, debug.Stack()))
@@ -54,20 +73,26 @@ func run() {
 	workspaces := desktop.CreateWorkspaces()
 	tracker := desktop.CreateTracker(workspaces)
 
+	// Show initial layout
+	ws := tracker.ActiveWorkspace()
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
+
 	// Bind input events
 	input.BindSignal(tracker)
 	input.BindSocket(tracker)
 	input.BindMouse(tracker)
 	input.BindKeys(tracker)
+	input.BindTray(tracker)
 
 	// Run X event loop
-	xevent.Main(common.X)
+	xevent.Main(store.X)
 }
 
 func InitLock() *os.File {
 	file, err := createLockFile(common.Args.Lock)
 	if err != nil {
-		fmt.Println(fmt.Errorf("cortile already running (%s)", err))
+		fmt.Println(fmt.Errorf("%s already running (%s)", common.Build.Name, err))
 		os.Exit(1)
 	}
 

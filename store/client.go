@@ -230,7 +230,7 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 func IsSpecial(info *Info) bool {
 
 	// Check internal windows
-	if info.Class == "cortile" {
+	if info.Class == common.Build.Name {
 		log.Info("Ignore internal window [", info.Class, "]")
 		return true
 	}

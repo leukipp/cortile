@@ -6,8 +6,16 @@ import (
 )
 
 var (
-	Args Arguments // Parsed arguments
+	Build BuildInfo // Build information
+	Args  Arguments // Parsed arguments
 )
+
+type BuildInfo struct {
+	Name    string // Build name
+	Version string // Build version
+	Commit  string // Build commit
+	Date    string // Build date
+}
 
 type Arguments struct {
 	Config string // Argument for config file path
@@ -19,20 +27,23 @@ type Arguments struct {
 	V      bool   // Argument for verbose mode
 }
 
-func InitArgs(version, commit, date string) {
+func InitArgs(name, version, commit, date string) {
+
+	// Build information
+	Build = BuildInfo{Name: name, Version: version, Commit: commit, Date: date}
 
 	// Command line arguments
-	flag.StringVar(&Args.Config, "config", ConfigFilePath(), "config file path")
-	flag.StringVar(&Args.Lock, "lock", "/tmp/cortile.lock", "lock file path")
-	flag.StringVar(&Args.Sock, "sock", "/tmp/cortile.sock", "sock file path")
-	flag.StringVar(&Args.Log, "log", "/tmp/cortile.log", "log file path")
+	flag.StringVar(&Args.Config, "config", ConfigFilePath(Build.Name), "config file path")
+	flag.StringVar(&Args.Lock, "lock", fmt.Sprintf("/tmp/%s.lock", Build.Name), "lock file path")
+	flag.StringVar(&Args.Sock, "sock", fmt.Sprintf("/tmp/%s.sock", Build.Name), "sock file path")
+	flag.StringVar(&Args.Log, "log", fmt.Sprintf("/tmp/%s.log", Build.Name), "log file path")
 	flag.BoolVar(&Args.VVV, "vvv", false, "very very verbose mode")
 	flag.BoolVar(&Args.VV, "vv", false, "very verbose mode")
 	flag.BoolVar(&Args.V, "v", false, "verbose mode")
 
 	// Command line usage text
 	flag.CommandLine.Usage = func() {
-		title := fmt.Sprintf("cortile v%s, built on %s (%s)", version, date, commit)
+		title := fmt.Sprintf("%s v%s, built on %s (%s)", Build.Name, Build.Version, Build.Date, Build.Commit)
 		fmt.Fprintf(flag.CommandLine.Output(), "%s\n\nUsage:\n", title)
 		flag.PrintDefaults()
 	}

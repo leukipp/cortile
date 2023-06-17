@@ -21,6 +21,7 @@ type Configuration struct {
 	TilingEnabled    bool              `toml:"tiling_enabled"`     // Tile windows on startup
 	TilingLayout     string            `toml:"tiling_layout"`      // Initial tiling layout
 	TilingGui        int               `toml:"tiling_gui"`         // Time duration of gui
+	TilingIcon       [][]string        `toml:"tiling_icon"`        // Menu entries of systray
 	WindowIgnore     [][]string        `toml:"window_ignore"`      // Regex to ignore windows
 	WindowMastersMax int               `toml:"window_masters_max"` // Maximum number of allowed masters
 	WindowSlavesMax  int               `toml:"window_slaves_max"`  // Maximum number of allowed slaves
@@ -34,7 +35,8 @@ type Configuration struct {
 	EdgeCenterSize   int               `toml:"edge_center_size"`   // Length of rectangle defining edge centers
 	Colors           map[string][]int  `toml:"colors"`             // List of color values for gui elements
 	Keys             map[string]string `toml:"keys"`               // Event bindings for keyboard shortcuts
-	Corners          map[string]string `toml:"corners"`            // Event bindings for hot-corners
+	Corners          map[string]string `toml:"corners"`            // Event bindings for hot-corner actions
+	Systray          map[string]string `toml:"systray"`            // Event bindings for systray icon
 }
 
 func InitConfig() {
@@ -57,19 +59,19 @@ func InitConfig() {
 	watchConfig(Args.Config)
 }
 
-func ConfigFilePath() string {
+func ConfigFilePath(name string) string {
 
 	// Obtain user home directory
 	userHome, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal("Error obtaining home directory ", err)
 	}
-	configFolderPath := filepath.Join(userHome, ".config", "cortile")
+	configFolderPath := filepath.Join(userHome, ".config", name)
 
 	// Obtain config directory
 	xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
 	if xdgConfigHome != "" {
-		configFolderPath = filepath.Join(xdgConfigHome, "cortile")
+		configFolderPath = filepath.Join(xdgConfigHome, name)
 	}
 
 	return filepath.Join(configFolderPath, "config.toml")

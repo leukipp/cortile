@@ -12,37 +12,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type KeyMapper struct{}
-
 func BindKeys(tr *desktop.Tracker) {
 	keybind.Initialize(store.X)
 
 	// Bind keyboard shortcuts
-	k := KeyMapper{}
-	k.bind("tile", tr)
-	k.bind("untile", tr)
-	k.bind("layout_cycle", tr)
-	k.bind("layout_fullscreen", tr)
-	k.bind("layout_vertical_left", tr)
-	k.bind("layout_vertical_right", tr)
-	k.bind("layout_horizontal_top", tr)
-	k.bind("layout_horizontal_bottom", tr)
-	k.bind("master_make", tr)
-	k.bind("master_increase", tr)
-	k.bind("master_decrease", tr)
-	k.bind("slave_increase", tr)
-	k.bind("slave_decrease", tr)
-	k.bind("proportion_increase", tr)
-	k.bind("proportion_decrease", tr)
-	k.bind("window_next", tr)
-	k.bind("window_previous", tr)
+	for a, k := range common.Config.Keys {
+		bind(a, k, tr)
+	}
 }
 
-func (k KeyMapper) bind(a string, tr *desktop.Tracker) {
+func bind(action string, key string, tr *desktop.Tracker) {
 	err := keybind.KeyPressFun(func(X *xgbutil.XUtil, ev xevent.KeyPressEvent) {
-		Execute(a, tr)
-	}).Connect(store.X, store.X.RootWin(), common.Config.Keys[a], true)
+		Execute(action, tr)
+	}).Connect(store.X, store.X.RootWin(), key, true)
 	if err != nil {
-		log.Warn("Error on action for ", a, ": ", err)
+		log.Warn("Error on action for ", action, ": ", err)
 	}
 }

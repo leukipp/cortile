@@ -64,11 +64,17 @@ func (ws *Workspace) ActiveLayout() Layout {
 	return ws.Layouts[ws.ActiveLayoutNum]
 }
 
-func (ws *Workspace) SwitchLayout() {
+func (ws *Workspace) CycleLayout(step int) {
 	if !ws.IsEnabled() {
 		return
 	}
-	ws.SetLayout((ws.ActiveLayoutNum + 1) % uint(len(ws.Layouts)))
+
+	i := (int(ws.ActiveLayoutNum) + step) % len(ws.Layouts)
+	if i < 0 {
+		i = len(ws.Layouts) - 1
+	}
+
+	ws.SetLayout(uint(i))
 	ws.Tile()
 }
 

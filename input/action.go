@@ -8,8 +8,13 @@ import (
 	"github.com/leukipp/cortile/common"
 	"github.com/leukipp/cortile/desktop"
 	"github.com/leukipp/cortile/store"
+	"github.com/leukipp/cortile/ui"
 
 	log "github.com/sirupsen/logrus"
+)
+
+var (
+	executeCallbacksFun []func(string) // Execute events callback functions
 )
 
 func Execute(a string, tr *desktop.Tracker) bool {
@@ -25,8 +30,12 @@ func Execute(a string, tr *desktop.Tracker) bool {
 		success = Tile(tr)
 	case "untile":
 		success = UnTile(tr)
-	case "layout_cycle":
-		success = SwitchLayout(tr)
+	case "toggle":
+		success = Toggle(tr)
+	case "cycle_next":
+		success = CycleNext(tr)
+	case "cycle_previous":
+		success = CyclePrevious(tr)
 	case "layout_fullscreen":
 		success = FullscreenLayout(tr)
 	case "layout_vertical_left":
@@ -65,25 +74,30 @@ func Execute(a string, tr *desktop.Tracker) bool {
 		cmd := exec.Command(params[0], params[1:]...)
 		if err := cmd.Run(); err != nil {
 			log.Error(err)
-			return false
+		} else {
+			success = true
 		}
-		success = true
+	}
+
+	if !success {
+		return false
 	}
 
 	// Notify socket
-	if success {
-		type Action struct {
-			Desk   uint
-			Screen uint
-		}
-		NotifySocket(Message[Action]{
-			Type: "Action",
-			Name: a,
-			Data: Action{Desk: store.CurrentDesk, Screen: store.CurrentScreen},
-		})
+	type Action struct {
+		Desk   uint
+		Screen uint
 	}
+	NotifySocket(Message[Action]{
+		Type: "Action",
+		Name: a,
+		Data: Action{Desk: store.CurrentDesk, Screen: store.CurrentScreen},
+	})
 
-	return success
+	// Execute callbacks
+	executeCallbacks(a)
+
+	return true
 }
 
 func Query(s string, tr *desktop.Tracker) bool {
@@ -134,8 +148,10 @@ func Tile(tr *desktop.Tracker) bool {
 	ws := tr.ActiveWorkspace()
 	ws.Enable(true)
 	tr.Update()
+	ws.Tile()
 
-	desktop.ShowLayout(ws)
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
@@ -148,19 +164,42 @@ func UnTile(tr *desktop.Tracker) bool {
 	ws.Enable(false)
 	ws.UnTile()
 
-	desktop.ShowLayout(ws)
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
 
-func SwitchLayout(tr *desktop.Tracker) bool {
+func Toggle(tr *desktop.Tracker) bool {
+	ws := tr.ActiveWorkspace()
+	if !ws.IsEnabled() {
+		return Tile(tr)
+	}
+	return UnTile(tr)
+}
+
+func CycleNext(tr *desktop.Tracker) bool {
 	ws := tr.ActiveWorkspace()
 	if !ws.IsEnabled() {
 		return false
 	}
-	ws.SwitchLayout()
+	ws.CycleLayout(1)
 
-	desktop.ShowLayout(ws)
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
+
+	return true
+}
+
+func CyclePrevious(tr *desktop.Tracker) bool {
+	ws := tr.ActiveWorkspace()
+	if !ws.IsEnabled() {
+		return false
+	}
+	ws.CycleLayout(-1)
+
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
@@ -177,7 +216,8 @@ func FullscreenLayout(tr *desktop.Tracker) bool {
 	}
 	ws.Tile()
 
-	desktop.ShowLayout(ws)
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
@@ -194,7 +234,8 @@ func VerticalLeftLayout(tr *desktop.Tracker) bool {
 	}
 	ws.Tile()
 
-	desktop.ShowLayout(ws)
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
@@ -211,7 +252,8 @@ func VerticalRightLayout(tr *desktop.Tracker) bool {
 	}
 	ws.Tile()
 
-	desktop.ShowLayout(ws)
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
@@ -228,7 +270,8 @@ func HorizontalTopLayout(tr *desktop.Tracker) bool {
 	}
 	ws.Tile()
 
-	desktop.ShowLayout(ws)
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
@@ -245,7 +288,8 @@ func HorizontalBottomLayout(tr *desktop.Tracker) bool {
 	}
 	ws.Tile()
 
-	desktop.ShowLayout(ws)
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
@@ -260,6 +304,7 @@ func MakeMaster(tr *desktop.Tracker) bool {
 		ws.Tile()
 		return true
 	}
+
 	return false
 }
 
@@ -271,7 +316,8 @@ func IncreaseMaster(tr *desktop.Tracker) bool {
 	ws.ActiveLayout().IncreaseMaster()
 	ws.Tile()
 
-	desktop.ShowLayout(ws)
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
@@ -284,7 +330,8 @@ func DecreaseMaster(tr *desktop.Tracker) bool {
 	ws.ActiveLayout().DecreaseMaster()
 	ws.Tile()
 
-	desktop.ShowLayout(ws)
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
@@ -297,7 +344,8 @@ func IncreaseSlave(tr *desktop.Tracker) bool {
 	ws.ActiveLayout().IncreaseSlave()
 	ws.Tile()
 
-	desktop.ShowLayout(ws)
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
@@ -310,7 +358,8 @@ func DecreaseSlave(tr *desktop.Tracker) bool {
 	ws.ActiveLayout().DecreaseSlave()
 	ws.Tile()
 
-	desktop.ShowLayout(ws)
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
@@ -372,4 +421,16 @@ func Exit(tr *desktop.Tracker) bool {
 	os.Exit(1)
 
 	return true
+}
+
+func OnExecute(fun func(string)) {
+	executeCallbacksFun = append(executeCallbacksFun, fun)
+}
+
+func executeCallbacks(arg string) {
+	log.Info("Execute event ", arg)
+
+	for _, fun := range executeCallbacksFun {
+		fun(arg)
+	}
 }

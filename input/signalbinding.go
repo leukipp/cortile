@@ -9,14 +9,23 @@ import (
 )
 
 func BindSignal(tr *desktop.Tracker) {
-	c := make(chan os.Signal, 1)
+	ch := make(chan os.Signal, 1)
 
-	// Bind signal events
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go exit(c, tr)
+	// Bind signal channel
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	go exit(ch, tr)
+
+	// Bind action channel
+	go action(tr.Action, tr)
 }
 
-func exit(c chan os.Signal, tr *desktop.Tracker) {
-	<-c
+func exit(ch chan os.Signal, tr *desktop.Tracker) {
+	<-ch
 	Execute("exit", tr)
+}
+
+func action(ch chan string, tr *desktop.Tracker) {
+	for {
+		Execute(<-ch, tr)
+	}
 }

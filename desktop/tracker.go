@@ -20,6 +20,7 @@ import (
 type Tracker struct {
 	Clients    map[xproto.Window]*store.Client // List of clients that are being tracked
 	Workspaces map[Location]*Workspace         // List of workspaces per location
+	Action     chan string                     // Event channel for actions
 	Handler    *Handler                        // Helper for event handlers
 }
 
@@ -64,6 +65,7 @@ func CreateTracker(ws map[Location]*Workspace) *Tracker {
 	tr := Tracker{
 		Clients:    make(map[xproto.Window]*store.Client),
 		Workspaces: ws,
+		Action:     make(chan string),
 		Handler: &Handler{
 			Resize: &ResizeHandler{
 				Client: &ResizeClient{},
@@ -82,7 +84,6 @@ func CreateTracker(ws map[Location]*Workspace) *Tracker {
 	// Populate clients on startup
 	if common.Config.TilingEnabled {
 		tr.Update()
-		ShowLayout(tr.ActiveWorkspace())
 	}
 
 	return &tr
@@ -193,16 +194,8 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 			log.Debug("Client maximized handler fired [", c.Latest.Class, "]")
 
 			// Set fullscreen layout
-			for i, l := range ws.Layouts {
-				if l.GetName() == "fullscreen" {
-					ws.SetLayout(uint(i))
-				}
-			}
-
-			// Tile workspace
-			ws.Tile()
+			tr.Action <- "layout_fullscreen"
 			c.Activate()
-			ShowLayout(ws)
 			break
 		}
 	}

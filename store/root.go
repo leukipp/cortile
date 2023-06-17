@@ -171,6 +171,11 @@ func ScreenNumGet(p *common.Pointer) uint {
 }
 
 func DesktopDimensions(screenNum uint) (x, y, w, h int) {
+	if int(screenNum) >= len(ViewPorts.Desktops) {
+		return
+	}
+
+	// Get desktop dimensions
 	x, y, w, h = ViewPorts.Desktops[screenNum].Pieces()
 
 	// Add desktop margin

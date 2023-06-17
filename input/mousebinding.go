@@ -3,18 +3,28 @@ package input
 import (
 	"time"
 
-	"github.com/BurntSushi/xgbutil"
-
 	"github.com/leukipp/cortile/common"
 	"github.com/leukipp/cortile/desktop"
 	"github.com/leukipp/cortile/store"
+	"github.com/leukipp/cortile/ui"
 
 	log "github.com/sirupsen/logrus"
 )
 
+var (
+	workspace *desktop.Workspace // Stores last active workspace
+)
+
 func BindMouse(tr *desktop.Tracker) {
-	poll(store.X, 100, func() {
+	poll(50, func() {
 		store.PointerUpdate(store.X)
+
+		// Update systray icon
+		ws := tr.ActiveWorkspace()
+		if ws != workspace {
+			ui.UpdateIcon(ws)
+			workspace = ws
+		}
 
 		// Evaluate corner states
 		for i := range store.Corners {
@@ -33,11 +43,11 @@ func BindMouse(tr *desktop.Tracker) {
 	})
 }
 
-func poll(X *xgbutil.XUtil, t time.Duration, fun func()) {
+func poll(t time.Duration, fun func()) {
 	fun()
 	go func() {
 		for range time.Tick(t * time.Millisecond) {
-			_, err := X.Conn().PollForEvent()
+			_, err := store.X.Conn().PollForEvent()
 			if err != nil {
 				continue
 			}

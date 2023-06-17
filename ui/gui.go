@@ -1,4 +1,4 @@
-package desktop
+package ui
 
 import (
 	"image"
@@ -17,6 +17,7 @@ import (
 	"github.com/BurntSushi/xgbutil/xwindow"
 
 	"github.com/leukipp/cortile/common"
+	"github.com/leukipp/cortile/desktop"
 	"github.com/leukipp/cortile/store"
 
 	log "github.com/sirupsen/logrus"
@@ -32,7 +33,7 @@ var (
 	rectMargin int = 4  // Margin of layout rectangles
 )
 
-func ShowLayout(ws *Workspace) {
+func ShowLayout(ws *desktop.Workspace) {
 	if common.Config.TilingGui <= 0 {
 		return
 	}
@@ -164,10 +165,10 @@ func showGraphics(img *xgraphics.Image, duration time.Duration) *xwindow.Window 
 
 	// Set class and name
 	icccm.WmClassSet(win.X, win.Id, &icccm.WmClass{
-		Instance: "cortile",
-		Class:    "cortile",
+		Instance: common.Build.Name,
+		Class:    common.Build.Name,
 	})
-	icccm.WmNameSet(win.X, win.Id, "cortile - gui")
+	icccm.WmNameSet(win.X, win.Id, common.Build.Name)
 
 	// Set states for modal like behavior
 	icccm.WmStateSet(win.X, win.Id, &icccm.WmState{
