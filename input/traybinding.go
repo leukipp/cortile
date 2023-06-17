@@ -3,6 +3,7 @@ package input
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"fyne.io/systray"
@@ -20,7 +21,7 @@ import (
 var (
 	clicked bool        // Tray icon clicked flag
 	pointer uint16      // Pointer button states of device
-	timer   *time.Timer // Timer to compress scroll events
+	timer   *time.Timer // Timer to compress pointer events
 	menu    *Menu       // Items collection of systray menu
 )
 
@@ -147,7 +148,7 @@ func messages(tr *desktop.Tracker) {
 				clicked = true
 				onActivate(tr)
 			case "Scroll":
-				onPointerScroll(tr, msg.Body[0].(int32), msg.Body[1].(string))
+				onPointerScroll(tr, msg.Body[0].(int32), strings.ToLower(msg.Body[1].(string)))
 			}
 		}
 	}()
@@ -193,8 +194,13 @@ func onPointerClick(tr *desktop.Tracker, button uint16) {
 		pointer = button
 	}
 
-	// Wait for dbus event
-	time.AfterFunc(50*time.Millisecond, func() {
+	// Reset timer
+	if timer != nil {
+		timer.Stop()
+	}
+
+	// Wait for dbus events
+	timer = time.AfterFunc(150*time.Millisecond, func() {
 		if clicked {
 			switch pointer {
 			case pointer & xproto.ButtonMask1:
@@ -210,12 +216,14 @@ func onPointerClick(tr *desktop.Tracker, button uint16) {
 }
 
 func onPointerScroll(tr *desktop.Tracker, delta int32, orientation string) {
+
+	// Reset timer
 	if timer != nil {
 		timer.Stop()
 	}
 
 	// Compress scroll events
-	timer = time.AfterFunc(50*time.Millisecond, func() {
+	timer = time.AfterFunc(150*time.Millisecond, func() {
 		switch orientation {
 		case "vertical":
 			if delta >= 0 {

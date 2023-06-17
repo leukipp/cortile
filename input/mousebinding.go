@@ -16,7 +16,7 @@ var (
 )
 
 func BindMouse(tr *desktop.Tracker) {
-	poll(50, func() {
+	poll(100, func() {
 		store.PointerUpdate(store.X)
 
 		// Update systray icon

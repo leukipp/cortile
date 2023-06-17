@@ -30,35 +30,17 @@ type Location struct {
 }
 
 type Handler struct {
-	Resize *ResizeHandler // Stores variables of resize handler
-	Move   *MoveHandler   // Stores variables of move handler
+	Timer        *time.Timer    // Timer to handle delayed structure events
+	ResizeClient *HandlerClient // Stores client for proportion change
+	MoveClient   *HandlerClient // Stores client for tiling after move
+	SwapClient   *HandlerClient // Stores clients for window swap
+	SwapScreen   *HandlerClient // Stores client for screen swap
 }
 
-type ResizeHandler struct {
-	Fired  bool          // Indicates fired resize event
-	Client *ResizeClient // Stores client for proportion change
-}
-
-type ResizeClient struct {
-	Active bool          // Indicates active client resize
-	Source *store.Client // Stores user resized client
-}
-
-type MoveHandler struct {
-	Fired  bool        // Indicates fired move event
-	Client *SwapClient // Stores clients for window swap
-	Screen *SwapScreen // Stores client for screen change
-}
-
-type SwapClient struct {
-	Active bool          // Indicates active client swap
-	Source *store.Client // Stores moving client for window swap
-	Target *store.Client // Stores hovered client for window swap
-}
-
-type SwapScreen struct {
-	Active bool          // Indicates active screen change
-	Source *store.Client // Stores moving client for screen change
+type HandlerClient struct {
+	Active bool          // Indicates active handler event
+	Source *store.Client // Stores moving/resizing client
+	Target *store.Client // Stores hovered client
 }
 
 func CreateTracker(ws map[Location]*Workspace) *Tracker {
@@ -67,13 +49,10 @@ func CreateTracker(ws map[Location]*Workspace) *Tracker {
 		Workspaces: ws,
 		Action:     make(chan string),
 		Handler: &Handler{
-			Resize: &ResizeHandler{
-				Client: &ResizeClient{},
-			},
-			Move: &MoveHandler{
-				Client: &SwapClient{},
-				Screen: &SwapScreen{},
-			},
+			ResizeClient: &HandlerClient{},
+			MoveClient:   &HandlerClient{},
+			SwapClient:   &HandlerClient{},
+			SwapScreen:   &HandlerClient{},
 		},
 	}
 
@@ -225,7 +204,7 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 
 func (tr *Tracker) handleResizeClient(c *store.Client) {
 	ws := tr.ClientWorkspace(c)
-	if !tr.isTracked(c.Win.Id) || !ws.IsEnabled() || store.IsMaximized(c.Win.Id) {
+	if !ws.IsEnabled() || !tr.isTracked(c.Win.Id) || store.IsMaximized(c.Win.Id) {
 		return
 	}
 
@@ -241,30 +220,27 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	cx, cy, cw, ch := cGeom.Pieces()
 
 	// Check size changes
-	moved := math.Abs(float64(cx-px)) > 0.0 || math.Abs(float64(cy-py)) > 0.0
 	resized := math.Abs(float64(cw-pw)) > 0.0 || math.Abs(float64(ch-ph)) > 0.0
 	directions := &store.Directions{Top: cy != py, Right: cx == px && cw != pw, Bottom: cy == py && ch != ph, Left: cx != px}
 
 	// Check window lifetime
 	lifetime := time.Since(c.Created)
 	added := lifetime < 1000*time.Millisecond
-	initialized := moved && added
 
-	if resized || initialized {
+	if resized && !tr.Handler.MoveClient.Active {
 		al := ws.ActiveLayout()
 
 		// Set client resize event
-		if !tr.Handler.Resize.Fired {
-			tr.Handler.Resize.Client = &ResizeClient{Active: true, Source: c}
+		if !tr.Handler.ResizeClient.Active {
+			tr.Handler.ResizeClient = &HandlerClient{Active: true, Source: c}
 		}
-		tr.Handler.Resize.Fired = true
 		log.Debug("Client resize handler fired [", c.Latest.Class, "]")
 
 		if !added {
 
 			// Set client resize lock
-			if tr.Handler.Resize.Client.Active {
-				tr.Handler.Resize.Client.Source.Lock()
+			if tr.Handler.ResizeClient.Active {
+				tr.Handler.ResizeClient.Source.Lock()
 				log.Debug("Client resize handler active [", c.Latest.Class, "]")
 			}
 
@@ -279,36 +255,37 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 func (tr *Tracker) handleMoveClient(c *store.Client) {
 	ws := tr.ClientWorkspace(c)
-	if !tr.isTracked(c.Win.Id) || !ws.IsEnabled() || store.IsMaximized(c.Win.Id) {
+	if !tr.isTracked(c.Win.Id) || store.IsMaximized(c.Win.Id) {
 		return
 	}
 
 	// Previous position
 	pGeom := c.Latest.Dimensions.Geometry
-	px, py, pw, ph := pGeom.Pieces()
+	px, py, _, _ := pGeom.Pieces()
 
 	// Current position
 	cGeom, err := c.Win.DecorGeometry()
 	if err != nil {
 		return
 	}
-	cx, cy, cw, ch := cGeom.Pieces()
+	cx, cy, _, _ := cGeom.Pieces()
 
 	// Check position change
-	active := c.Win.Id == store.ActiveWindow
 	moved := math.Abs(float64(cx-px)) > 0.0 || math.Abs(float64(cy-py)) > 0.0
-	resized := math.Abs(float64(cw-pw)) > 0.0 || math.Abs(float64(ch-ph)) > 0.0
+	active := c.Win.Id == store.ActiveWindow
 
-	if active && moved && !resized {
+	if moved && active && !tr.Handler.ResizeClient.Active {
 		mg := ws.ActiveLayout().GetManager()
 		pt := store.PointerGet(store.X)
 
 		// Set client move event
-		tr.Handler.Move.Fired = true
+		if !tr.Handler.MoveClient.Active {
+			tr.Handler.MoveClient = &HandlerClient{Active: true, Source: c}
+		}
 		log.Debug("Client move handler fired [", c.Latest.Class, "]")
 
 		// Check if pointer hovers another client
-		tr.Handler.Move.Client.Active = false
+		tr.Handler.SwapClient.Active = false
 		for _, co := range mg.Clients(false) {
 			if co == nil || c.Win.Id == co.Win.Id {
 				continue
@@ -316,33 +293,33 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 			// Store moved client and hovered client
 			if common.IsInsideRect(pt, co.Latest.Dimensions.Geometry) {
-				tr.Handler.Move.Client = &SwapClient{Active: true, Source: c, Target: co}
+				tr.Handler.SwapClient = &HandlerClient{Active: true, Source: c, Target: co}
 				log.Debug("Client move handler active [", c.Latest.Class, "-", co.Latest.Class, "]")
 				break
 			}
 		}
 
 		// Check if pointer moves to another screen
-		tr.Handler.Move.Screen.Active = false
+		tr.Handler.SwapScreen.Active = false
 		if c.Latest.ScreenNum != store.CurrentScreen {
-			tr.Handler.Move.Screen = &SwapScreen{Active: true, Source: c}
+			tr.Handler.SwapScreen = &HandlerClient{Active: true, Source: c}
 		}
 	}
 }
 
 func (tr *Tracker) handleSwapClient(c *store.Client) {
 	ws := tr.ClientWorkspace(c)
-	if !tr.isTracked(c.Win.Id) || !ws.IsEnabled() || store.IsMaximized(c.Win.Id) {
+	if !tr.isTracked(c.Win.Id) {
 		return
 	}
-	log.Debug("Client swap handler fired [", tr.Handler.Move.Client.Source.Latest.Class, "-", tr.Handler.Move.Client.Target.Latest.Class, "]")
+	log.Debug("Client swap handler fired [", tr.Handler.SwapClient.Source.Latest.Class, "-", tr.Handler.SwapClient.Target.Latest.Class, "]")
 
 	// Swap clients on same desktop and screen
 	mg := ws.ActiveLayout().GetManager()
-	mg.SwapClient(tr.Handler.Move.Client.Source, tr.Handler.Move.Client.Target)
+	mg.SwapClient(tr.Handler.SwapClient.Source, tr.Handler.SwapClient.Target)
 
 	// Reset client swapping event
-	tr.Handler.Move.Client.Active = false
+	tr.Handler.SwapClient.Active = false
 
 	// Tile workspace
 	ws.Tile()
@@ -362,7 +339,7 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 	}
 
 	// Reset screen swapping event
-	tr.Handler.Move.Screen.Active = false
+	tr.Handler.SwapScreen.Active = false
 
 	// Update client desktop and screen
 	if !tr.isTrackable(c.Win.Id) {
@@ -398,29 +375,39 @@ func (tr *Tracker) onStateUpdate(aname string) {
 
 func (tr *Tracker) onPointerUpdate(button uint16) {
 
-	// Window resized
-	if tr.Handler.Resize.Client.Active {
-		tr.Handler.Resize.Client.Active = false
+	// Reset timer
+	if tr.Handler.Timer != nil {
+		tr.Handler.Timer.Stop()
 	}
 
-	// Window moved over another window
-	if tr.Handler.Move.Client.Active {
-		tr.handleSwapClient(tr.Handler.Move.Client.Source)
+	// Wait on button release
+	var t time.Duration = 0
+	if button == 0 {
+		t = 50
 	}
 
-	// Window moved to another screen
-	if tr.Handler.Move.Screen.Active {
-		tr.handleWorkspaceChange(tr.Handler.Move.Screen.Source)
-	}
+	// Wait for structure events
+	tr.Handler.Timer = time.AfterFunc(t*time.Millisecond, func() {
 
-	// Reset client resize and move events
-	if tr.Handler.Resize.Fired || tr.Handler.Move.Fired {
-		tr.Handler.Resize.Fired = false
-		tr.Handler.Move.Fired = false
+		// Window moved to another screen
+		if tr.Handler.SwapScreen.Active {
+			tr.handleWorkspaceChange(tr.Handler.SwapScreen.Source)
+		}
 
-		// Tile workspace
-		tr.ActiveWorkspace().Tile()
-	}
+		// Window moved over another window
+		if tr.Handler.SwapClient.Active {
+			tr.handleSwapClient(tr.Handler.SwapClient.Source)
+		}
+
+		// Window moved or resized
+		if tr.Handler.MoveClient.Active || tr.Handler.ResizeClient.Active {
+			tr.Handler.MoveClient.Active = false
+			tr.Handler.ResizeClient.Active = false
+
+			// Tile workspace
+			tr.ActiveWorkspace().Tile()
+		}
+	})
 }
 
 func (tr *Tracker) attachHandlers(c *store.Client) {
