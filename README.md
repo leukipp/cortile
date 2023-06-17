@@ -241,12 +241,16 @@ Hot corners:
 
 Systray:
 - Use the `tiling_icon` property to add any external command to the systray menu.
-  - e.g. use `tiling_icon = [...,['firefox', 'Open Browser'],..]` to add a web browser entry.
+  - e.g. use `tiling_icon = [...,['firefox', 'Open Browser'],...]` to add a web browser entry.
 
 ## Issues [![issues](https://img.shields.io/github/issues-closed/leukipp/cortile)](#issues-)
+Environments:
 - It's recommended to disable all build-in window snapping features (snap to other windows, snap to screen borders).
+- Adjust the bindings in the `[systray]` section, as pointer events may not be triggered in various desktop environments.
 - Window managers not supporting StatusNotifierItem for displaying system tray icons will need to install [snixembed](https://github.com/fyne-io/systray#linuxbsd).
 - Some GNOME based desktop environments (Mate, Deepin, Cinnamon, Budgie) may cause issues during resizing.
+
+Debugging:
 - If you encounter problems start the process with `cortile -vv`, which provides additional debug outputs.
 - A log file is created by default under `/tmp/cortile.log`.
 
