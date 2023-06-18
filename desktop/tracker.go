@@ -109,11 +109,19 @@ func (tr *Tracker) Reset() {
 }
 
 func (tr *Tracker) ActiveWorkspace() *Workspace {
-	return tr.Workspaces[Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}]
+	ws := tr.Workspaces[Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}]
+	if ws == nil {
+		log.Warn("Invalid active workspace [workspace-", store.CurrentDesk, "-", store.CurrentScreen, "]")
+	}
+	return ws
 }
 
 func (tr *Tracker) ClientWorkspace(c *store.Client) *Workspace {
-	return tr.Workspaces[Location{DeskNum: c.Latest.DeskNum, ScreenNum: c.Latest.ScreenNum}]
+	ws := tr.Workspaces[Location{DeskNum: c.Latest.DeskNum, ScreenNum: c.Latest.ScreenNum}]
+	if ws == nil {
+		log.Warn("Invalid client workspace [workspace-", c.Latest.DeskNum, "-", c.Latest.ScreenNum, "]")
+	}
+	return ws
 }
 
 func (tr *Tracker) trackWindow(w xproto.Window) bool {

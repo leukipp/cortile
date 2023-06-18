@@ -108,9 +108,15 @@ func (ws *Workspace) RemoveClient(c *store.Client) {
 }
 
 func (ws *Workspace) Enable(enable bool) {
+	if ws == nil {
+		return
+	}
 	ws.TilingEnabled = enable
 }
 
 func (ws *Workspace) IsEnabled() bool {
+	if ws == nil {
+		return false
+	}
 	return ws.TilingEnabled
 }
