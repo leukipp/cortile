@@ -243,7 +243,7 @@ func (mg *Manager) DecreaseProportion() {
 func (mg *Manager) SetProportions(ps []float64, pi float64, i int, j int) bool {
 
 	// Ignore changes on border sides
-	if i == j || j < 0 || j >= len(ps) {
+	if i == j || i < 0 || i >= len(ps) || j < 0 || j >= len(ps) {
 		return false
 	}
 
