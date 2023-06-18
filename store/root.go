@@ -103,7 +103,13 @@ func PhysicalHeadsGet(rGeom xrect.Rect) xinerama.Heads {
 		heads, _ = xinerama.PhysicalHeads(X)
 	}
 
-	return heads
+	// Validate physical heads
+	if len(heads) > 0 {
+		return heads
+	}
+	log.Warn("Error retrieving screen dimensions")
+
+	return ViewPorts.Screens
 }
 
 func ViewPortsGet(X *xgbutil.XUtil) (Head, error) {
