@@ -82,24 +82,18 @@ If some of them are already in use by your system, update the default values in 
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_2</kbd>        | Focus next window                        |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_8</kbd>        | Focus previous window                    |
 
-Hot corner events are defined under the `[corners]` section and will be triggered when the pointer enters one of the target areas:
-| Corners                             | Description                              |
-| ----------------------------------- | ---------------------------------------- |
-| <kbd>Top</kbd>-<kbd>Left</kbd>      | Focus previous window                    |
-| <kbd>Top</kbd>-<kbd>Center</kbd>    | -                                        |
-| <kbd>Top</kbd>-<kbd>Right</kbd>     | Make the active window master            |
-| <kbd>Center</kbd>-<kbd>Right</kbd>  | -                                        |
-| <kbd>Bottom</kbd>-<kbd>Right</kbd>  | Increase proportion of master-slave area |
-| <kbd>Bottom</kbd>-<kbd>Center</kbd> | -                                        |
-| <kbd>Bottom</kbd>-<kbd>Left</kbd>   | Decrease proportion of master-slave area |
-| <kbd>Center</kbd>-<kbd>Left</kbd>   | -                                        |
+Hot corner events are defined under the `[corners]` section and are triggered when the pointer enters one of the target areas:
+| Corners                            | Description                              |
+| ---------------------------------- | ---------------------------------------- |
+| <kbd>Top</kbd>-<kbd>Left</kbd>     | Focus previous window                    |
+| <kbd>Top</kbd>-<kbd>Right</kbd>    | Make the active window master            |
+| <kbd>Bottom</kbd>-<kbd>Right</kbd> | Increase proportion of master-slave area |
+| <kbd>Bottom</kbd>-<kbd>Left</kbd>  | Decrease proportion of master-slave area |
 
-Systray events are defined under the `[systray]` section and are triggered when the pointer keys are pressed while the mouse hovers the icon:
+Systray events are defined under the `[systray]` section and are triggered when the pointer keys are pressed while hovering the icon:
 | Pointer                            | Description                              |
 | ---------------------------------- | ---------------------------------------- |
-| <kbd>Left</kbd>-<kbd>Click</kbd>   | -                                        |
 | <kbd>Middle</kbd>-<kbd>Click</kbd> | Toggle between tile and untile           |
-| <kbd>Right</kbd>-<kbd>Click</kbd>  | -                                        |
 | <kbd>Scroll</kbd>-<kbd>Up</kbd>    | Cycle through previous layouts           |
 | <kbd>Scroll</kbd>-<kbd>Down</kbd>  | Cycle through next layouts               |
 | <kbd>Scroll</kbd>-<kbd>Left</kbd>  | Decrease proportion of master-slave area |
@@ -246,16 +240,16 @@ Systray:
 ## Issues [![issues](https://img.shields.io/github/issues-closed/leukipp/cortile)](#issues-)
 Environments:
 - It's recommended to disable all build-in window snapping features (snap to other windows, snap to screen borders).
-- Adjust the bindings in the `[systray]` section, as pointer events may not be triggered in various desktop environments.
-- Window managers not supporting StatusNotifierItem for displaying system tray icons will need to install [snixembed](https://github.com/fyne-io/systray#linuxbsd).
-- Some GNOME based desktop environments (Mate, Deepin, Cinnamon, Budgie) may cause issues during resizing.
+- Adjust the bindings in the `[systray]` section, as some pointer events may not fire across different desktop environments.
+- Window managers not supporting [StatusNotifierItem](https://freedesktop.org/wiki/Specifications/StatusNotifierItem) for displaying systray icons will need to install [snixembed](https://github.com/fyne-io/systray#linuxbsd).
+- In some GNOME based desktop environments window displacement or resizing issues may occur.
 
 Debugging:
 - If you encounter problems start the process with `cortile -vv`, which provides additional debug outputs.
 - A log file is created by default under `/tmp/cortile.log`.
 
 ## Credits [![credits](https://img.shields.io/github/contributors/leukipp/cortile)](#credits-)
-Based on [zentile](https://github.com/blrsn/zentile) ([Berin Larson](https://github.com/blrsn)) and [pytyle3](https://github.com/BurntSushi/pytyle3) ([Andrew Gallant](https://github.com/BurntSushi)).
+Based on [zentile](https://github.com/blrsn/zentile) ([Berin Larson](https://github.com/blrsn)) and [pytyle3](https://github.com/BurntSushi/pytyle3) ([Andrew Gallant](https://github.com/BurntSushi)).  
 The main libraries used in this project are [xgbutil](https://github.com/BurntSushi/xgbutil), [toml](https://github.com/BurntSushi/toml), [systray](https://github.com/fyne-io/systray), [dbus](https://github.com/godbus/dbus), [fsnotify](https://github.com/fsnotify/fsnotify) and [logrus](https://github.com/sirupsen/logrus).
 
 ## License [![license](https://img.shields.io/github/license/leukipp/cortile)](#license-)
