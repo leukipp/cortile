@@ -1,7 +1,6 @@
 package desktop
 
 import (
-	"math"
 	"strings"
 	"time"
 
@@ -228,7 +227,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	cx, cy, cw, ch := cGeom.Pieces()
 
 	// Check size changes
-	resized := math.Abs(float64(cw-pw)) > 0.0 || math.Abs(float64(ch-ph)) > 0.0
+	resized := cw != pw || ch != ph
 	directions := &store.Directions{Top: cy != py, Right: cx == px && cw != pw, Bottom: cy == py && ch != ph, Left: cx != px}
 
 	// Check window lifetime
@@ -269,20 +268,21 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 	// Previous position
 	pGeom := c.Latest.Dimensions.Geometry
-	px, py, _, _ := pGeom.Pieces()
+	px, py, pw, ph := pGeom.Pieces()
 
 	// Current position
 	cGeom, err := c.Win.DecorGeometry()
 	if err != nil {
 		return
 	}
-	cx, cy, _, _ := cGeom.Pieces()
+	cx, cy, cw, ch := cGeom.Pieces()
 
 	// Check position change
-	moved := math.Abs(float64(cx-px)) > 0.0 || math.Abs(float64(cy-py)) > 0.0
+	moved := cx != px || cy != py
+	resized := cw != pw || ch != ph
 	active := c.Win.Id == store.ActiveWindow
 
-	if moved && active && !tr.Handler.ResizeClient.Active {
+	if active && moved && !resized && !tr.Handler.ResizeClient.Active {
 		mg := ws.ActiveLayout().GetManager()
 		pt := store.PointerGet(store.X)
 
@@ -378,6 +378,12 @@ func (tr *Tracker) onStateUpdate(aname string) {
 	// Viewport changed or clients changed
 	if viewportChanged || clientsChanged {
 		tr.Update()
+
+		// Deactivate handlers
+		tr.Handler.ResizeClient.Active = false
+		tr.Handler.MoveClient.Active = false
+		tr.Handler.SwapClient.Active = false
+		tr.Handler.SwapScreen.Active = false
 	}
 }
 
@@ -411,6 +417,13 @@ func (tr *Tracker) onPointerUpdate(button uint16) {
 		if tr.Handler.MoveClient.Active || tr.Handler.ResizeClient.Active {
 			tr.Handler.MoveClient.Active = false
 			tr.Handler.ResizeClient.Active = false
+
+			// Unlock clients
+			ws := tr.ActiveWorkspace()
+			mg := ws.ActiveLayout().GetManager()
+			for _, c := range mg.Clients(false) {
+				c.UnLock()
+			}
 
 			// Tile workspace
 			tr.ActiveWorkspace().Tile()
