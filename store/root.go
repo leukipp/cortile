@@ -90,7 +90,7 @@ func Connect() *xgbutil.XUtil {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	log.Info("Connected to X server")
+	log.Info("Connected to X server [", common.Build.Summary, "]")
 
 	return X
 }

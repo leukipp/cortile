@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime/debug"
 	"syscall"
+	"time"
 
 	"github.com/BurntSushi/xgbutil/xevent"
 
@@ -31,7 +32,7 @@ var (
 	commit = "local"
 
 	// Build date
-	date = "unknown"
+	date = time.Now().Format(time.RFC3339)
 )
 
 var (

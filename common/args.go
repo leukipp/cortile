@@ -15,6 +15,7 @@ type BuildInfo struct {
 	Version string // Build version
 	Commit  string // Build commit
 	Date    string // Build date
+	Summary string // Build summary
 }
 
 type Arguments struct {
@@ -30,7 +31,13 @@ type Arguments struct {
 func InitArgs(name, version, commit, date string) {
 
 	// Build information
-	Build = BuildInfo{Name: name, Version: version, Commit: commit, Date: date}
+	Build = BuildInfo{
+		Name:    name,
+		Version: version,
+		Commit:  Truncate(commit, 7),
+		Date:    date,
+	}
+	Build.Summary = fmt.Sprintf("%s v%s-%s, built on %s", Build.Name, Build.Version, Build.Commit, Build.Date)
 
 	// Command line arguments
 	flag.StringVar(&Args.Config, "config", ConfigFilePath(Build.Name), "config file path")
@@ -43,8 +50,7 @@ func InitArgs(name, version, commit, date string) {
 
 	// Command line usage text
 	flag.CommandLine.Usage = func() {
-		title := fmt.Sprintf("%s v%s, built on %s (%s)", Build.Name, Build.Version, Build.Date, Build.Commit)
-		fmt.Fprintf(flag.CommandLine.Output(), "%s\n\nUsage:\n", title)
+		fmt.Fprintf(flag.CommandLine.Output(), "%s\n\nUsage:\n", Build.Summary)
 		flag.PrintDefaults()
 	}
 

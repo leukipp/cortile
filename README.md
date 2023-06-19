@@ -211,7 +211,7 @@ cd cortile
 
 If necessary you can make local changes, then execute:
 ```bash
-go install -ldflags="-X 'main.date=$(date --iso-8601=seconds)'"
+go install
 ```
 
 </div></details>

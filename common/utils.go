@@ -10,6 +10,13 @@ type Pointer struct {
 	Button uint16 // Pointer button states of device
 }
 
+func Truncate(s string, max int) string {
+	if max > len(s) {
+		return s
+	}
+	return s[:max]
+}
+
 func IsInList(item string, items []string) bool {
 	for i := 0; i < len(items); i++ {
 		if items[i] == item {
