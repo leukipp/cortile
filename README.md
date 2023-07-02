@@ -62,9 +62,10 @@ The default keyboard shortcuts are assigned as shown below.
 If some of them are already in use by your system, update the default values in the `[keys]` section of the configuration file:
 | Keys                                                    | Description                              |
 | ------------------------------------------------------- | ---------------------------------------- |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Home</kbd>        | Tile current workspace                   |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>End</kbd>         | Untile current workspace                 |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>           | Toggle between tile and untile           |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Home</kbd>        | Enable tiling on the current screen      |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>End</kbd>         | Disable tiling on the current screen     |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>           | Disable tiling and restore windows       |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>           | Toggle between enable and disable        |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Next</kbd>        | Cycle through next layouts               |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Prior</kbd>       | Cycle through previous layouts           |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>       | Activate fullscreen layout               |
@@ -93,7 +94,7 @@ Hot corner events are defined under the `[corners]` section and are triggered wh
 Systray events are defined under the `[systray]` section and are triggered when the pointer keys are pressed while hovering the icon:
 | Pointer                            | Description                              |
 | ---------------------------------- | ---------------------------------------- |
-| <kbd>Middle</kbd>-<kbd>Click</kbd> | Toggle between tile and untile           |
+| <kbd>Middle</kbd>-<kbd>Click</kbd> | Toggle between enable and disable        |
 | <kbd>Scroll</kbd>-<kbd>Up</kbd>    | Cycle through previous layouts           |
 | <kbd>Scroll</kbd>-<kbd>Down</kbd>  | Cycle through next layouts               |
 | <kbd>Scroll</kbd>-<kbd>Left</kbd>  | Decrease proportion of master-slave area |
@@ -211,7 +212,7 @@ cd cortile
 
 If necessary you can make local changes, then execute:
 ```bash
-go install
+go install -ldflags="-X 'main.date=$(date --iso-8601=seconds)'"
 ```
 
 </div></details>
