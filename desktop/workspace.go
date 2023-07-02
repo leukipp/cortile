@@ -65,10 +65,11 @@ func (ws *Workspace) ActiveLayout() Layout {
 }
 
 func (ws *Workspace) CycleLayout(step int) {
-	if !ws.IsEnabled() {
+	if ws.Disabled() {
 		return
 	}
 
+	// Calculate cycle direction
 	i := (int(ws.ActiveLayoutNum) + step) % len(ws.Layouts)
 	if i < 0 {
 		i = len(ws.Layouts) - 1
@@ -76,17 +77,6 @@ func (ws *Workspace) CycleLayout(step int) {
 
 	ws.SetLayout(uint(i))
 	ws.Tile()
-}
-
-func (ws *Workspace) Tile() {
-	if !ws.IsEnabled() {
-		return
-	}
-	ws.ActiveLayout().Do()
-}
-
-func (ws *Workspace) UnTile() {
-	ws.ActiveLayout().Undo()
 }
 
 func (ws *Workspace) AddClient(c *store.Client) {
@@ -107,16 +97,45 @@ func (ws *Workspace) RemoveClient(c *store.Client) {
 	}
 }
 
-func (ws *Workspace) Enable(enable bool) {
-	if ws == nil {
+func (ws *Workspace) Tile() {
+	if ws.Disabled() {
 		return
 	}
-	ws.TilingEnabled = enable
+
+	// Apply active layout
+	ws.ActiveLayout().Apply()
 }
 
-func (ws *Workspace) IsEnabled() bool {
+func (ws *Workspace) Restore(original bool) {
+	mg := ws.ActiveLayout().GetManager()
+	clients := mg.Clients(true)
+
+	log.Info("Untile ", len(clients), " windows [workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
+
+	// Restore client dimensions
+	for _, c := range clients {
+		c.Restore(original)
+	}
+}
+
+func (ws *Workspace) Enable() {
+	ws.TilingEnabled = true
+}
+
+func (ws *Workspace) Disable() {
+	ws.TilingEnabled = false
+}
+
+func (ws *Workspace) Enabled() bool {
 	if ws == nil {
 		return false
 	}
 	return ws.TilingEnabled
+}
+
+func (ws *Workspace) Disabled() bool {
+	if ws == nil {
+		return false
+	}
+	return !ws.TilingEnabled
 }

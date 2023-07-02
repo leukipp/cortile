@@ -18,7 +18,7 @@ tiling_gui = 1500
 # Menu entries in systray which shows the tiling state as icon ([] = disabled).
 # tiling_icon = [
 #   ['ACTION', 'TEXT'] = ['action strings from [keys] section', 'text to show in the menu'],
-#   ['', ''] = 'render a separator',
+#   ['', ''] = 'show a separator line',
 # ]
 tiling_icon = [
     ['toggle', 'Enabled'],
@@ -109,13 +109,16 @@ icon_foreground = [255, 255, 255, 255]
 [keys]                            # Key symbols can be found by running 'xev'. #
 ################################################################################
 
-# Tile the current workspace.
-tile = "Control-Shift-Home"
+# Enable tiling on the current screen.
+enable = "Control-Shift-Home"
 
-# Untile the current workspace.
-untile = "Control-Shift-End"
+# Disable tiling on the current screen.
+disable = "Control-Shift-End"
 
-# Toggle between tile and untile.
+# Disable tiling and restore windows on the current screen.
+restore = "Control-Shift-R"
+
+# Toggle between enable and disable on the current screen.
 toggle = "Control-Shift-T"
 
 # Cycles through next layouts.
@@ -139,7 +142,7 @@ layout_horizontal_top = "Control-Shift-Up"
 # Activates the horizontal-bottom layout.
 layout_horizontal_bottom = "Control-Shift-Down"
 
-# Make the active window as master.
+# Make the active window a master.
 master_make = "Control-Shift-M"
 
 # Increase the number of masters.
@@ -165,6 +168,12 @@ window_next = "Control-Shift-KP_2"
 
 # Moves focus to the previous window.
 window_previous = "Control-Shift-KP_8"
+
+# The commands above will affect all screens if this key is pressed in addition (Mod1 = Alt_L).
+mod_screens = "Mod1"
+
+# The commands above will affect all workspaces if this key is pressed in addition (Mod4 = Super_L).
+mod_workspaces = "Mod4"
 
 ################################################################################
 [corners]                   # Action strings from [keys] or external commands. #

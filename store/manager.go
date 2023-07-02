@@ -55,16 +55,6 @@ func CreateManager(deskNum uint, screenNum uint) *Manager {
 	}
 }
 
-func (mg *Manager) Undo() {
-	clients := mg.Clients(true)
-
-	log.Info("Untile ", len(clients), " windows [workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
-
-	for _, c := range clients {
-		c.Restore()
-	}
-}
-
 func (mg *Manager) AddClient(c *Client) {
 	if mg.IsMaster(c) || mg.IsSlave(c) {
 		return
@@ -319,8 +309,8 @@ func (mg *Manager) Visible(windows *Clients) []*Client {
 	return visible
 }
 
-func (mg *Manager) Clients(all bool) []*Client {
-	if all {
+func (mg *Manager) Clients(stacked bool) []*Client {
+	if stacked {
 		return append(mg.Masters.Items, mg.Slaves.Items...)
 	}
 	return append(mg.Visible(mg.Masters), mg.Visible(mg.Slaves)...)

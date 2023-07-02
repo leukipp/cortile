@@ -21,11 +21,11 @@ func BindSignal(tr *desktop.Tracker) {
 
 func exit(ch chan os.Signal, tr *desktop.Tracker) {
 	<-ch
-	Execute("exit", tr)
+	Execute("exit", "current", tr)
 }
 
 func action(ch chan string, tr *desktop.Tracker) {
 	for {
-		Execute(<-ch, tr)
+		Execute(<-ch, "current", tr)
 	}
 }

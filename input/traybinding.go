@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	clicked bool        // Tray icon clicked flag
-	pointer uint16      // Pointer button states of device
+	clicked bool        // Tray clicked state from dbus
+	pointer uint16      // Pointer button state of device
 	timer   *time.Timer // Timer to compress pointer events
 	menu    *Menu       // Items collection of systray menu
 )
@@ -95,7 +95,7 @@ func items(tr *desktop.Tracker) {
 		go func() {
 			for {
 				<-item.ClickedCh
-				Execute(action, tr)
+				Execute(action, "current", tr)
 			}
 		}()
 	}
@@ -155,7 +155,7 @@ func messages(tr *desktop.Tracker) {
 }
 
 func onExecute(tr *desktop.Tracker, action string) {
-	if !common.IsInList(action, []string{"tile", "untile", "toggle"}) {
+	if !common.IsInList(action, []string{"enable", "disable", "restore", "toggle"}) {
 		return
 	}
 	onActivate(tr)
@@ -164,18 +164,7 @@ func onExecute(tr *desktop.Tracker, action string) {
 func onActivate(tr *desktop.Tracker) {
 	ws := tr.ActiveWorkspace()
 
-	if !ws.IsEnabled() {
-
-		// Uncheck toggle item
-		if menu.Toggle != nil {
-			menu.Toggle.Uncheck()
-		}
-
-		// Disable action items
-		for _, item := range menu.Items {
-			item.Disable()
-		}
-	} else {
+	if ws.Enabled() {
 
 		// Check toggle item
 		if menu.Toggle != nil {
@@ -185,6 +174,17 @@ func onActivate(tr *desktop.Tracker) {
 		// Enable action items
 		for _, item := range menu.Items {
 			item.Enable()
+		}
+	} else {
+
+		// Uncheck toggle item
+		if menu.Toggle != nil {
+			menu.Toggle.Uncheck()
+		}
+
+		// Disable action items
+		for _, item := range menu.Items {
+			item.Disable()
 		}
 	}
 }
@@ -204,11 +204,11 @@ func onPointerClick(tr *desktop.Tracker, button uint16) {
 		if clicked {
 			switch pointer {
 			case pointer & xproto.ButtonMask1:
-				Execute(common.Config.Systray["click_left"], tr)
+				Execute(common.Config.Systray["click_left"], "current", tr)
 			case pointer & xproto.ButtonMask2:
-				Execute(common.Config.Systray["click_middle"], tr)
+				Execute(common.Config.Systray["click_middle"], "current", tr)
 			case pointer & xproto.ButtonMask3:
-				Execute(common.Config.Systray["click_right"], tr)
+				Execute(common.Config.Systray["click_right"], "current", tr)
 			}
 			clicked = false
 		}
@@ -227,15 +227,15 @@ func onPointerScroll(tr *desktop.Tracker, delta int32, orientation string) {
 		switch orientation {
 		case "vertical":
 			if delta >= 0 {
-				Execute(common.Config.Systray["scroll_down"], tr)
+				Execute(common.Config.Systray["scroll_down"], "current", tr)
 			} else {
-				Execute(common.Config.Systray["scroll_up"], tr)
+				Execute(common.Config.Systray["scroll_up"], "current", tr)
 			}
 		case "horizontal":
 			if delta >= 0 {
-				Execute(common.Config.Systray["scroll_right"], tr)
+				Execute(common.Config.Systray["scroll_right"], "current", tr)
 			} else {
-				Execute(common.Config.Systray["scroll_left"], tr)
+				Execute(common.Config.Systray["scroll_left"], "current", tr)
 			}
 		}
 	})

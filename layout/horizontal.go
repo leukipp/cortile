@@ -34,7 +34,7 @@ func CreateHorizontalBottomLayout(deskNum uint, screenNum uint) *HorizontalLayou
 	}
 }
 
-func (l *HorizontalLayout) Do() {
+func (l *HorizontalLayout) Apply() {
 	clients := l.Clients(true)
 
 	dx, dy, dw, dh := store.DesktopDimensions(l.ScreenNum)

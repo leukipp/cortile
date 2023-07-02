@@ -21,7 +21,7 @@ func CreateFullscreenLayout(deskNum uint, screenNum uint) *FullscreenLayout {
 	}
 }
 
-func (l *FullscreenLayout) Do() {
+func (l *FullscreenLayout) Apply() {
 	clients := l.Clients(true)
 
 	dx, dy, dw, dh := store.DesktopDimensions(l.ScreenNum)

@@ -14,6 +14,7 @@ import (
 	"github.com/BurntSushi/xgbutil/motif"
 	"github.com/BurntSushi/xgbutil/xevent"
 	"github.com/BurntSushi/xgbutil/xgraphics"
+	"github.com/BurntSushi/xgbutil/xrect"
 	"github.com/BurntSushi/xgbutil/xwindow"
 
 	"github.com/leukipp/cortile/common"
@@ -24,34 +25,33 @@ import (
 )
 
 var (
-	gui *xwindow.Window // Layout overlay window
-)
-
-var (
 	fontSize   int = 16 // Size of text font
 	fontMargin int = 4  // Margin of text font
 	rectMargin int = 4  // Margin of layout rectangles
 )
 
+var (
+	gui map[uint]*xwindow.Window = make(map[uint]*xwindow.Window) // Layout overlay window
+)
+
 func ShowLayout(ws *desktop.Workspace) {
-	if common.Config.TilingGui <= 0 {
+	location := desktop.Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
+	if common.Config.TilingGui <= 0 || ws.Location.DeskNum != location.DeskNum {
 		return
 	}
 
 	// Wait for tiling events
 	time.AfterFunc(100*time.Millisecond, func() {
-		al := ws.ActiveLayout()
-		mg := al.GetManager()
 
 		// Obtain layout name
-		name := al.GetName()
-		if !ws.IsEnabled() {
+		name := ws.ActiveLayout().GetName()
+		if ws.Disabled() {
 			name = "disabled"
 		}
 
 		// Calculate scaled desktop dimensions
-		dx, dy, dw, dh := store.DesktopDimensions(store.CurrentScreen)
-		_, _, width, height := scale(dx, dy, dw, dh)
+		dim := xrect.New(store.DesktopDimensions(ws.Location.ScreenNum))
+		_, _, width, height := scale(dim.X(), dim.Y(), dim.Width(), dim.Height())
 
 		// Create an empty canvas image
 		bg := bgra("gui_background")
@@ -59,17 +59,21 @@ func ShowLayout(ws *desktop.Workspace) {
 		cv.For(func(x int, y int) xgraphics.BGRA { return bg })
 
 		// Draw client rectangles
-		drawClients(cv, mg, name)
+		drawClients(cv, ws, name)
 
 		// Draw layout name
 		drawText(cv, name, bgra("gui_text"), cv.Rect.Dx()/2, cv.Rect.Dy()-fontSize-2*fontMargin-rectMargin)
 
 		// Show the canvas graphics
-		showGraphics(cv, time.Duration(common.Config.TilingGui))
+		showGraphics(cv, ws, time.Duration(common.Config.TilingGui))
 	})
 }
 
-func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
+func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
+	al := ws.ActiveLayout()
+	mg := al.GetManager()
+
+	// Obtain visible clients
 	clients := mg.Clients(false)
 	for _, c := range clients {
 		for _, state := range c.Latest.States {
@@ -81,16 +85,15 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 	}
 
 	// Draw default rectangle
+	dim := xrect.New(store.DesktopDimensions(ws.Location.ScreenNum))
 	if len(clients) == 0 || layout == "disabled" {
 
 		// Calculate scaled desktop dimensions
-		_, _, dw, dh := store.DesktopDimensions(store.CurrentScreen)
-		x, y, width, height := scale(0, 0, dw, dh)
+		x, y, width, height := scale(0, 0, dim.Width(), dim.Height())
 
 		// Draw client rectangle onto canvas
 		color := bgra("gui_client_slave")
-		rect := &image.Uniform{color}
-		drawImage(cv, rect, color, x+rectMargin, y+rectMargin, x+width, y+height)
+		drawImage(cv, &image.Uniform{color}, color, x+rectMargin, y+rectMargin, x+width, y+height)
 
 		return
 	}
@@ -100,8 +103,7 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 
 		// Calculate scaled client dimensions
 		cx, cy, cw, ch := c.OuterGeometry()
-		dx, dy, _, _ := store.DesktopDimensions(store.CurrentScreen)
-		x, y, width, height := scale(cx-dx, cy-dy, cw, ch)
+		x, y, width, height := scale(cx-dim.X(), cy-dim.Y(), cw, ch)
 
 		// Calculate icon size
 		iconSize := math.MaxInt
@@ -132,7 +134,11 @@ func drawClients(cv *xgraphics.Image, mg *store.Manager, layout string) {
 }
 
 func drawImage(cv *xgraphics.Image, img image.Image, color xgraphics.BGRA, x0 int, y0 int, x1 int, y1 int) {
+
+	// Draw rectangle
 	draw.Draw(cv, image.Rect(x0, y0, x1, y1), img, image.Point{}, draw.Src)
+
+	// Blend background
 	xgraphics.BlendBgColor(cv, color)
 }
 
@@ -148,7 +154,7 @@ func drawText(cv *xgraphics.Image, txt string, color xgraphics.BGRA, x int, y in
 	cv.Text(x-w/2, y, color, float64(fontSize), font, txt)
 }
 
-func showGraphics(img *xgraphics.Image, duration time.Duration) *xwindow.Window {
+func showGraphics(img *xgraphics.Image, ws *desktop.Workspace, duration time.Duration) *xwindow.Window {
 	win, err := xwindow.Generate(img.X)
 	if err != nil {
 		log.Error(err)
@@ -156,9 +162,9 @@ func showGraphics(img *xgraphics.Image, duration time.Duration) *xwindow.Window 
 	}
 
 	// Calculate window dimensions
-	dx, dy, dw, dh := store.DesktopDimensions(store.CurrentScreen)
+	dim := xrect.New(store.DesktopDimensions(ws.Location.ScreenNum))
 	w, h := img.Rect.Dx(), img.Rect.Dy()
-	x, y := dx+dw/2-w/2, dy+dh/2-h/2
+	x, y := dim.X()+dim.Width()/2-w/2, dim.Y()+dim.Height()/2-h/2
 
 	// Create the graphics window
 	win.Create(img.X.RootWin(), x, y, w, h, 0)
@@ -211,10 +217,10 @@ func showGraphics(img *xgraphics.Image, duration time.Duration) *xwindow.Window 
 	win.Map()
 
 	// Close previous opened window
-	if gui != nil {
-		gui.Destroy()
+	if v, ok := gui[ws.Location.ScreenNum]; ok {
+		v.Destroy()
 	}
-	gui = win
+	gui[ws.Location.ScreenNum] = win
 
 	// Close window after given duration
 	if duration > 0 {
@@ -226,7 +232,10 @@ func showGraphics(img *xgraphics.Image, duration time.Duration) *xwindow.Window 
 
 func scale(x, y, w, h int) (sx, sy, sw, sh int) {
 	s := 10
+
+	// Rescale dimensions by factor s
 	sx, sy, sw, sh = x/s, y/s, w/s, h/s
+
 	return
 }
 

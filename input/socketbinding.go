@@ -91,7 +91,7 @@ func listen(listener net.Listener, tr *desktop.Tracker) {
 
 		// Execute action
 		if v, ok := kv["Action"]; ok {
-			Execute(v, tr)
+			Execute(v, "current", tr)
 		}
 
 		// Query state

@@ -62,7 +62,7 @@ func CreateClient(w xproto.Window) *Client {
 	}
 
 	// Restore window decorations
-	c.Restore()
+	c.Restore(false)
 
 	return c
 }
@@ -95,7 +95,7 @@ func (c *Client) UnMaximize() {
 
 	// Unmaximize window
 	for _, state := range c.Latest.States {
-		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
+		if strings.HasPrefix(state, "_NET_WM_STATE_MAXIMIZED") {
 			ewmh.WmStateReq(X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_VERT")
 			ewmh.WmStateReq(X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_HORZ")
 			break
@@ -162,10 +162,11 @@ func (c *Client) Update() {
 	c.Latest = info
 }
 
-func (c *Client) Restore() {
-	dw, dh := 0, 0
+func (c *Client) Restore(original bool) {
+	c.Update()
 
 	// Obtain decoration motif
+	dw, dh := 0, 0
 	decoration := motif.DecorationNone
 	if motif.Decor(&c.Original.Dimensions.Hints.Motif) {
 		decoration = motif.DecorationAll
@@ -192,8 +193,11 @@ func (c *Client) Restore() {
 	// Restore window size limits
 	icccm.WmNormalHintsSet(X, c.Win.Id, &c.Original.Dimensions.Hints.Normal)
 
-	// Move window to latest position considering decoration adjustments
+	// Move window to latest/original position considering decoration adjustments
 	geom := c.Latest.Dimensions.Geometry
+	if original {
+		geom = c.Original.Dimensions.Geometry
+	}
 	c.MoveResize(geom.X(), geom.Y(), geom.Width()-dw, geom.Height()-dh)
 }
 
@@ -314,7 +318,7 @@ func IsMaximized(w xproto.Window) bool {
 
 	// Check maximized windows
 	for _, state := range info.States {
-		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
+		if strings.HasPrefix(state, "_NET_WM_STATE_MAXIMIZED") {
 			log.Info("Ignore maximized window [", info.Class, "]")
 			return true
 		}

@@ -69,7 +69,7 @@ func CreateTracker(ws map[Location]*Workspace) *Tracker {
 
 func (tr *Tracker) Update() {
 	ws := tr.ActiveWorkspace()
-	if !ws.IsEnabled() {
+	if ws.Disabled() {
 		return
 	}
 	log.Debug("Update trackable clients [", len(tr.Clients), "/", len(store.Windows), "]")
@@ -108,18 +108,26 @@ func (tr *Tracker) Reset() {
 }
 
 func (tr *Tracker) ActiveWorkspace() *Workspace {
-	ws := tr.Workspaces[Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}]
+	location := Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
+
+	// Validate active workspace
+	ws := tr.Workspaces[location]
 	if ws == nil {
-		log.Warn("Invalid active workspace [workspace-", store.CurrentDesk, "-", store.CurrentScreen, "]")
+		log.Warn("Invalid active workspace [workspace-", location.DeskNum, "-", location.ScreenNum, "]")
 	}
+
 	return ws
 }
 
 func (tr *Tracker) ClientWorkspace(c *store.Client) *Workspace {
-	ws := tr.Workspaces[Location{DeskNum: c.Latest.DeskNum, ScreenNum: c.Latest.ScreenNum}]
+	location := Location{DeskNum: c.Latest.DeskNum, ScreenNum: c.Latest.ScreenNum}
+
+	// Validate client workspace
+	ws := tr.Workspaces[location]
 	if ws == nil {
-		log.Warn("Invalid client workspace [workspace-", c.Latest.DeskNum, "-", c.Latest.ScreenNum, "]")
+		log.Warn("Invalid client workspace [workspace-", location.DeskNum, "-", location.ScreenNum, "]")
 	}
+
 	return ws
 }
 
@@ -154,7 +162,7 @@ func (tr *Tracker) untrackWindow(w xproto.Window) bool {
 	xevent.Detach(store.X, w)
 
 	// Restore client
-	c.Restore()
+	c.Restore(false)
 
 	// Remove client
 	ws.RemoveClient(c)
@@ -172,9 +180,9 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 	// Client maximized
 	states, _ := ewmh.WmStateGet(store.X, c.Win.Id)
 	for _, state := range states {
-		if strings.Contains(state, "_NET_WM_STATE_MAXIMIZED") {
+		if strings.HasPrefix(state, "_NET_WM_STATE_MAXIMIZED") {
 			ws := tr.ClientWorkspace(c)
-			if !ws.IsEnabled() {
+			if ws.Disabled() {
 				return
 			}
 			log.Debug("Client maximized handler fired [", c.Latest.Class, "]")
@@ -197,7 +205,7 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 	for _, state := range states {
 		if state == "_NET_WM_STATE_HIDDEN" {
 			ws := tr.ClientWorkspace(c)
-			if !ws.IsEnabled() {
+			if ws.Disabled() {
 				return
 			}
 			log.Debug("Client minimized handler fired [", c.Latest.Class, "]")
@@ -211,7 +219,7 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 
 func (tr *Tracker) handleResizeClient(c *store.Client) {
 	ws := tr.ClientWorkspace(c)
-	if !ws.IsEnabled() || !tr.isTracked(c.Win.Id) || store.IsMaximized(c.Win.Id) {
+	if ws.Disabled() || !tr.isTracked(c.Win.Id) || store.IsMaximized(c.Win.Id) {
 		return
 	}
 
@@ -342,7 +350,7 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 	// Remove client from current workspace
 	ws := tr.ClientWorkspace(c)
 	ws.RemoveClient(c)
-	if ws.IsEnabled() {
+	if ws.Enabled() {
 		ws.Tile()
 	}
 
@@ -358,10 +366,10 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 	// Add client to new workspace
 	ws = tr.ClientWorkspace(c)
 	ws.AddClient(c)
-	if ws.IsEnabled() {
+	if ws.Enabled() {
 		ws.Tile()
 	} else {
-		c.Restore()
+		c.Restore(false)
 	}
 }
 

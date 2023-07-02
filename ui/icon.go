@@ -11,6 +11,7 @@ import (
 
 	"github.com/leukipp/cortile/common"
 	"github.com/leukipp/cortile/desktop"
+	"github.com/leukipp/cortile/store"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -22,13 +23,14 @@ var (
 )
 
 func UpdateIcon(ws *desktop.Workspace) {
-	if len(common.Config.TilingIcon) == 0 {
+	location := desktop.Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
+	if len(common.Config.TilingIcon) == 0 || ws.Location != location {
 		return
 	}
 
 	// Obtain layout name
 	name := ws.ActiveLayout().GetName()
-	if !ws.IsEnabled() {
+	if ws.Disabled() {
 		name = "disabled"
 	}
 

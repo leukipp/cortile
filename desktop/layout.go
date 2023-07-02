@@ -3,8 +3,7 @@ package desktop
 import "github.com/leukipp/cortile/store"
 
 type Layout interface {
-	Do()
-	Undo()
+	Apply()
 	AddClient(c *store.Client)
 	RemoveClient(c *store.Client)
 	MakeMaster(c *store.Client)
