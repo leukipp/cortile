@@ -42,7 +42,7 @@ type Head struct {
 func InitRoot() {
 	var err error
 
-	X := Connect()
+	X = Connect()
 	root := xwindow.New(X, X.RootWin())
 
 	DeskCount, err = ewmh.NumberOfDesktopsGet(X)
@@ -67,23 +67,23 @@ func InitRoot() {
 }
 
 func Connect() *xgbutil.XUtil {
-	var err error
 
 	// Connect to X server
-	X, err = xgbutil.NewConn()
-	checkFatal(err)
+	X, err1 := xgbutil.NewConn()
+	checkFatal(err1)
 
 	// Check ewmh compliance
-	_, err = ewmh.GetEwmhWM(X)
-	if err != nil {
-		log.Fatal("Window manager is not EWMH compliant ", err)
+	_, err2 := ewmh.GetEwmhWM(X)
+	if err2 != nil {
+		log.Fatal("Window manager is not EWMH compliant ", err2)
 	}
 
-	// Wait for client list availability
+	// Wait for root window properties
 	i, j := 0, 100
 	for i < j {
-		_, err = ewmh.ClientListStackingGet(X)
-		if err == nil {
+		_, err3 := ewmh.ClientListGet(X)
+		_, err4 := ewmh.ActiveWindowGet(X)
+		if err3 == nil && err4 == nil {
 			break
 		}
 		i += 1
@@ -123,7 +123,7 @@ func ViewPortsGet(X *xgbutil.XUtil) (Head, error) {
 	desktops := PhysicalHeadsGet(rGeom)
 
 	// Adjust desktops geometry
-	clients, err := ewmh.ClientListStackingGet(X)
+	clients, err := ewmh.ClientListGet(X)
 	for _, id := range clients {
 		strut, err := ewmh.WmStrutPartialGet(X, id)
 		if err != nil {
