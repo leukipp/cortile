@@ -7,3 +7,40 @@ builds:
       - amd64
       - arm
       - arm64
+    ldflags:
+      - -s -w -X main.name=cortile -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^(?i)(t)ypo"
+      - "^(?i)(m)erge"
+  groups:
+    - title: "Features"
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 100
+    - title: "Issues"
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 200
+    - title: "Security"
+      regexp: '^.*?sec(\([[:word:]]+\))??!?:.+$'
+      order: 300
+    - title: "Refactor"
+      regexp: '^.*?ref(\([[:word:]]+\))??!?:.+$'
+      order: 400
+    - title: "Test"
+      regexp: '^.*?test(\([[:word:]]+\))??!?:.+$'
+      order: 500
+    - title: "Documentation"
+      regexp: ^.*?doc(\([[:word:]]+\))??!?:.+$
+      order: 600
+    - title: "Build"
+      regexp: ^.*?build(\([[:word:]]+\))??!?:.+$
+      order: 700
+    - title: "Dependencies"
+      regexp: '^.*?(feat|fix|sec|ref|test|doc|build)\(deps\)!?:.+$'
+      order: 800
+    - title: "Other"
+      order: 900
