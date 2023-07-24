@@ -79,6 +79,7 @@ func ConfigFilePath(name string) string {
 
 func readConfig(configFilePath string) {
 	fmt.Println(fmt.Errorf("LOAD %s [%s]", configFilePath, Build.Summary))
+	log.Info("Starting [", Build.Summary, "]")
 
 	// Decode contents into struct
 	toml.DecodeFile(configFilePath, &Config)
