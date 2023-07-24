@@ -3,7 +3,7 @@ module github.com/leukipp/cortile
 go 1.18
 
 require (
-	fyne.io/systray v1.10.1-0.20230710085509-436a931baccf
+	fyne.io/systray v1.10.1-0.20230722100817-88df1e0ffa9a
 	github.com/BurntSushi/freetype-go v0.0.0-20160129220410-b763ddbfe298
 	github.com/BurntSushi/toml v1.3.3-0.20230608112459-cfb3ca96c431
 	github.com/BurntSushi/xgb v0.0.0-20210121224620-deaf085860bc
