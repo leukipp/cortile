@@ -25,7 +25,7 @@ var (
 	name = "cortile"
 
 	// Build version
-	version = "dev"
+	version = "0.0.0"
 
 	// Build commit
 	commit = "local"
