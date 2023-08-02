@@ -18,6 +18,9 @@ changelog:
       - "^(?i)(t)ypo"
       - "^(?i)(m)erge"
   groups:
+    - title: "Dependencies"
+      regexp: '^.*?(feat|fix|sec|ref|test|doc|build)\(deps\)!?:.+$'
+      order: 800
     - title: "Features"
       regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
       order: 100
@@ -39,8 +42,5 @@ changelog:
     - title: "Build"
       regexp: ^.*?build(\([[:word:]]+\))??!?:.+$
       order: 700
-    - title: "Dependencies"
-      regexp: '^.*?(feat|fix|sec|ref|test|doc|build)\(deps\)!?:.+$'
-      order: 800
     - title: "Other"
       order: 900
