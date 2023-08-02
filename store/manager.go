@@ -3,7 +3,6 @@ package store
 import (
 	"math"
 
-	"github.com/BurntSushi/xgbutil/ewmh"
 	"github.com/leukipp/cortile/common"
 
 	log "github.com/sirupsen/logrus"
@@ -285,8 +284,7 @@ func (mg *Manager) Ordered(windows *Clients) []*Client {
 	ordered := []*Client{}
 
 	// Create ordered client list
-	stacking, _ := ewmh.ClientListStackingGet(X)
-	for _, w := range stacking {
+	for _, w := range Windows {
 		for _, c := range windows.Items {
 			if w == c.Win.Id {
 				ordered = append(ordered, c)
@@ -317,12 +315,12 @@ func (mg *Manager) Clients(stacked bool) []*Client {
 }
 
 func (mg *Manager) updateMasters(cs []*Client) {
-	mg.Masters.Items = cs
+	mg.Masters.Items = mg.Ordered(&Clients{Items: cs})
 	mg.Proportions.MasterMaster = calcProportions(int(math.Min(float64(len(mg.Masters.Items)), float64(mg.Masters.MaxAllowed))))
 }
 
 func (mg *Manager) updateSlaves(cs []*Client) {
-	mg.Slaves.Items = cs
+	mg.Slaves.Items = mg.Ordered(&Clients{Items: cs})
 	mg.Proportions.SlaveSlave = calcProportions(int(math.Min(float64(len(mg.Slaves.Items)), float64(mg.Slaves.MaxAllowed))))
 }
 
