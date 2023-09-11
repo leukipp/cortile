@@ -17,7 +17,7 @@ Once enabled, the tiling manager will handle _resizing_ and _positioning_ of _ex
 - [x] Vertical, horizontal and fullscreen mode.
 - [x] Socket communication commands.
 - [x] Adjustment of layout proportions.
-- [x] Floating and persistent windows.
+- [x] Floating and sticky windows.
 - [x] Drag & drop window swap.
 - [x] Multi monitor support.
 
@@ -239,11 +239,14 @@ Systray:
   - e.g. use `tiling_icon = [...,['firefox', 'Open Browser'],...]` to add a web browser entry.
 
 ## Issues [![issues](https://img.shields.io/github/issues-closed/leukipp/cortile)](#issues-)
-Environments:
+Windows:
 - It's recommended to disable all build-in window snapping features (snap to other windows, snap to screen borders).
+- In some GNOME based desktop environments window displacement or resizing issues may occur.
+- Sticky windows may cause unwanted layout modifications during workspace change.
+
+Systray:
 - Adjust the bindings in the `[systray]` section, as some pointer events may not fire across different desktop environments.
 - Window managers not supporting [StatusNotifierItem](https://freedesktop.org/wiki/Specifications/StatusNotifierItem) for displaying systray icons will need to install [snixembed](https://github.com/fyne-io/systray#linuxbsd).
-- In some GNOME based desktop environments window displacement or resizing issues may occur.
 
 Debugging:
 - If you encounter problems start the process with `cortile -vv`, which provides additional debug outputs.
