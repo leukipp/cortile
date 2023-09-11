@@ -349,6 +349,8 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 
 	// Remove client from current workspace
 	ws := tr.ClientWorkspace(c)
+	mg := ws.ActiveLayout().GetManager()
+	master := mg.IsMaster(c)
 	ws.RemoveClient(c)
 	if ws.Enabled() {
 		ws.Tile()
@@ -365,7 +367,11 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 
 	// Add client to new workspace
 	ws = tr.ClientWorkspace(c)
+	mg = ws.ActiveLayout().GetManager()
 	ws.AddClient(c)
+	if master {
+		mg.MakeMaster(c)
+	}
 	if ws.Enabled() {
 		ws.Tile()
 	} else {
@@ -470,7 +476,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 		log.Trace("Client focus in event [", c.Latest.Class, "]")
 
 		// Update active window
-		store.ActiveWindow, _ = ewmh.ActiveWindowGet(store.X)
+		store.ActiveWindow = store.ActiveWindowGet(store.X)
 	}).Connect(store.X, c.Win.Id)
 
 	// Attach focus out events
@@ -478,7 +484,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 		log.Trace("Client focus out event [", c.Latest.Class, "]")
 
 		// Update active window
-		store.ActiveWindow, _ = ewmh.ActiveWindowGet(store.X)
+		store.ActiveWindow = store.ActiveWindowGet(store.X)
 	}).Connect(store.X, c.Win.Id)
 }
 
