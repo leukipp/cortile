@@ -1,7 +1,6 @@
 package store
 
 import (
-	"math"
 	"reflect"
 	"regexp"
 	"strings"
@@ -239,12 +238,6 @@ func IsSpecial(info *Info) bool {
 		return true
 	}
 
-	// Check pinned windows
-	if info.DeskNum > DeskCount {
-		log.Info("Ignore pinned window [", info.Class, "]")
-		return true
-	}
-
 	// Check window types
 	types := []string{
 		"_NET_WM_WINDOW_TYPE_DOCK",
@@ -271,7 +264,6 @@ func IsSpecial(info *Info) bool {
 	// Check window states
 	states := []string{
 		"_NET_WM_STATE_HIDDEN",
-		"_NET_WM_STATE_STICKY",
 		"_NET_WM_STATE_MODAL",
 		"_NET_WM_STATE_ABOVE",
 		"_NET_WM_STATE_BELOW",
@@ -352,10 +344,10 @@ func GetInfo(w xproto.Window) *Info {
 		name = class
 	}
 
-	// Window desktop and screen (workspace where the window is located)
+	// Window desktop and screen (window workspace location)
 	deskNum, err = ewmh.WmDesktopGet(X, w)
-	if err != nil {
-		deskNum = math.MaxUint
+	if err != nil || deskNum > DeskCount {
+		deskNum = CurrentDesktopGet(X)
 	}
 	screenNum = GetScreenNum(w)
 
