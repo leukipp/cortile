@@ -62,7 +62,7 @@ func ShowLayout(ws *desktop.Workspace) {
 		drawClients(cv, ws, name)
 
 		// Draw layout name
-		drawText(cv, name, bgra("gui_text"), cv.Rect.Dx()/2, cv.Rect.Dy()-fontSize-2*fontMargin-rectMargin)
+		drawText(cv, name, bgra("gui_text"), cv.Rect.Dx()/2, cv.Rect.Dy()-2*fontMargin-rectMargin, fontSize)
 
 		// Show the canvas graphics
 		showGraphics(cv, ws, time.Duration(common.Config.TilingGui))
@@ -142,16 +142,22 @@ func drawImage(cv *xgraphics.Image, img image.Image, color xgraphics.BGRA, x0 in
 	xgraphics.BlendBgColor(cv, color)
 }
 
-func drawText(cv *xgraphics.Image, txt string, color xgraphics.BGRA, x int, y int) {
+func drawText(cv *xgraphics.Image, txt string, color xgraphics.BGRA, x int, y int, size int) {
 	font, err := truetype.Parse(goregular.TTF)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
+	// Obtain maximum font size
+	w, _ := xgraphics.Extents(font, float64(size), txt)
+	if w > 2*(x-fontMargin-rectMargin) {
+		drawText(cv, txt, color, x, y, size-1)
+		return
+	}
+
 	// Draw text onto canvas
-	w, _ := xgraphics.Extents(font, float64(fontSize), txt)
-	cv.Text(x-w/2, y, color, float64(fontSize), font, txt)
+	cv.Text(x-w/2, y-size, color, float64(size), font, txt)
 }
 
 func showGraphics(img *xgraphics.Image, ws *desktop.Workspace, duration time.Duration) *xwindow.Window {
