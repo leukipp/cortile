@@ -2,9 +2,9 @@ package common
 
 import (
 	"fmt"
+	"os"
 
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
@@ -59,22 +59,15 @@ func InitConfig() {
 	watchConfig(Args.Config)
 }
 
-func ConfigFilePath(name string) string {
+func ConfigFolderPath(name string) string {
 
-	// Obtain user home directory
-	userHome, err := os.UserHomeDir()
+	// Obtain user config directory
+	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
-		log.Fatal("Error obtaining home directory ", err)
-	}
-	configFolderPath := filepath.Join(userHome, ".config", name)
-
-	// Obtain config directory
-	xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
-	if xdgConfigHome != "" {
-		configFolderPath = filepath.Join(xdgConfigHome, name)
+		log.Fatal("Error obtaining config directory ", err)
 	}
 
-	return filepath.Join(configFolderPath, "config.toml")
+	return filepath.Join(userConfigDir, name)
 }
 
 func readConfig(configFilePath string) {

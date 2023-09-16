@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"runtime/debug"
 	"syscall"
+
+	"runtime/debug"
 
 	"github.com/BurntSushi/xgbutil/xevent"
 
@@ -54,15 +55,18 @@ func main() {
 	defer InitLock().Close()
 	InitLog()
 
-	// Init config and root
+	// Init cache and config
+	common.InitCache()
 	common.InitConfig()
+
+	// Init root window properties
 	store.InitRoot()
 
-	// Start main
-	start()
+	// Run main application
+	run()
 }
 
-func start() {
+func run() {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Fatal(fmt.Errorf("%s\n%s", err, debug.Stack()))

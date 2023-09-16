@@ -3,6 +3,9 @@ package common
 import (
 	"flag"
 	"fmt"
+	"os"
+
+	"path/filepath"
 )
 
 var (
@@ -19,6 +22,7 @@ type BuildInfo struct {
 }
 
 type Arguments struct {
+	Cache  string // Argument for cache folder path
 	Config string // Argument for config file path
 	Lock   string // Argument for lock file path
 	Sock   string // Argument for sock file path
@@ -40,10 +44,11 @@ func InitArgs(name, version, commit, date string) {
 	Build.Summary = fmt.Sprintf("%s v%s-%s, built on %s", Build.Name, Build.Version, Build.Commit, Build.Date)
 
 	// Command line arguments
-	flag.StringVar(&Args.Config, "config", ConfigFilePath(Build.Name), "config file path")
-	flag.StringVar(&Args.Lock, "lock", fmt.Sprintf("/tmp/%s.lock", Build.Name), "lock file path")
-	flag.StringVar(&Args.Sock, "sock", fmt.Sprintf("/tmp/%s.sock", Build.Name), "sock file path")
-	flag.StringVar(&Args.Log, "log", fmt.Sprintf("/tmp/%s.log", Build.Name), "log file path")
+	flag.StringVar(&Args.Cache, "cache", filepath.Join(CacheFolderPath(Build.Name), Build.Commit), "cache folder path")
+	flag.StringVar(&Args.Config, "config", filepath.Join(ConfigFolderPath(Build.Name), "config.toml"), "config file path")
+	flag.StringVar(&Args.Lock, "lock", filepath.Join(os.TempDir(), fmt.Sprintf("%s.lock", Build.Name)), "lock file path")
+	flag.StringVar(&Args.Sock, "sock", filepath.Join(os.TempDir(), fmt.Sprintf("%s.sock", Build.Name)), "sock file path")
+	flag.StringVar(&Args.Log, "log", filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", Build.Name)), "log file path")
 	flag.BoolVar(&Args.VVV, "vvv", false, "very very verbose mode")
 	flag.BoolVar(&Args.VV, "vv", false, "very verbose mode")
 	flag.BoolVar(&Args.V, "v", false, "verbose mode")
