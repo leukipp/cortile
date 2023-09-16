@@ -23,7 +23,7 @@ var (
 )
 
 func UpdateIcon(ws *desktop.Workspace) {
-	location := desktop.Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
+	location := store.Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
 	if len(common.Config.TilingIcon) == 0 || ws.Location != location {
 		return
 	}

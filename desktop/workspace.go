@@ -9,18 +9,18 @@ import (
 )
 
 type Workspace struct {
-	Location        Location // Desktop and screen location
-	Layouts         []Layout // List of available layouts
-	TilingEnabled   bool     // Tiling is enabled or not
-	ActiveLayoutNum uint     // Active layout index
+	Location        store.Location // Desktop and screen location
+	Layouts         []Layout       // List of available layouts
+	TilingEnabled   bool           // Tiling is enabled or not
+	ActiveLayoutNum uint           // Active layout index
 }
 
-func CreateWorkspaces() map[Location]*Workspace {
-	workspaces := make(map[Location]*Workspace)
+func CreateWorkspaces() map[store.Location]*Workspace {
+	workspaces := make(map[store.Location]*Workspace)
 
 	for deskNum := uint(0); deskNum < store.DeskCount; deskNum++ {
 		for screenNum := uint(0); screenNum < store.ScreenCount; screenNum++ {
-			location := Location{DeskNum: deskNum, ScreenNum: screenNum}
+			location := store.Location{DeskNum: deskNum, ScreenNum: screenNum}
 
 			// Create layouts for each desktop and screen
 			layouts := CreateLayouts(location)
@@ -46,7 +46,7 @@ func CreateWorkspaces() map[Location]*Workspace {
 	return workspaces
 }
 
-func CreateLayouts(l Location) []Layout {
+func CreateLayouts(l store.Location) []Layout {
 	return []Layout{
 		layout.CreateFullscreenLayout(l.DeskNum, l.ScreenNum),
 		layout.CreateVerticalLeftLayout(l.DeskNum, l.ScreenNum),

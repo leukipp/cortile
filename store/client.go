@@ -30,19 +30,31 @@ type Client struct {
 type Info struct {
 	Class      string     // Client window application name
 	Name       string     // Client window title name
-	DeskNum    uint       // Client window desktop
-	ScreenNum  uint       // Client window screen
 	Types      []string   // Client window types
 	States     []string   // Client window states
+	Location   Location   // Client window location
 	Dimensions Dimensions // Client window dimensions
 }
 
+type Location struct {
+	DeskNum   uint // Client workspace desktop number
+	ScreenNum uint // Client workspace screen number
+}
+
 type Dimensions struct {
-	Geometry xrect.Rect        // Client window geometry
+	Geometry Geometry          // Client window geometry
 	Hints    Hints             // Client window dimension hints
 	Extents  ewmh.FrameExtents // Client window geometry extents
 	AdjPos   bool              // Adjust position on move/resize
 	AdjSize  bool              // Adjust size on move/resize
+}
+
+type Geometry struct {
+	xrect.Rect `json:"-"` // Client window geometry functions
+	X          int        // Client window geometry x position
+	Y          int        // Client window geometry y position
+	Width      int        // Client window geometry width dimension
+	Height     int        // Client window geometry height dimension
 }
 
 type Hints struct {
@@ -197,7 +209,7 @@ func (c *Client) Restore(original bool) {
 	if original {
 		geom = c.Original.Dimensions.Geometry
 	}
-	c.MoveResize(geom.X(), geom.Y(), geom.Width()-dw, geom.Height()-dh)
+	c.MoveResize(geom.X, geom.Y, geom.Width-dw, geom.Height-dh)
 }
 
 func (c *Client) OuterGeometry() (x, y, w, h int) {
@@ -324,10 +336,9 @@ func GetInfo(w xproto.Window) *Info {
 
 	var class string
 	var name string
-	var deskNum uint
-	var screenNum uint
 	var types []string
 	var states []string
+	var location Location
 	var dimensions Dimensions
 
 	// Window class (internal class name of the window)
@@ -345,11 +356,14 @@ func GetInfo(w xproto.Window) *Info {
 	}
 
 	// Window desktop and screen (window workspace location)
-	deskNum, err = ewmh.WmDesktopGet(X, w)
+	deskNum, err := ewmh.WmDesktopGet(X, w)
 	if err != nil || deskNum > DeskCount {
 		deskNum = CurrentDesktopGet(X)
 	}
-	screenNum = GetScreenNum(w)
+	location = Location{
+		DeskNum:   deskNum,
+		ScreenNum: GetScreenNum(w),
+	}
 
 	// Window types (types of the window)
 	types, err = ewmh.WmWindowTypeGet(X, w)
@@ -364,9 +378,9 @@ func GetInfo(w xproto.Window) *Info {
 	}
 
 	// Window geometry (dimensions of the window)
-	geometry, err := xwindow.New(X, w).DecorGeometry()
+	geom, err := xwindow.New(X, w).DecorGeometry()
 	if err != nil {
-		geometry = &xrect.XRect{}
+		geom = &xrect.XRect{}
 	}
 
 	// Window normal hints (normal hints of the window)
@@ -395,7 +409,13 @@ func GetInfo(w xproto.Window) *Info {
 
 	// Window dimensions (geometry/extent information for move/resize)
 	dimensions = Dimensions{
-		Geometry: geometry,
+		Geometry: Geometry{
+			Rect:   geom,
+			X:      geom.X(),
+			Y:      geom.Y(),
+			Width:  geom.Width(),
+			Height: geom.Height(),
+		},
 		Hints: Hints{
 			Normal: *nhints,
 			Motif:  *mhints,
@@ -413,10 +433,9 @@ func GetInfo(w xproto.Window) *Info {
 	return &Info{
 		Class:      class,
 		Name:       name,
-		DeskNum:    deskNum,
-		ScreenNum:  screenNum,
 		Types:      types,
 		States:     states,
+		Location:   location,
 		Dimensions: dimensions,
 	}
 }

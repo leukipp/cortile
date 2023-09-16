@@ -18,14 +18,9 @@ import (
 
 type Tracker struct {
 	Clients    map[xproto.Window]*store.Client // List of clients that are being tracked
-	Workspaces map[Location]*Workspace         // List of workspaces per location
+	Workspaces map[store.Location]*Workspace   // List of workspaces per location
 	Action     chan string                     // Event channel for actions
 	Handler    *Handler                        // Helper for event handlers
-}
-
-type Location struct {
-	DeskNum   uint // Workspace desktop number
-	ScreenNum uint // Workspace screen number
 }
 
 type Handler struct {
@@ -42,7 +37,7 @@ type HandlerClient struct {
 	Target *store.Client // Stores hovered client
 }
 
-func CreateTracker(ws map[Location]*Workspace) *Tracker {
+func CreateTracker(ws map[store.Location]*Workspace) *Tracker {
 	tr := Tracker{
 		Clients:    make(map[xproto.Window]*store.Client),
 		Workspaces: ws,
@@ -108,7 +103,7 @@ func (tr *Tracker) Reset() {
 }
 
 func (tr *Tracker) ActiveWorkspace() *Workspace {
-	location := Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
+	location := store.Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
 
 	// Validate active workspace
 	ws := tr.Workspaces[location]
@@ -120,7 +115,7 @@ func (tr *Tracker) ActiveWorkspace() *Workspace {
 }
 
 func (tr *Tracker) ClientWorkspace(c *store.Client) *Workspace {
-	location := Location{DeskNum: c.Latest.DeskNum, ScreenNum: c.Latest.ScreenNum}
+	location := store.Location{DeskNum: c.Latest.Location.DeskNum, ScreenNum: c.Latest.Location.ScreenNum}
 
 	// Validate client workspace
 	ws := tr.Workspaces[location]
@@ -308,7 +303,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 			}
 
 			// Store moved client and hovered client
-			if common.IsInsideRect(pt, co.Latest.Dimensions.Geometry) {
+			if common.IsInsideRect(pt, co.Latest.Dimensions.Geometry.Rect) {
 				tr.Handler.SwapClient = &HandlerClient{Active: true, Source: c, Target: co}
 				log.Debug("Client move handler active [", c.Latest.Class, "-", co.Latest.Class, "]")
 				break
@@ -317,7 +312,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 		// Check if pointer moves to another screen
 		tr.Handler.SwapScreen.Active = false
-		if c.Latest.ScreenNum != store.CurrentScreen {
+		if c.Latest.Location.ScreenNum != store.CurrentScreen {
 			tr.Handler.SwapScreen = &HandlerClient{Active: true, Source: c}
 		}
 	}

@@ -35,7 +35,7 @@ var (
 )
 
 func ShowLayout(ws *desktop.Workspace) {
-	location := desktop.Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
+	location := store.Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
 	if common.Config.TilingGui <= 0 || ws.Location.DeskNum != location.DeskNum {
 		return
 	}
