@@ -36,12 +36,12 @@ var (
 
 func ShowLayout(ws *desktop.Workspace) {
 	location := store.Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
-	if common.Config.TilingGui <= 0 || ws.Location.DeskNum != location.DeskNum {
+	if ws == nil || ws.Location.DeskNum != location.DeskNum || common.Config.TilingGui <= 0 {
 		return
 	}
 
 	// Wait for tiling events
-	time.AfterFunc(100*time.Millisecond, func() {
+	time.AfterFunc(150*time.Millisecond, func() {
 
 		// Obtain layout name
 		name := ws.ActiveLayout().GetName()
