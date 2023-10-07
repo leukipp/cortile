@@ -24,7 +24,7 @@ func CreateCorner(name string, screenNum uint, x int, y int, w int, h int) *Corn
 func CreateCorners() []*Corner {
 	corners := []*Corner{}
 
-	for i, s := range ViewPorts.Screens {
+	for i, s := range Displays.Screens {
 		xw, yw, ww, hw := s.Pieces()
 
 		// Corner dimensions
