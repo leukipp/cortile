@@ -44,7 +44,7 @@ func InitArgs(name, version, commit, date string) {
 	Build.Summary = fmt.Sprintf("%s v%s-%s, built on %s", Build.Name, Build.Version, Build.Commit, Build.Date)
 
 	// Command line arguments
-	flag.StringVar(&Args.Cache, "cache", filepath.Join(CacheFolderPath(Build.Name), Build.Commit), "cache folder path")
+	flag.StringVar(&Args.Cache, "cache", filepath.Join(CacheFolderPath(Build.Name), Build.Version), "cache folder path")
 	flag.StringVar(&Args.Config, "config", filepath.Join(ConfigFolderPath(Build.Name), "config.toml"), "config file path")
 	flag.StringVar(&Args.Lock, "lock", filepath.Join(os.TempDir(), fmt.Sprintf("%s.lock", Build.Name)), "lock file path")
 	flag.StringVar(&Args.Sock, "sock", filepath.Join(os.TempDir(), fmt.Sprintf("%s.sock", Build.Name)), "sock file path")

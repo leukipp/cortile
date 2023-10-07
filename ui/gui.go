@@ -76,6 +76,9 @@ func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
 	// Obtain visible clients
 	clients := mg.Clients(false)
 	for _, c := range clients {
+		if c == nil {
+			return
+		}
 		for _, state := range c.Latest.States {
 			if state == "_NET_WM_STATE_FULLSCREEN" || layout == "fullscreen" {
 				clients = mg.Visible(&store.Clients{Items: mg.Clients(true), MaxAllowed: 1})

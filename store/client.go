@@ -1,10 +1,15 @@
 package store
 
 import (
+	"os"
 	"reflect"
 	"regexp"
 	"strings"
 	"time"
+
+	"encoding/json"
+	"io/ioutil"
+	"path/filepath"
 
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil/ewmh"
@@ -72,7 +77,12 @@ func CreateClient(w xproto.Window) *Client {
 		Latest:   i,
 	}
 
-	// Restore window decorations
+	// Read client geometry from cache
+	cached := c.Read()
+	c.Original = cached
+	c.Latest = cached
+
+	// Restore window dimensions
 	c.Restore(false)
 
 	return c
@@ -144,6 +154,27 @@ func (c *Client) MoveResize(x, y, w, h int) {
 		log.Warn("Error on window move/resize [", c.Latest.Class, "]")
 	}
 
+	// Check window lifetime
+	lifetime := time.Since(c.Created)
+	added := lifetime < 1000*time.Millisecond
+
+	if added {
+
+		// Wait for structure change event
+		deadline := time.Now().Add(50 * time.Millisecond)
+		for time.Now().Before(deadline) {
+			ev, _ := X.Conn().PollForEvent()
+
+			if common.IsType(ev, xproto.ConfigureNotifyEvent{}) {
+				ev := ev.(xproto.ConfigureNotifyEvent)
+				if ev.Window == c.Win.Id || ev.Window == c.Parent().Id {
+					log.Info("Client substructure event [", c.Latest.Class, "]")
+					break
+				}
+			}
+		}
+	}
+
 	// Update stored dimensions
 	c.Update()
 }
@@ -162,19 +193,89 @@ func (c *Client) LimitDimensions(w, h int) {
 	})
 }
 
+func (c *Client) Cache() common.Cache[*Info] {
+
+	// Create client cache folder
+	folder := filepath.Join(common.Args.Cache, "clients", c.Latest.Class)
+	if _, err := os.Stat(folder); os.IsNotExist(err) && common.Args.Cache != "0" {
+		os.MkdirAll(folder, 0700)
+	}
+
+	// Create client cache object
+	hash := common.Hash(c.Latest.Class)
+	cache := common.Cache[*Info]{
+		Folder: folder,
+		Name:   hash + ".json",
+		Data:   c.Latest,
+	}
+
+	return cache
+}
+
 func (c *Client) Update() {
 	info := GetInfo(c.Win.Id)
 	if len(info.Class) == 0 {
 		return
 	}
+	log.Debug("Update client info [", info.Class, "]")
 
 	// Update client info
-	log.Debug("Update client info [", info.Class, "]")
 	c.Latest = info
+
+	// Write client cache
+	c.Write()
+}
+
+func (c *Client) Write() {
+
+	// Obtain cache object
+	cache := c.Cache()
+
+	// Parse client info
+	data, err := json.MarshalIndent(cache.Data, "", "  ")
+	if err != nil {
+		log.Warn("Error parsing client info [", c.Latest.Class, "]")
+		return
+	}
+
+	// Write client cache
+	path := filepath.Join(cache.Folder, cache.Name)
+	err = ioutil.WriteFile(path, data, 0644)
+	if err != nil {
+		log.Warn("Error writing client cache [", c.Latest.Class, "]")
+		return
+	}
+
+	log.Info("Write client cache data ", cache.Name, " [", c.Latest.Class, "]")
+}
+
+func (c *Client) Read() *Info {
+	var info *Info
+
+	// Obtain cache object
+	cache := c.Cache()
+
+	// Read client info
+	path := filepath.Join(cache.Folder, cache.Name)
+	data, err := ioutil.ReadFile(path)
+	if os.IsNotExist(err) {
+		log.Info("No client cache found [", c.Latest.Class, "]")
+		return c.Latest
+	}
+
+	// Parse client info
+	err = json.Unmarshal([]byte(data), &info)
+	if err != nil {
+		log.Warn("Error reading client cache [", c.Latest.Class, "]")
+		return c.Latest
+	}
+
+	log.Info("Read client cache data ", cache.Name, " [", c.Latest.Class, "]")
+
+	return info
 }
 
 func (c *Client) Restore(original bool) {
-	c.Update()
 
 	// Obtain decoration motif
 	dw, dh := 0, 0
@@ -193,6 +294,13 @@ func (c *Client) Restore(original bool) {
 	if c.Latest.Dimensions.AdjPos && c.Latest.Dimensions.AdjSize {
 		c.Latest.Dimensions.AdjPos = false
 		c.Latest.Dimensions.AdjSize = false
+	}
+
+	// Restore window states
+	for _, state := range c.Original.States {
+		if common.IsInList(state, []string{"_NET_WM_STATE_STICKY"}) {
+			ewmh.WmStateReq(X, c.Win.Id, 1, state)
+		}
 	}
 
 	// Restore window decorations
@@ -240,6 +348,21 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 	x, y, w, h = oGeom.X()+iGeom.X()-dx, oGeom.Y()+iGeom.Y()-dy, iGeom.Width()+dw, iGeom.Height()+dh
 
 	return
+}
+
+func (c *Client) Parent() *xwindow.Window {
+	parent := c.Win
+
+	// Traverse up to top-level window
+	for {
+		tmp, err := parent.Parent()
+		if err != nil || tmp.Id == X.RootWin() {
+			break
+		}
+		parent = tmp
+	}
+
+	return parent
 }
 
 func IsSpecial(info *Info) bool {
@@ -450,8 +573,8 @@ func GetScreenNum(w xproto.Window) uint {
 
 	// Window center position
 	center := &common.Pointer{
-		X: int16(geom.X() + (geom.Width() / 2)),
-		Y: int16(geom.Y() + (geom.Height() / 2)),
+		X: int16(geom.X() + geom.Width()/2),
+		Y: int16(geom.Y() + geom.Height()/2),
 	}
 
 	return ScreenNumGet(center)

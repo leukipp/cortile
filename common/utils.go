@@ -1,6 +1,10 @@
 package common
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
+	"reflect"
+
 	"github.com/BurntSushi/xgbutil/xrect"
 )
 
@@ -10,11 +14,21 @@ type Pointer struct {
 	Button uint16 // Pointer button states of device
 }
 
+func Hash(text string) string {
+	hash := sha1.New()
+	hash.Write([]byte(text))
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
 func Truncate(s string, max int) string {
 	if max > len(s) {
 		return s
 	}
 	return s[:max]
+}
+
+func IsType(a interface{}, b interface{}) bool {
+	return reflect.TypeOf(a) == reflect.TypeOf(b)
 }
 
 func IsInList(item string, items []string) bool {
