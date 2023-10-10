@@ -3,6 +3,7 @@ package input
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -56,13 +57,29 @@ func items(tr *desktop.Tracker) {
 	systray.SetTooltip(fmt.Sprintf("%s - tiling manager", common.Build.Name))
 	systray.SetTitle(common.Build.Name)
 
-	// Version section
+	// Version checker
+	latest := common.VersionToInt(common.Build.Latest)
+	current := common.VersionToInt(common.Build.Version)
 	title := fmt.Sprintf("%s v%s", common.Build.Name, common.Build.Version)
+	if latest > current {
+		title = fmt.Sprintf("%s (v%s available)", title, common.Build.Latest)
+	}
 	version := systray.AddMenuItem(title, title)
 	version.SetIcon(common.File.Icon)
-	version.Disable()
 
-	// Menu section
+	// Menu item hyperlink
+	if latest > current {
+		go func() {
+			for {
+				<-version.ClickedCh
+				exec.Command("xdg-open", common.Build.Source).Start()
+			}
+		}()
+	} else {
+		version.Disable()
+	}
+
+	// Menu items
 	menu = &Menu{}
 	systray.AddSeparator()
 	for _, m := range common.Config.TilingIcon {
@@ -91,7 +108,7 @@ func items(tr *desktop.Tracker) {
 			menu.Toggle = item
 		}
 
-		// Menu item clicked
+		// Menu item action
 		go func() {
 			for {
 				<-item.ClickedCh

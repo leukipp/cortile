@@ -4,6 +4,9 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"reflect"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/BurntSushi/xgbutil/xrect"
 )
@@ -48,4 +51,19 @@ func IsInsideRect(p *Pointer, r xrect.Rect) bool {
 	yInRect := int(p.Y) >= y && int(p.Y) <= (y+h)
 
 	return xInRect && yInRect
+}
+
+func VersionToInt(version string) int {
+
+	// Remove non-numeric characters
+	reg := regexp.MustCompile("[^0-9]+")
+	numeric := reg.ReplaceAllString(strings.Split(version, "-")[0], "")
+
+	// Convert version string to integer
+	integer, err := strconv.Atoi(numeric)
+	if err != nil {
+		return -1
+	}
+
+	return integer
 }

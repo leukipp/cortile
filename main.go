@@ -33,6 +33,9 @@ var (
 
 	// Build date
 	date = "unknown"
+
+	// Build source
+	source = "https://github.com/leukipp/cortile"
 )
 
 var (
@@ -46,7 +49,7 @@ var (
 func main() {
 
 	// Init command line arguments
-	common.InitArgs(name, version, commit, date)
+	common.InitArgs(name, version, commit, date, source)
 
 	// Init embedded files
 	common.InitFiles(toml, icon)

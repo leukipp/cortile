@@ -4,7 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
+	"strings"
 
+	"net/http"
 	"path/filepath"
 )
 
@@ -18,6 +21,8 @@ type BuildInfo struct {
 	Version string // Build version
 	Commit  string // Build commit
 	Date    string // Build date
+	Source  string // Build summary
+	Latest  string // Build latest
 	Summary string // Build summary
 }
 
@@ -32,7 +37,7 @@ type Arguments struct {
 	V      bool   // Argument for verbose mode
 }
 
-func InitArgs(name, version, commit, date string) {
+func InitArgs(name, version, commit, date, source string) {
 
 	// Build information
 	Build = BuildInfo{
@@ -40,6 +45,8 @@ func InitArgs(name, version, commit, date string) {
 		Version: version,
 		Commit:  Truncate(commit, 7),
 		Date:    date,
+		Source:  source,
+		Latest:  version,
 	}
 	Build.Summary = fmt.Sprintf("%s v%s-%s, built on %s", Build.Name, Build.Version, Build.Commit, Build.Date)
 
@@ -58,7 +65,34 @@ func InitArgs(name, version, commit, date string) {
 		fmt.Fprintf(flag.CommandLine.Output(), "%s\n\nUsage:\n", Build.Summary)
 		flag.PrintDefaults()
 	}
-
-	// Parse arguments
 	flag.Parse()
+
+	// Version checker
+	suspended := false
+	if _, err := os.Stat(filepath.Join(Args.Cache, "no-version-check")); !os.IsNotExist(err) {
+		suspended = true
+	}
+	if !suspended && VersionToInt(Build.Version) > 0 {
+		Build.Latest = Latest(source)
+		if VersionToInt(Build.Latest) > VersionToInt(Build.Version) {
+			Build.Summary = fmt.Sprintf("%s, >>> %s v%s available <<<", Build.Summary, Build.Name, Build.Latest)
+		}
+	}
+}
+
+func Latest(source string) string {
+
+	// Request latest version from github
+	res, err := http.Get(strings.Trim(source, "/") + "/releases/latest")
+	if err != nil {
+		return Build.Version
+	}
+
+	// Parse latest version from redirect url
+	version := path.Base(res.Request.URL.Path)
+	if !strings.HasPrefix(version, "v") {
+		return Build.Version
+	}
+
+	return version[1:]
 }

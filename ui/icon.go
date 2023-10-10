@@ -35,7 +35,7 @@ func UpdateIcon(ws *desktop.Workspace) {
 	}
 
 	// Initialize image
-	color := image.Uniform{rgba("icon_foreground")}
+	col := image.Uniform{rgba("icon_foreground")}
 	icon := image.NewRGBA(image.Rect(0, 0, iconSize, iconSize))
 
 	// Draw background rectangle
@@ -45,27 +45,41 @@ func UpdateIcon(ws *desktop.Workspace) {
 	// Draw layout rectangles
 	switch name {
 	case "fullscreen":
-		draw.Draw(icon, image.Rect(x0, y0, x1, y1), &color, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0, y0, x1, y1), &col, image.Point{}, draw.Src)
 	case "vertical-left":
-		draw.Draw(icon, image.Rect(x0, y0, x0+(x1-x0)/2-layoutMargin, y1), &color, image.Point{}, draw.Src)
-		draw.Draw(icon, image.Rect(x0+(x1-x0)/2+layoutMargin, y0, x1, y0+(y1-y0)/2-layoutMargin), &color, image.Point{}, draw.Src)
-		draw.Draw(icon, image.Rect(x0+(x1-x0)/2+layoutMargin, y0+(y1-y0)/2+layoutMargin, x1, y1), &color, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0, y0, x0+(x1-x0)/2-layoutMargin, y1), &col, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0+(x1-x0)/2+layoutMargin, y0, x1, y0+(y1-y0)/2-layoutMargin), &col, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0+(x1-x0)/2+layoutMargin, y0+(y1-y0)/2+layoutMargin, x1, y1), &col, image.Point{}, draw.Src)
 	case "vertical-right":
-		draw.Draw(icon, image.Rect(x0, y0, x0+(x1-x0)/2-layoutMargin, y0+(y1-y0)/2-layoutMargin), &color, image.Point{}, draw.Src)
-		draw.Draw(icon, image.Rect(x0, y0+(y1-y0)/2+layoutMargin, x0+(x1-x0)/2-layoutMargin, y1), &color, image.Point{}, draw.Src)
-		draw.Draw(icon, image.Rect(x0+(x1-x0)/2+layoutMargin, y0, x1, y1), &color, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0, y0, x0+(x1-x0)/2-layoutMargin, y0+(y1-y0)/2-layoutMargin), &col, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0, y0+(y1-y0)/2+layoutMargin, x0+(x1-x0)/2-layoutMargin, y1), &col, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0+(x1-x0)/2+layoutMargin, y0, x1, y1), &col, image.Point{}, draw.Src)
 	case "horizontal-top":
-		draw.Draw(icon, image.Rect(x0, y0, x1, y0+(y1-y0)/2-layoutMargin), &color, image.Point{}, draw.Src)
-		draw.Draw(icon, image.Rect(x0, y0+(y1-y0)/2+layoutMargin, x0+(x1-x0)/2-layoutMargin, y1), &color, image.Point{}, draw.Src)
-		draw.Draw(icon, image.Rect(x0+(x1-x0)/2+layoutMargin, y0+(y1-y0)/2+layoutMargin, x1, y1), &color, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0, y0, x1, y0+(y1-y0)/2-layoutMargin), &col, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0, y0+(y1-y0)/2+layoutMargin, x0+(x1-x0)/2-layoutMargin, y1), &col, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0+(x1-x0)/2+layoutMargin, y0+(y1-y0)/2+layoutMargin, x1, y1), &col, image.Point{}, draw.Src)
 	case "horizontal-bottom":
-		draw.Draw(icon, image.Rect(x0, y0, x0+(x1-x0)/2-layoutMargin, y0+(y1-y0)/2-layoutMargin), &color, image.Point{}, draw.Src)
-		draw.Draw(icon, image.Rect(x0+(x1-x0)/2+layoutMargin, y0, x1, y0+(y1-y0)/2-layoutMargin), &color, image.Point{}, draw.Src)
-		draw.Draw(icon, image.Rect(x0, y0+(y1-y0)/2+layoutMargin, x1, y1), &color, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0, y0, x0+(x1-x0)/2-layoutMargin, y0+(y1-y0)/2-layoutMargin), &col, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0+(x1-x0)/2+layoutMargin, y0, x1, y0+(y1-y0)/2-layoutMargin), &col, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0, y0+(y1-y0)/2+layoutMargin, x1, y1), &col, image.Point{}, draw.Src)
 	case "disabled":
-		draw.Draw(icon, image.Rect(x0, y0, x0+2*layoutMargin, y1-2*layoutMargin), &color, image.Point{}, draw.Src)
-		draw.Draw(icon, image.Rect(x0, y0, x1-2*layoutMargin, y0+2*layoutMargin), &color, image.Point{}, draw.Src)
-		draw.Draw(icon, image.Rect(x0+2*layoutMargin+20, y0+2*layoutMargin+20, x1, y1), &color, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0, y0, x0+2*layoutMargin, y1-2*layoutMargin), &col, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0, y0, x1-2*layoutMargin, y0+2*layoutMargin), &col, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0+2*layoutMargin+20, y0+2*layoutMargin+20, x1, y1), &col, image.Point{}, draw.Src)
+	}
+
+	// Draw version checker
+	latest := common.VersionToInt(common.Build.Latest)
+	current := common.VersionToInt(common.Build.Version)
+	if latest > current {
+		col := image.Uniform{color.RGBA{
+			R: uint8(250),
+			G: uint8(80),
+			B: uint8(30),
+			A: uint8(255),
+		}}
+		dx, dy := iconSize/10, iconSize/10
+		draw.Draw(icon, image.Rect(x1-dx, y1-dy, x1+dx, y1+dy), &col, image.Point{}, draw.Src)
 	}
 
 	// Encode image bytes
