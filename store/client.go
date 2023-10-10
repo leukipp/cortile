@@ -193,25 +193,6 @@ func (c *Client) LimitDimensions(w, h int) {
 	})
 }
 
-func (c *Client) Cache() common.Cache[*Info] {
-
-	// Create client cache folder
-	folder := filepath.Join(common.Args.Cache, "clients", c.Latest.Class)
-	if _, err := os.Stat(folder); os.IsNotExist(err) {
-		os.MkdirAll(folder, 0700)
-	}
-
-	// Create client cache object
-	hash := common.Hash(c.Latest.Class)
-	cache := common.Cache[*Info]{
-		Folder: folder,
-		Name:   hash + ".json",
-		Data:   c.Latest,
-	}
-
-	return cache
-}
-
 func (c *Client) Update() {
 	info := GetInfo(c.Win.Id)
 	if len(info.Class) == 0 {
@@ -279,6 +260,25 @@ func (c *Client) Read() *Info {
 	log.Info("Read client cache data ", cache.Name, " [", c.Latest.Class, "]")
 
 	return info
+}
+
+func (c *Client) Cache() common.Cache[*Info] {
+
+	// Create client cache folder
+	folder := filepath.Join(common.Args.Cache, "clients", c.Latest.Class)
+	if _, err := os.Stat(folder); os.IsNotExist(err) {
+		os.MkdirAll(folder, 0700)
+	}
+
+	// Create client cache object
+	hash := common.Hash(c.Latest.Class)
+	cache := common.Cache[*Info]{
+		Folder: folder,
+		Name:   hash + ".json",
+		Data:   c.Latest,
+	}
+
+	return cache
 }
 
 func (c *Client) Restore(original bool) {
