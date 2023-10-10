@@ -15,10 +15,13 @@ type Cache[T any] struct {
 }
 
 func InitCache() {
+	if Args.Cache == "0" {
+		return
+	}
 
 	// Create cache folder if not exists
 	cacheFolderPath := Args.Cache
-	if _, err := os.Stat(cacheFolderPath); os.IsNotExist(err) && Args.Cache != "0" {
+	if _, err := os.Stat(cacheFolderPath); os.IsNotExist(err) {
 		os.MkdirAll(cacheFolderPath, 0700)
 	}
 }

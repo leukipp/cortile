@@ -197,7 +197,7 @@ func (c *Client) Cache() common.Cache[*Info] {
 
 	// Create client cache folder
 	folder := filepath.Join(common.Args.Cache, "clients", c.Latest.Class)
-	if _, err := os.Stat(folder); os.IsNotExist(err) && common.Args.Cache != "0" {
+	if _, err := os.Stat(folder); os.IsNotExist(err) {
 		os.MkdirAll(folder, 0700)
 	}
 
@@ -227,6 +227,9 @@ func (c *Client) Update() {
 }
 
 func (c *Client) Write() {
+	if common.Args.Cache == "0" {
+		return
+	}
 
 	// Obtain cache object
 	cache := c.Cache()
@@ -250,7 +253,9 @@ func (c *Client) Write() {
 }
 
 func (c *Client) Read() *Info {
-	var info *Info
+	if common.Args.Cache == "0" {
+		return c.Latest
+	}
 
 	// Obtain cache object
 	cache := c.Cache()
@@ -264,6 +269,7 @@ func (c *Client) Read() *Info {
 	}
 
 	// Parse client info
+	var info *Info
 	err = json.Unmarshal([]byte(data), &info)
 	if err != nil {
 		log.Warn("Error reading client cache [", c.Latest.Class, "]")
