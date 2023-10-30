@@ -303,9 +303,10 @@ func (c *Client) Restore(original bool) {
 	}
 
 	// Restore window states
-	for _, state := range c.Original.States {
+	for _, state := range c.Latest.States {
 		if common.IsInList(state, []string{"_NET_WM_STATE_STICKY"}) {
 			ewmh.WmStateReq(X, c.Win.Id, 1, state)
+			ewmh.WmDesktopSet(X, c.Win.Id, ^uint(0))
 		}
 	}
 
@@ -486,7 +487,8 @@ func GetInfo(w xproto.Window) *Info {
 
 	// Window desktop and screen (window workspace location)
 	deskNum, err := ewmh.WmDesktopGet(X, w)
-	if err != nil || deskNum > DeskCount {
+	sticky := deskNum > DeskCount
+	if err != nil || sticky {
 		deskNum = CurrentDesktopGet(X)
 	}
 	location = Location{
@@ -504,6 +506,9 @@ func GetInfo(w xproto.Window) *Info {
 	states, err = ewmh.WmStateGet(X, w)
 	if err != nil {
 		states = []string{}
+	}
+	if sticky && !common.IsInList("_NET_WM_STATE_STICKY", states) {
+		states = append(states, "_NET_WM_STATE_STICKY")
 	}
 
 	// Window geometry (dimensions of the window)
