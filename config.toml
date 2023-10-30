@@ -109,10 +109,10 @@ icon_foreground = [255, 255, 255, 255]
 [keys]                            # Key symbols can be found by running 'xev'. #
 ################################################################################
 
-# Enable tiling on the current screen.
+# Enable tiling on the current screen (Home = Fn_Left).
 enable = "Control-Shift-Home"
 
-# Disable tiling on the current screen.
+# Disable tiling on the current screen (End = Fn_Right).
 disable = "Control-Shift-End"
 
 # Disable tiling and restore windows on the current screen.
@@ -121,52 +121,52 @@ restore = "Control-Shift-R"
 # Toggle between enable and disable on the current screen.
 toggle = "Control-Shift-T"
 
-# Cycles through next layouts.
+# Cycles through next layouts (Next = Page_Down).
 cycle_next = "Control-Shift-Next"
 
-# Cycles through previous layouts.
+# Cycles through previous layouts (Prior = Page_Up).
 cycle_previous = "Control-Shift-Prior"
 
-# Activates the fullscreen layout.
+# Activates the fullscreen layout (Space = Blank).
 layout_fullscreen = "Control-Shift-Space"
 
-# Activates the vertical-left layout.
+# Activates the vertical-left layout (Left = Arrow_Left).
 layout_vertical_left = "Control-Shift-Left"
 
-# Activates the vertical-right layout.
+# Activates the vertical-right layout (Right = Arrow_Right).
 layout_vertical_right = "Control-Shift-Right"
 
-# Activates the horizontal-top layout.
+# Activates the horizontal-top layout (Up = Arrow_Up).
 layout_horizontal_top = "Control-Shift-Up"
 
-# Activates the horizontal-bottom layout.
+# Activates the horizontal-bottom layout (Down = Arrow_Down).
 layout_horizontal_bottom = "Control-Shift-Down"
 
 # Make the active window a master.
 master_make = "Control-Shift-M"
 
-# Increase the number of masters.
+# Increase the number of masters (Plus = +).
 master_increase = "Control-Shift-Plus"
 
-# Decrease the number of masters.
+# Decrease the number of masters (Minus = -).
 master_decrease = "Control-Shift-Minus"
 
-# Increase the number of slaves.
+# Increase the number of slaves (KP_Add = Num_+).
 slave_increase = "Control-Shift-KP_Add"
 
-# Decrease the number of slaves.
+# Decrease the number of slaves (KP_Subtract = Num_-).
 slave_decrease = "Control-Shift-KP_Subtract"
 
-# Increase the proportion of master-slave area.
+# Increase the proportion of master-slave area (KP_6 = Num_6).
 proportion_increase = "Control-Shift-KP_6"
 
-# Decrease the proportion of master-slave area.
+# Decrease the proportion of master-slave area (KP_4 = Num_4).
 proportion_decrease = "Control-Shift-KP_4"
 
-# Moves focus to the next window.
+# Moves focus to the next window (KP_2 = Num_2).
 window_next = "Control-Shift-KP_2"
 
-# Moves focus to the previous window.
+# Moves focus to the previous window (KP_8 = Num_8).
 window_previous = "Control-Shift-KP_8"
 
 # The commands above will affect all screens if this key is pressed in addition (Mod1 = Alt_L).
