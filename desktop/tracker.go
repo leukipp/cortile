@@ -431,6 +431,9 @@ func (tr *Tracker) onPointerUpdate(button uint16) {
 			ws := tr.ActiveWorkspace()
 			mg := ws.ActiveLayout().GetManager()
 			for _, c := range mg.Clients(false) {
+				if c == nil {
+					continue
+				}
 				c.UnLock()
 			}
 

@@ -77,7 +77,7 @@ func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
 	clients := mg.Clients(false)
 	for _, c := range clients {
 		if c == nil {
-			return
+			continue
 		}
 		for _, state := range c.Latest.States {
 			if state == "_NET_WM_STATE_FULLSCREEN" || layout == "fullscreen" {

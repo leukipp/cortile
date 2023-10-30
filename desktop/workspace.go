@@ -114,6 +114,9 @@ func (ws *Workspace) Restore(original bool) {
 
 	// Restore client dimensions
 	for _, c := range clients {
+		if c == nil {
+			continue
+		}
 		c.Restore(original)
 	}
 }
