@@ -66,6 +66,10 @@ func Execute(action string, mod string, tr *desktop.Tracker) bool {
 			success = HorizontalBottomLayout(tr, ws)
 		case "master_make":
 			success = MakeMaster(tr, ws)
+		case "master_make_next":
+			success = MakeMasterNext(tr, ws)
+		case "master_make_previous":
+			success = MakeMasterPrevious(tr, ws)
 		case "master_increase":
 			success = IncreaseMaster(tr, ws)
 		case "master_decrease":
@@ -319,6 +323,36 @@ func MakeMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	return false
 }
 
+func MakeMasterNext(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.Disabled() {
+		return false
+	}
+	c := ws.ActiveLayout().NextClient()
+	if c == nil {
+		return false
+	}
+
+	ws.ActiveLayout().MakeMaster(c)
+	ws.Tile()
+
+	return NextWindow(tr, ws)
+}
+
+func MakeMasterPrevious(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.Disabled() {
+		return false
+	}
+	c := ws.ActiveLayout().PreviousClient()
+	if c == nil {
+		return false
+	}
+
+	ws.ActiveLayout().MakeMaster(c)
+	ws.Tile()
+
+	return PreviousWindow(tr, ws)
+}
+
 func IncreaseMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.Disabled() {
 		return false
@@ -395,7 +429,12 @@ func NextWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.Disabled() {
 		return false
 	}
-	ws.ActiveLayout().NextClient()
+	c := ws.ActiveLayout().NextClient()
+	if c == nil {
+		return false
+	}
+
+	c.Activate()
 
 	return true
 }
@@ -404,7 +443,12 @@ func PreviousWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.Disabled() {
 		return false
 	}
-	ws.ActiveLayout().PreviousClient()
+	c := ws.ActiveLayout().PreviousClient()
+	if c == nil {
+		return false
+	}
+
+	c.Activate()
 
 	return true
 }

@@ -8,8 +8,8 @@ type Layout interface {
 	RemoveClient(c *store.Client)
 	MakeMaster(c *store.Client)
 	SwapClient(c1 *store.Client, c2 *store.Client)
-	NextClient()
-	PreviousClient()
+	NextClient() *store.Client
+	PreviousClient() *store.Client
 	IncreaseMaster()
 	DecreaseMaster()
 	IncreaseSlave()

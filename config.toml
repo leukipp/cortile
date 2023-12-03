@@ -142,8 +142,14 @@ layout_horizontal_top = "Control-Shift-Up"
 # Activates the horizontal-bottom layout (Down = Arrow_Down).
 layout_horizontal_bottom = "Control-Shift-Down"
 
-# Make the active window a master.
-master_make = "Control-Shift-M"
+# Make the active window a master (KP_5 = Num_5).
+master_make = "Control-Shift-KP_5"
+
+# Make the next window a master (KP_6 = Num_6).
+master_make_next = "Control-Shift-KP_6"
+
+# Make the previous window a master (KP_4 = Num_4).
+master_make_previous = "Control-Shift-KP_4"
 
 # Increase the number of masters (Plus = +).
 master_increase = "Control-Shift-Plus"
@@ -157,11 +163,11 @@ slave_increase = "Control-Shift-KP_Add"
 # Decrease the number of slaves (KP_Subtract = Num_-).
 slave_decrease = "Control-Shift-KP_Subtract"
 
-# Increase the proportion of master-slave area (KP_6 = Num_6).
-proportion_increase = "Control-Shift-KP_6"
+# Increase the proportion of master-slave area (KP_3 = Num_3).
+proportion_increase = "Control-Shift-KP_3"
 
-# Decrease the proportion of master-slave area (KP_4 = Num_4).
-proportion_decrease = "Control-Shift-KP_4"
+# Decrease the proportion of master-slave area (KP_1 = Num_1).
+proportion_decrease = "Control-Shift-KP_1"
 
 # Moves focus to the next window (KP_2 = Num_2).
 window_next = "Control-Shift-KP_2"

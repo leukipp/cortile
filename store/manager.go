@@ -133,38 +133,52 @@ func (mg *Manager) SwapClient(c1 *Client, c2 *Client) {
 	}
 }
 
-func (mg *Manager) NextClient() {
+func (mg *Manager) NextClient() *Client {
 	clients := mg.Clients(true)
 	last := len(clients) - 1
 
 	// Get next window
+	next := -1
 	for i, c := range clients {
 		if c.Win.Id == ActiveWindow {
-			next := i + 1
+			next = i + 1
 			if next > last {
 				next = 0
 			}
-			clients[next].Activate()
 			break
 		}
 	}
+
+	// Invalid active window
+	if next == -1 {
+		return nil
+	}
+
+	return clients[next]
 }
 
-func (mg *Manager) PreviousClient() {
+func (mg *Manager) PreviousClient() *Client {
 	clients := mg.Clients(true)
 	last := len(clients) - 1
 
 	// Get previous window
+	prev := -1
 	for i, c := range clients {
 		if c.Win.Id == ActiveWindow {
-			prev := i - 1
+			prev = i - 1
 			if prev < 0 {
 				prev = last
 			}
-			clients[prev].Activate()
 			break
 		}
 	}
+
+	// Invalid active window
+	if prev == -1 {
+		return nil
+	}
+
+	return clients[prev]
 }
 
 func (mg *Manager) IncreaseMaster() {
