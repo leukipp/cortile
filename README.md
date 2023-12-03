@@ -73,13 +73,15 @@ If some of them are already in use by your system, update the default values in 
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Right</kbd>       | Activate vertical-right layout           |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Up</kbd>          | Activate horizontal-top layout           |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Down</kbd>        | Activate horizontal-bottom layout        |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>           | Make the active window master            |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_5</kbd>        | Make the active window master            |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_6</kbd>        | Make the next window master              |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_4</kbd>        | Make the previous window master          |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Plus</kbd>        | Increase number of master windows        |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Minus</kbd>       | Decrease number of master windows        |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_Add</kbd>      | Increase number of maximum slave windows |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_Subtract</kbd> | Decrease number of maximum slave windows |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_6</kbd>        | Increase proportion of master-slave area |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_4</kbd>        | Decrease proportion of master-slave area |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_3</kbd>        | Increase proportion of master-slave area |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_1</kbd>        | Decrease proportion of master-slave area |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_2</kbd>        | Focus next window                        |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_8</kbd>        | Focus previous window                    |
 
@@ -97,8 +99,8 @@ Systray events are defined under the `[systray]` section and are triggered when 
 | <kbd>Middle</kbd>-<kbd>Click</kbd> | Toggle between enable and disable        |
 | <kbd>Scroll</kbd>-<kbd>Up</kbd>    | Cycle through previous layouts           |
 | <kbd>Scroll</kbd>-<kbd>Down</kbd>  | Cycle through next layouts               |
-| <kbd>Scroll</kbd>-<kbd>Left</kbd>  | Decrease proportion of master-slave area |
 | <kbd>Scroll</kbd>-<kbd>Right</kbd> | Increase proportion of master-slave area |
+| <kbd>Scroll</kbd>-<kbd>Left</kbd>  | Decrease proportion of master-slave area |
 
 Common pointer shortcuts used in some environments:
 - Move window: <kbd>Alt</kbd>+<kbd>Left-Click</kbd>.
