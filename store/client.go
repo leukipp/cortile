@@ -257,9 +257,13 @@ func (c *Client) Read() *Info {
 		return c.Latest
 	}
 
+	// Overwrite states and geometry
+	c.Latest.States = info.States
+	c.Latest.Dimensions.Geometry = info.Dimensions.Geometry
+
 	log.Info("Read client cache data ", cache.Name, " [", c.Latest.Class, "]")
 
-	return info
+	return c.Latest
 }
 
 func (c *Client) Cache() common.Cache[*Info] {
