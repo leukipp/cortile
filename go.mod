@@ -11,12 +11,12 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/sirupsen/logrus v1.9.3
-	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
-	golang.org/x/image v0.13.0
+	golang.org/x/exp v0.0.0-20231127185646-65229373498e
+	golang.org/x/image v0.14.0
 )
 
 require (
 	github.com/BurntSushi/graphics-go v0.0.0-20160129215708-b43f31a4a966 // indirect
 	github.com/tevino/abool v1.2.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
 )
