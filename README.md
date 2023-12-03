@@ -27,17 +27,38 @@ The _go_ implementation ensures a fast and responsive system, where _multiple la
 [![demo](https://raw.githubusercontent.com/leukipp/cortile/main/assets/images/demo.gif)](https://github.com/leukipp/cortile/blob/main/assets/images/demo.gif)
 
 ## Installation [![installation](https://img.shields.io/github/v/release/leukipp/cortile)](#installation-)
-Download the latest binary file from the [releases](https://github.com/leukipp/cortile/releases/latest):
+Manually `download`/`extract` the latest binary file from [releases](https://github.com/leukipp/cortile/releases/latest) or use `wget`/`tar`:
 ```bash
-# extract cortile from the tar.gz archive
-tar -xvf cortile_*_linux_amd64.tar.gz
+# download and extract binary file (e.g. amd64 build)
+wget -qO- $(wget -qO- https://api.github.com/repos/leukipp/cortile/releases/latest | jq -r '.assets[] | select(.name | contains ("amd64.tar.gz")) | .browser_download_url') | tar -xvz
+```
 
+If you execute the binary, cortile will perform auto tiling until you stop it:
+```bash
 # execute the binary file
 ./cortile
 ```
 Alternative installation methods can be found in the [development](#development-) section.
 
-## Usage [![usage](https://img.shields.io/github/release-date/leukipp/cortile)](#usage-)
+### Service
+To enable auto tiling on startup, you can run cortile as a service after the graphical user interface has been loaded.
+A template to run cortile as a [systemd](https://en.wikipedia.org/wiki/Systemd) service is provided in the [services](https://github.com/leukipp/cortile/tree/main/assets/services) folder.
+You may have to adjust the filepath/symlink under `ExecStart` and enable the user service:
+```bash
+# copy systemd service file
+cp cortile.service ~/.config/systemd/user/
+
+# reload systemd configurations
+systemctl --user daemon-reload
+
+# enable systemd service
+systemctl --user enable cortile.service
+
+# start systemd service
+systemctl --user start cortile.service
+```
+
+### Usage
 The layouts are based on the master-slave concept, where one side of the screen is considered to be the master area and the other side is considered to be the slave area:
 - `vertical-right:` split the screen vertically, master area on the right.
 - `vertical-left:` split the screen vertically, master area on the left.
@@ -51,7 +72,7 @@ Adjustments to window sizes are considered to be proportion changes of the under
 Windows placed on the master side are static and the layout will only change as long the space is not fully occupied.
 Once the master area is full, the slave area is used, where the layout changes dynamically based on available space and configuration settings.
 
-## Configuration [![configuration](https://img.shields.io/github/last-commit/leukipp/cortile)](#configuration-)
+## Configuration [![configuration](https://img.shields.io/github/release-date/leukipp/cortile)](#configuration-)
 The configuration file is located at `~/.config/cortile/config.toml` (or `XDG_CONFIG_HOME`) and is created with default values during the first startup.
 Additional information about individual entries can be found in the comments section of the [config.toml](https://github.com/leukipp/cortile/blob/main/config.toml) file.
 
