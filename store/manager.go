@@ -31,7 +31,7 @@ type Proportions struct {
 
 type Clients struct {
 	Items      []*Client // List of stored window clients
-	MaxAllowed int       // Number of maximal allowed clients
+	MaxAllowed int       // Currently maximum allowed clients
 }
 
 func CreateManager(deskNum uint, screenNum uint) *Manager {
@@ -45,11 +45,11 @@ func CreateManager(deskNum uint, screenNum uint) *Manager {
 		},
 		Masters: &Clients{
 			Items:      make([]*Client, 0),
-			MaxAllowed: 1,
+			MaxAllowed: int(math.Min(float64(common.Config.WindowMastersMax), 1)),
 		},
 		Slaves: &Clients{
 			Items:      make([]*Client, 0),
-			MaxAllowed: common.Config.WindowSlavesMax,
+			MaxAllowed: int(math.Max(float64(common.Config.WindowSlavesMax), 1)),
 		},
 	}
 }
