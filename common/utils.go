@@ -34,6 +34,14 @@ func IsType(a interface{}, b interface{}) bool {
 	return reflect.TypeOf(a) == reflect.TypeOf(b)
 }
 
+func IsZero(items []uint) bool {
+	mask := uint(0)
+	for _, s := range items {
+		mask |= s
+	}
+	return mask == 0
+}
+
 func IsInList(item string, items []string) bool {
 	for i := 0; i < len(items); i++ {
 		if items[i] == item {

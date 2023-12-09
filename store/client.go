@@ -82,9 +82,6 @@ func CreateClient(w xproto.Window) *Client {
 	c.Original = cached
 	c.Latest = cached
 
-	// Restore window dimensions
-	c.Restore(false)
-
 	return c
 }
 
@@ -106,10 +103,10 @@ func (c *Client) UnDecorate() {
 	}
 
 	// Remove window decorations
-	motif.WmHintsSet(X, c.Win.Id, &motif.Hints{
-		Flags:      motif.HintDecorations,
-		Decoration: motif.DecorationNone,
-	})
+	mhints := c.Original.Dimensions.Hints.Motif
+	mhints.Flags |= motif.HintDecorations
+	mhints.Decoration = motif.DecorationNone
+	motif.WmHintsSet(X, c.Win.Id, &mhints)
 }
 
 func (c *Client) UnMaximize() {
@@ -186,11 +183,11 @@ func (c *Client) LimitDimensions(w, h int) {
 	dw, dh := ext.Left+ext.Right, ext.Top+ext.Bottom
 
 	// Set window size limits
-	icccm.WmNormalHintsSet(X, c.Win.Id, &icccm.NormalHints{
-		Flags:     icccm.SizeHintPMinSize,
-		MinWidth:  uint(w - dw),
-		MinHeight: uint(h - dh),
-	})
+	nhints := c.Original.Dimensions.Hints.Normal
+	nhints.Flags |= icccm.SizeHintPMinSize
+	nhints.MinWidth = uint(w - dw)
+	nhints.MinHeight = uint(h - dh)
+	icccm.WmNormalHintsSet(X, c.Win.Id, &nhints)
 }
 
 func (c *Client) Update() {
@@ -287,24 +284,11 @@ func (c *Client) Cache() common.Cache[*Info] {
 
 func (c *Client) Restore(original bool) {
 
-	// Obtain decoration motif
-	dw, dh := 0, 0
-	decoration := motif.DecorationNone
-	if motif.Decor(&c.Original.Dimensions.Hints.Motif) {
-		decoration = motif.DecorationAll
+	// Restore window decorations
+	motif.WmHintsSet(X, c.Win.Id, &c.Original.Dimensions.Hints.Motif)
 
-		// Obtain decoration extents
-		if !common.Config.WindowDecoration {
-			ext := c.Original.Dimensions.Extents
-			dw, dh = ext.Left+ext.Right, ext.Top+ext.Bottom
-		}
-	}
-
-	// Obtain dimension adjustments
-	if c.Latest.Dimensions.AdjPos && c.Latest.Dimensions.AdjSize {
-		c.Latest.Dimensions.AdjPos = false
-		c.Latest.Dimensions.AdjSize = false
-	}
+	// Restore window size limits
+	icccm.WmNormalHintsSet(X, c.Win.Id, &c.Original.Dimensions.Hints.Normal)
 
 	// Restore window states
 	for _, state := range c.Latest.States {
@@ -314,14 +298,16 @@ func (c *Client) Restore(original bool) {
 		}
 	}
 
-	// Restore window decorations
-	motif.WmHintsSet(X, c.Win.Id, &motif.Hints{
-		Flags:      motif.HintDecorations,
-		Decoration: uint(decoration),
-	})
-
-	// Restore window size limits
-	icccm.WmNormalHintsSet(X, c.Win.Id, &c.Original.Dimensions.Hints.Normal)
+	// Obtain decoration adjustments
+	dw, dh := 0, 0
+	if !common.Config.WindowDecoration && motif.Decor(&c.Original.Dimensions.Hints.Motif) {
+		ext := c.Original.Dimensions.Extents
+		dw, dh = ext.Left+ext.Right, ext.Top+ext.Bottom
+	}
+	if c.Latest.Dimensions.AdjPos && c.Latest.Dimensions.AdjSize {
+		c.Latest.Dimensions.AdjPos = false
+		c.Latest.Dimensions.AdjSize = false
+	}
 
 	// Move window to latest/original position considering decoration adjustments
 	geom := c.Latest.Dimensions.Geometry
@@ -564,8 +550,8 @@ func GetInfo(w xproto.Window) *Info {
 			Top:    int(ext[2]),
 			Bottom: int(ext[3]),
 		},
-		AdjPos:  (extNet != nil && mhints.Flags&motif.HintDecorations > 0 && mhints.Decoration > 1) || (extGtk != nil),
-		AdjSize: (extNet != nil) || (extGtk != nil),
+		AdjPos:  !common.IsZero(extNet) && (mhints.Decoration > 1 || nhints.WinGravity > 1) || !common.IsZero(extGtk),
+		AdjSize: !common.IsZero(extNet) || !common.IsZero(extGtk),
 	}
 
 	return &Info{
