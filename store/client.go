@@ -168,7 +168,7 @@ func (c *Client) MoveResize(x, y, w, h int) {
 			if common.IsType(ev, xproto.ConfigureNotifyEvent{}) {
 				ev := ev.(xproto.ConfigureNotifyEvent)
 				if ev.Window == c.Win.Id || ev.Window == c.Parent().Id {
-					log.Info("Client substructure event [", c.Latest.Class, "]")
+					log.Debug("Client substructure event [", c.Latest.Class, "]")
 					break
 				}
 			}
@@ -230,7 +230,7 @@ func (c *Client) Write() {
 		return
 	}
 
-	log.Info("Write client cache data ", cache.Name, " [", c.Latest.Class, "]")
+	log.Debug("Write client cache data ", cache.Name, " [", c.Latest.Class, "]")
 }
 
 func (c *Client) Read() *Info {
@@ -261,7 +261,7 @@ func (c *Client) Read() *Info {
 	c.Latest.States = info.States
 	c.Latest.Dimensions.Geometry = info.Dimensions.Geometry
 
-	log.Info("Read client cache data ", cache.Name, " [", c.Latest.Class, "]")
+	log.Debug("Read client cache data ", cache.Name, " [", c.Latest.Class, "]")
 
 	return c.Latest
 }
