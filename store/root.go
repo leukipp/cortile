@@ -70,35 +70,40 @@ func InitRoot() {
 func Connect() *xgbutil.XUtil {
 	var err error
 
-	// Connect to X server
-	X, err = xgbutil.NewConn()
-	if err != nil {
-		log.Fatal("Connection to X server failed ", err)
-	}
-	randr.Init(X.Conn())
-
-	// Check ewmh compliance
-	wm, err := ewmh.GetEwmhWM(X)
-	if err != nil {
-		log.Fatal("Window manager is not EWMH compliant ", err)
-	}
-
-	// Wait for root window properties
-	i, j := 0, 100
-	for i < j {
-		_, err = ewmh.ClientListStackingGet(X)
-		if err == nil {
-			break
+	// Retry to connect
+	for i := 0; i < 10; i++ {
+		if i > 0 {
+			log.Warn("Retry in 1 second...")
+			time.Sleep(1000 * time.Millisecond)
 		}
-		i += 1
-		time.Sleep(100 * time.Millisecond)
-	}
 
-	// Validate root window properties
-	if err != nil {
-		log.Fatal("Error retrieving root properties ", err)
+		// Connect to X server
+		X, err = xgbutil.NewConn()
+		if err != nil {
+			log.Error("Connection to X server failed ", err)
+			continue
+		}
+
+		// Check EWMH compliance
+		wm, err := ewmh.GetEwmhWM(X)
+		if err != nil {
+			log.Error("Window manager is not EWMH compliant ", err)
+			continue
+		}
+
+		// Validate ROOT properties
+		_, err = ewmh.ClientListStackingGet(X)
+		if err != nil {
+			log.Error("Error retrieving ROOT properties ", err)
+			continue
+		}
+
+		// Connection established
+		log.Info("Connected to X server [", wm, "]")
+		randr.Init(X.Conn())
+
+		break
 	}
-	log.Info("Connected to X server [", wm, "]")
 
 	return X
 }
@@ -254,11 +259,8 @@ func PhysicalHeadsGet(X *xgbutil.XUtil) []Head {
 		for i, head := range heads {
 			if head.Id == biggest.Id {
 				heads[i].Primary = true
-				log.Info("Using fallback primary screen [", head.Name, "]")
 			}
 		}
-	} else {
-		log.Info("Using primary screen [", biggest.Name, "]")
 	}
 
 	return heads
