@@ -82,6 +82,9 @@ func CreateClient(w xproto.Window) *Client {
 	c.Original = cached
 	c.Latest = cached
 
+	// Restore window position
+	c.Restore(false)
+
 	return c
 }
 
@@ -151,29 +154,10 @@ func (c *Client) MoveResize(x, y, w, h int) {
 		log.Warn("Error on window move/resize [", c.Latest.Class, "]")
 	}
 
-	// Check window lifetime
-	lifetime := time.Since(c.Created)
-	added := lifetime < 1000*time.Millisecond
-
-	if added {
-
-		// Wait for structure change event
-		deadline := time.Now().Add(50 * time.Millisecond)
-		for time.Now().Before(deadline) {
-			ev, _ := X.Conn().PollForEvent()
-
-			if common.IsType(ev, xproto.ConfigureNotifyEvent{}) {
-				ev := ev.(xproto.ConfigureNotifyEvent)
-				if ev.Window == c.Win.Id || ev.Window == c.Parent().Id {
-					log.Debug("Client substructure event [", c.Latest.Class, "]")
-					break
-				}
-			}
-		}
-	}
-
 	// Update stored dimensions
-	c.Update()
+	if !c.IsNew() {
+		c.Update()
+	}
 }
 
 func (c *Client) LimitDimensions(w, h int) {
@@ -254,9 +238,13 @@ func (c *Client) Read() *Info {
 		return c.Latest
 	}
 
-	// Overwrite states and geometry
+	// Overwrite states, geometry and location
+	geom := info.Dimensions.Geometry
+	geom.Rect = xrect.New(geom.X, geom.Y, geom.Width, geom.Height)
+
 	c.Latest.States = info.States
-	c.Latest.Dimensions.Geometry = info.Dimensions.Geometry
+	c.Latest.Dimensions.Geometry = geom
+	c.Latest.Location.ScreenNum = GetScreenNum(geom.Rect)
 
 	log.Debug("Read client cache data ", cache.Name, " [", c.Latest.Class, "]")
 
@@ -347,19 +335,9 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 	return
 }
 
-func (c *Client) Parent() *xwindow.Window {
-	parent := c.Win
-
-	// Traverse up to top-level window
-	for {
-		tmp, err := parent.Parent()
-		if err != nil || tmp.Id == X.RootWin() {
-			break
-		}
-		parent = tmp
-	}
-
-	return parent
+func (c *Client) IsNew() bool {
+	lifetime := time.Since(c.Created)
+	return lifetime < 1000*time.Millisecond
 }
 
 func IsSpecial(info *Info) bool {
@@ -475,6 +453,12 @@ func GetInfo(w xproto.Window) *Info {
 		name = class
 	}
 
+	// Window geometry (dimensions of the window)
+	geom, err := xwindow.New(X, w).DecorGeometry()
+	if err != nil {
+		geom = &xrect.XRect{}
+	}
+
 	// Window desktop and screen (window workspace location)
 	deskNum, err := ewmh.WmDesktopGet(X, w)
 	sticky := deskNum > DeskCount
@@ -483,7 +467,7 @@ func GetInfo(w xproto.Window) *Info {
 	}
 	location = Location{
 		DeskNum:   deskNum,
-		ScreenNum: GetScreenNum(w),
+		ScreenNum: GetScreenNum(geom),
 	}
 
 	// Window types (types of the window)
@@ -499,12 +483,6 @@ func GetInfo(w xproto.Window) *Info {
 	}
 	if sticky && !common.IsInList("_NET_WM_STATE_STICKY", states) {
 		states = append(states, "_NET_WM_STATE_STICKY")
-	}
-
-	// Window geometry (dimensions of the window)
-	geom, err := xwindow.New(X, w).DecorGeometry()
-	if err != nil {
-		geom = &xrect.XRect{}
 	}
 
 	// Window normal hints (normal hints of the window)
@@ -564,13 +542,7 @@ func GetInfo(w xproto.Window) *Info {
 	}
 }
 
-func GetScreenNum(w xproto.Window) uint {
-
-	// Outer window dimensions
-	geom, err := xwindow.New(X, w).DecorGeometry()
-	if err != nil {
-		return 0
-	}
+func GetScreenNum(geom xrect.Rect) uint {
 
 	// Window center position
 	center := &common.Pointer{
