@@ -18,25 +18,26 @@ var (
 )
 
 type Configuration struct {
-	TilingEnabled    bool              `toml:"tiling_enabled"`     // Tile windows on startup
-	TilingLayout     string            `toml:"tiling_layout"`      // Initial tiling layout
-	TilingGui        int               `toml:"tiling_gui"`         // Time duration of gui
-	TilingIcon       [][]string        `toml:"tiling_icon"`        // Menu entries of systray
-	WindowIgnore     [][]string        `toml:"window_ignore"`      // Regex to ignore windows
-	WindowMastersMax int               `toml:"window_masters_max"` // Maximum number of allowed masters
-	WindowSlavesMax  int               `toml:"window_slaves_max"`  // Maximum number of allowed slaves
-	WindowGapSize    int               `toml:"window_gap_size"`    // Gap size between windows
-	WindowDecoration bool              `toml:"window_decoration"`  // Show window decorations
-	Proportion       float64           `toml:"proportion"`         // Master-slave area initial proportion
-	ProportionStep   float64           `toml:"proportion_step"`    // Master-slave area step size proportion
-	ProportionMin    float64           `toml:"proportion_min"`     // Window size minimum proportion
-	EdgeMargin       []int             `toml:"edge_margin"`        // Margin values of tiling area
-	EdgeCornerSize   int               `toml:"edge_corner_size"`   // Size of square defining edge corners
-	EdgeCenterSize   int               `toml:"edge_center_size"`   // Length of rectangle defining edge centers
-	Colors           map[string][]int  `toml:"colors"`             // List of color values for gui elements
-	Keys             map[string]string `toml:"keys"`               // Event bindings for keyboard shortcuts
-	Corners          map[string]string `toml:"corners"`            // Event bindings for hot-corner actions
-	Systray          map[string]string `toml:"systray"`            // Event bindings for systray icon
+	TilingEnabled     bool              `toml:"tiling_enabled"`      // Tile windows on startup
+	TilingLayout      string            `toml:"tiling_layout"`       // Initial tiling layout
+	TilingGui         int               `toml:"tiling_gui"`          // Time duration of gui
+	TilingIcon        [][]string        `toml:"tiling_icon"`         // Menu entries of systray
+	WindowIgnore      [][]string        `toml:"window_ignore"`       // Regex to ignore windows
+	WindowMastersMax  int               `toml:"window_masters_max"`  // Maximum number of allowed masters
+	WindowSlavesMax   int               `toml:"window_slaves_max"`   // Maximum number of allowed slaves
+	WindowGapSize     int               `toml:"window_gap_size"`     // Gap size between windows
+	WindowDecoration  bool              `toml:"window_decoration"`   // Show window decorations
+	Proportion        float64           `toml:"proportion"`          // Master-slave area initial proportion
+	ProportionStep    float64           `toml:"proportion_step"`     // Master-slave area step size proportion
+	ProportionMin     float64           `toml:"proportion_min"`      // Window size minimum proportion
+	EdgeMargin        []int             `toml:"edge_margin"`         // Margin values of tiling area
+	EdgeMarginPrimary []int             `toml:"edge_margin_primary"` // Margin values of primary tiling area
+	EdgeCornerSize    int               `toml:"edge_corner_size"`    // Size of square defining edge corners
+	EdgeCenterSize    int               `toml:"edge_center_size"`    // Length of rectangle defining edge centers
+	Colors            map[string][]int  `toml:"colors"`              // List of color values for gui elements
+	Keys              map[string]string `toml:"keys"`                // Event bindings for keyboard shortcuts
+	Corners           map[string]string `toml:"corners"`             // Event bindings for hot-corner actions
+	Systray           map[string]string `toml:"systray"`             // Event bindings for systray icon
 }
 
 func InitConfig() {

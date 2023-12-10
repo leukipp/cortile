@@ -304,11 +304,16 @@ func DesktopDimensions(screenNum uint) (x, y, w, h int) {
 	x, y, w, h = desktop.Pieces()
 
 	// Add desktop margin
-	if desktop.Primary {
-		x += common.Config.EdgeMargin[3]
-		y += common.Config.EdgeMargin[0]
-		w -= common.Config.EdgeMargin[1] + common.Config.EdgeMargin[3]
-		h -= common.Config.EdgeMargin[2] + common.Config.EdgeMargin[0]
+	margin := common.Config.EdgeMargin
+	if desktop.Primary && len(common.Config.EdgeMarginPrimary) > 0 {
+		margin = common.Config.EdgeMarginPrimary
+	}
+
+	if len(margin) == 4 {
+		x += margin[3]
+		y += margin[0]
+		w -= margin[1] + margin[3]
+		h -= margin[2] + margin[0]
 	}
 
 	return
