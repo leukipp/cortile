@@ -283,7 +283,6 @@ func (c *Client) Restore(original bool) {
 	if common.IsInList("_NET_WM_STATE_STICKY", c.Latest.States) {
 		ewmh.WmStateReq(X, c.Win.Id, 1, "_NET_WM_STATE_STICKY")
 		ewmh.WmDesktopSet(X, c.Win.Id, ^uint(0))
-		log.Error("Restore sticky:", c.Latest.Class)
 	}
 
 	// Disable adjustments on restore
