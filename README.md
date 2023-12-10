@@ -30,7 +30,9 @@ The _go_ implementation ensures a fast and responsive system, where _multiple la
 Manually `download`/`extract` the latest binary file from [releases](https://github.com/leukipp/cortile/releases/latest) or use `wget`/`tar`:
 ```bash
 # download and extract binary file (e.g. amd64 build)
-wget -qO- $(wget -qO- https://api.github.com/repos/leukipp/cortile/releases/latest | jq -r '.assets[] | select(.name | contains ("amd64.tar.gz")) | .browser_download_url') | tar -xvz
+wget -qO- $(wget -qO- https://api.github.com/repos/leukipp/cortile/releases/latest | \
+jq -r '.assets[] | select(.name | contains ("amd64.tar.gz")) | .browser_download_url') | \
+tar -xvz
 ```
 
 If you execute the binary, cortile will perform auto tiling until you stop it:
@@ -48,7 +50,7 @@ You may have to adjust the filepath/symlink under `ExecStart` and enable the use
 # copy systemd service file
 cp cortile.service ~/.config/systemd/user/
 
-# reload systemd configurations
+# reload systemd configuration
 systemctl --user daemon-reload
 
 # enable systemd service
@@ -262,10 +264,13 @@ Systray:
   - e.g. use `tiling_icon = [...,['firefox', 'Open Browser'],...]` to add a web browser entry.
 
 ## Issues [![issues](https://img.shields.io/github/issues-closed/leukipp/cortile)](#issues-)
+Cortile works best with Xfwm and Openbox window systems.
+However, it`s still possible that you may encounter problems during usage.
+
 Windows:
 - It's recommended to disable all build-in window snapping features (snap to other windows, snap to screen borders).
-- In some GNOME based desktop environments window displacement or resizing issues may occur.
-- Sticky windows may cause unwanted layout modifications during workspace change.
+- Particularly in GNOME based desktop environments, window displacements or resizing issues may occur.
+- Sticky windows are unstable and may cause unwanted layout modifications during workspace changes.
 
 Systray:
 - Adjust the bindings in the `[systray]` section, as some pointer events may not fire across different desktop environments.
