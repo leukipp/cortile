@@ -375,13 +375,25 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 }
 
 func (tr *Tracker) onStateUpdate(aname string) {
-	workspacesChanged := store.DeskCount*store.ScreenCount != uint(len(tr.Workspaces))
 	viewportChanged := common.IsInList(aname, []string{"_NET_NUMBER_OF_DESKTOPS", "_NET_DESKTOP_LAYOUT", "_NET_DESKTOP_GEOMETRY", "_NET_DESKTOP_VIEWPORT", "_NET_WORKAREA"})
 	clientsChanged := common.IsInList(aname, []string{"_NET_CLIENT_LIST_STACKING", "_NET_ACTIVE_WINDOW"})
+
+	workspacesChanged := store.DeskCount*store.ScreenCount != uint(len(tr.Workspaces))
+	workspaceChanged := common.IsInList(aname, []string{"_NET_CURRENT_DESKTOP"})
 
 	// Number of desktops or screens changed
 	if workspacesChanged {
 		tr.Reset()
+	}
+
+	// Active desktop changed
+	if workspaceChanged {
+		for _, c := range tr.Clients {
+			sticky := common.IsInList("_NET_WM_STATE_STICKY", c.Latest.States)
+			if sticky && c.Latest.Location.DeskNum != store.CurrentDesk {
+				ewmh.WmDesktopSet(store.X, c.Win.Id, ^uint(0))
+			}
+		}
 	}
 
 	// Viewport changed or clients changed
