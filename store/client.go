@@ -79,11 +79,22 @@ func CreateClient(w xproto.Window) *Client {
 
 	// Read client geometry from cache
 	cached := c.Read()
-	c.Original = cached
-	c.Latest = cached
+
+	// Overwrite states, geometry and location
+	geom := cached.Dimensions.Geometry
+	geom.Rect = xrect.New(geom.X, geom.Y, geom.Width, geom.Height)
+	x, y, width, height := geom.Pieces()
+
+	c.Original.States = cached.States
+	c.Original.Dimensions.Geometry = geom
+	c.Original.Location.ScreenNum = GetScreenNum(geom.Rect)
+
+	c.Latest.States = cached.States
+	c.Latest.Dimensions.Geometry = geom
+	c.Latest.Location.ScreenNum = GetScreenNum(geom.Rect)
 
 	// Restore window position
-	c.Restore(false)
+	c.MoveResize(x, y, width, height)
 
 	return c
 }
@@ -155,9 +166,7 @@ func (c *Client) MoveResize(x, y, w, h int) {
 	}
 
 	// Update stored dimensions
-	if !c.IsNew() {
-		c.Update()
-	}
+	c.Update()
 }
 
 func (c *Client) LimitDimensions(w, h int) {
@@ -238,17 +247,9 @@ func (c *Client) Read() *Info {
 		return c.Latest
 	}
 
-	// Overwrite states, geometry and location
-	geom := info.Dimensions.Geometry
-	geom.Rect = xrect.New(geom.X, geom.Y, geom.Width, geom.Height)
-
-	c.Latest.States = info.States
-	c.Latest.Dimensions.Geometry = geom
-	c.Latest.Location.ScreenNum = GetScreenNum(geom.Rect)
-
 	log.Debug("Read client cache data ", cache.Name, " [", c.Latest.Class, "]")
 
-	return c.Latest
+	return info
 }
 
 func (c *Client) Cache() common.Cache[*Info] {
@@ -333,11 +334,6 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 	x, y, w, h = oGeom.X()+iGeom.X()-dx, oGeom.Y()+iGeom.Y()-dy, iGeom.Width()+dw, iGeom.Height()+dh
 
 	return
-}
-
-func (c *Client) IsNew() bool {
-	lifetime := time.Since(c.Created)
-	return lifetime < 1000*time.Millisecond
 }
 
 func IsSpecial(info *Info) bool {
