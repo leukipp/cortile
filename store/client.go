@@ -47,11 +47,12 @@ type Location struct {
 }
 
 type Dimensions struct {
-	Geometry Geometry          // Client window geometry
-	Hints    Hints             // Client window dimension hints
-	Extents  ewmh.FrameExtents // Client window geometry extents
-	AdjPos   bool              // Adjust position on move/resize
-	AdjSize  bool              // Adjust size on move/resize
+	Geometry   Geometry          // Client window geometry
+	Hints      Hints             // Client window dimension hints
+	Extents    ewmh.FrameExtents // Client window geometry extents
+	AdjPos     bool              // Position adjustments on move/resize
+	AdjSize    bool              // Size adjustments on move/resize
+	AdjRestore bool              // Disable adjustments on restore
 }
 
 type Geometry struct {
@@ -83,7 +84,6 @@ func CreateClient(w xproto.Window) *Client {
 	// Overwrite states, geometry and location
 	geom := cached.Dimensions.Geometry
 	geom.Rect = xrect.New(geom.X, geom.Y, geom.Width, geom.Height)
-	x, y, width, height := geom.Pieces()
 
 	c.Original.States = cached.States
 	c.Original.Dimensions.Geometry = geom
@@ -94,7 +94,7 @@ func CreateClient(w xproto.Window) *Client {
 	c.Latest.Location.ScreenNum = GetScreenNum(geom.Rect)
 
 	// Restore window position
-	c.MoveResize(x, y, width, height)
+	c.Restore(true)
 
 	return c
 }
@@ -273,37 +273,31 @@ func (c *Client) Cache() common.Cache[*Info] {
 
 func (c *Client) Restore(original bool) {
 
-	// Restore window decorations
-	motif.WmHintsSet(X, c.Win.Id, &c.Original.Dimensions.Hints.Motif)
-
 	// Restore window size limits
 	icccm.WmNormalHintsSet(X, c.Win.Id, &c.Original.Dimensions.Hints.Normal)
 
+	// Restore window decorations
+	motif.WmHintsSet(X, c.Win.Id, &c.Original.Dimensions.Hints.Motif)
+
 	// Restore window states
-	for _, state := range c.Latest.States {
-		if common.IsInList(state, []string{"_NET_WM_STATE_STICKY"}) {
-			ewmh.WmStateReq(X, c.Win.Id, 1, state)
-			ewmh.WmDesktopSet(X, c.Win.Id, ^uint(0))
-		}
+	if common.IsInList("_NET_WM_STATE_STICKY", c.Latest.States) {
+		ewmh.WmStateReq(X, c.Win.Id, 1, "_NET_WM_STATE_STICKY")
+		ewmh.WmDesktopSet(X, c.Win.Id, ^uint(0))
+		log.Error("Restore sticky:", c.Latest.Class)
 	}
 
-	// Obtain decoration adjustments
-	dw, dh := 0, 0
-	if !common.Config.WindowDecoration && motif.Decor(&c.Original.Dimensions.Hints.Motif) {
-		ext := c.Original.Dimensions.Extents
-		dw, dh = ext.Left+ext.Right, ext.Top+ext.Bottom
-	}
-	if c.Latest.Dimensions.AdjPos && c.Latest.Dimensions.AdjSize {
+	// Disable adjustments on restore
+	if c.Latest.Dimensions.AdjRestore {
 		c.Latest.Dimensions.AdjPos = false
 		c.Latest.Dimensions.AdjSize = false
 	}
 
-	// Move window to latest/original position considering decoration adjustments
+	// Move window to restore position
 	geom := c.Latest.Dimensions.Geometry
 	if original {
 		geom = c.Original.Dimensions.Geometry
 	}
-	c.MoveResize(geom.X, geom.Y, geom.Width-dw, geom.Height-dh)
+	c.MoveResize(geom.X, geom.Y, geom.Width, geom.Height)
 }
 
 func (c *Client) OuterGeometry() (x, y, w, h int) {
@@ -524,8 +518,9 @@ func GetInfo(w xproto.Window) *Info {
 			Top:    int(ext[2]),
 			Bottom: int(ext[3]),
 		},
-		AdjPos:  !common.IsZero(extNet) && (mhints.Decoration > 1 || nhints.WinGravity > 1) || !common.IsZero(extGtk),
-		AdjSize: !common.IsZero(extNet) || !common.IsZero(extGtk),
+		AdjPos:     !common.IsZero(extNet) && (mhints.Decoration > 1 || nhints.WinGravity > 1) || !common.IsZero(extGtk),
+		AdjSize:    !common.IsZero(extNet) || !common.IsZero(extGtk),
+		AdjRestore: !common.IsZero(extGtk),
 	}
 
 	return &Info{
