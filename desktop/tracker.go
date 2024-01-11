@@ -182,9 +182,14 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 			}
 			log.Debug("Client maximized handler fired [", c.Latest.Class, "]")
 
+			// Update client states
+			c.Update()
+
 			// Set fullscreen layout
+			c.UnMaximize()
 			tr.Action <- "layout_fullscreen"
 			c.Activate()
+
 			break
 		}
 	}
@@ -207,6 +212,7 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 
 			// Untrack client
 			tr.untrackWindow(c.Win.Id)
+
 			break
 		}
 	}
