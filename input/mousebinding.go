@@ -17,7 +17,7 @@ var (
 
 func BindMouse(tr *desktop.Tracker) {
 	poll(100, func() {
-		store.PointerUpdate(store.X)
+		pt := store.PointerUpdate(store.X)
 
 		// Update systray icon
 		ws := tr.ActiveWorkspace()
@@ -31,7 +31,7 @@ func BindMouse(tr *desktop.Tracker) {
 			hc := store.Corners[i]
 
 			wasActive := hc.Active
-			isActive := hc.IsActive(store.CurrentPointer)
+			isActive := hc.IsActive(pt)
 
 			if !wasActive && isActive {
 				log.Debug("Corner at position ", hc.Area, " is hot [", hc.Name, "]")

@@ -323,7 +323,7 @@ func DesktopDimensions(screenNum uint) (x, y, w, h int) {
 	return
 }
 
-func PointerUpdate(X *xgbutil.XUtil) {
+func PointerUpdate(X *xgbutil.XUtil) *common.Pointer {
 
 	// Update current pointer
 	previousButton := uint16(0)
@@ -337,6 +337,8 @@ func PointerUpdate(X *xgbutil.XUtil) {
 
 	// Update current screen
 	CurrentScreen = ScreenNumGet(CurrentPointer)
+
+	return CurrentPointer
 }
 
 func StateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {

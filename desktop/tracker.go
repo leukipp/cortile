@@ -293,7 +293,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 	if active && moved && !resized && !tr.Handler.ResizeClient.Active {
 		mg := ws.ActiveLayout().GetManager()
-		pt := store.PointerGet(store.X)
+		pt := store.PointerUpdate(store.X)
 
 		// Set client move event
 		if !tr.Handler.MoveClient.Active {
@@ -353,12 +353,11 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 	mg := ws.ActiveLayout().GetManager()
 	master := mg.IsMaster(c)
 	ws.RemoveClient(c)
+
+	// Tile current workspace
 	if ws.Enabled() {
 		ws.Tile()
 	}
-
-	// Reset screen swapping event
-	tr.Handler.SwapScreen.Active = false
 
 	// Update client desktop and screen
 	if !tr.isTrackable(c.Win.Id) {
@@ -368,16 +367,24 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 
 	// Add client to new workspace
 	ws = tr.ClientWorkspace(c)
+	if tr.Handler.SwapScreen.Active {
+		ws = tr.ActiveWorkspace()
+	}
 	mg = ws.ActiveLayout().GetManager()
 	ws.AddClient(c)
 	if master {
 		mg.MakeMaster(c)
 	}
+
+	// Tile new workspace
 	if ws.Enabled() {
 		ws.Tile()
 	} else {
 		c.Restore(false)
 	}
+
+	// Reset screen swapping event
+	tr.Handler.SwapScreen.Active = false
 }
 
 func (tr *Tracker) onStateUpdate(aname string) {
