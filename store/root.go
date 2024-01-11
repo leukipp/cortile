@@ -67,6 +67,7 @@ func InitRoot() {
 	root := xwindow.New(X, X.RootWin())
 	root.Listen(xproto.EventMaskSubstructureNotify | xproto.EventMaskPropertyChange)
 	xevent.PropertyNotifyFun(StateUpdate).Connect(X, root.Id)
+	PointerUpdate(X)
 }
 
 func Connected() bool {

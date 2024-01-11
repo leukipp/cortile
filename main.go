@@ -82,8 +82,9 @@ func run() {
 
 	// Show initial layout
 	ws := tracker.ActiveWorkspace()
-	ui.ShowLayout(ws)
-	ui.UpdateIcon(ws)
+	if !ws.Disabled() {
+		ui.ShowLayout(ws)
+	}
 
 	// Bind input events
 	input.BindSignal(tracker)
