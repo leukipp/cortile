@@ -12,9 +12,9 @@ import (
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/godbus/dbus/v5"
 
-	"github.com/leukipp/cortile/common"
-	"github.com/leukipp/cortile/desktop"
-	"github.com/leukipp/cortile/store"
+	"github.com/leukipp/cortile/v2/common"
+	"github.com/leukipp/cortile/v2/desktop"
+	"github.com/leukipp/cortile/v2/store"
 
 	log "github.com/sirupsen/logrus"
 )

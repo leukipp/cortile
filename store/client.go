@@ -19,7 +19,7 @@ import (
 	"github.com/BurntSushi/xgbutil/xrect"
 	"github.com/BurntSushi/xgbutil/xwindow"
 
-	"github.com/leukipp/cortile/common"
+	"github.com/leukipp/cortile/v2/common"
 
 	log "github.com/sirupsen/logrus"
 )

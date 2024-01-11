@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/leukipp/cortile/common"
-	"github.com/leukipp/cortile/desktop"
+	"github.com/leukipp/cortile/v2/common"
+	"github.com/leukipp/cortile/v2/desktop"
 
 	log "github.com/sirupsen/logrus"
 )

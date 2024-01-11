@@ -3,7 +3,7 @@ package store
 import (
 	"math"
 
-	"github.com/leukipp/cortile/common"
+	"github.com/leukipp/cortile/v2/common"
 
 	log "github.com/sirupsen/logrus"
 )

@@ -1,6 +1,6 @@
 package desktop
 
-import "github.com/leukipp/cortile/store"
+import "github.com/leukipp/cortile/v2/store"
 
 type Layout interface {
 	Apply()

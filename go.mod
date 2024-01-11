@@ -1,9 +1,9 @@
-module github.com/leukipp/cortile
+module github.com/leukipp/cortile/v2
 
-go 1.18
+go 1.20
 
 require (
-	fyne.io/systray v1.10.1-0.20231115130155-104f5ef7839e
+	fyne.io/systray v1.10.1-0.20240111184411-11c585fff98d
 	github.com/BurntSushi/freetype-go v0.0.0-20160129220410-b763ddbfe298
 	github.com/BurntSushi/toml v1.3.3-0.20240103001115-0e879cbdab10
 	github.com/BurntSushi/xgb v0.0.0-20210121224620-deaf085860bc
@@ -17,6 +17,5 @@ require (
 
 require (
 	github.com/BurntSushi/graphics-go v0.0.0-20160129215708-b43f31a4a966 // indirect
-	github.com/tevino/abool v1.2.0 // indirect
 	golang.org/x/sys v0.16.1-0.20240110015235-f69d32aa924f // indirect
 )

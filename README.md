@@ -176,7 +176,7 @@ Since the communication is asynchronous, it is necessary to listen to the outgoi
 Example files for sending commands and receiving states can be found in the [scripts](https://github.com/leukipp/cortile/tree/main/assets/scripts) folder.
 
 ## Development [![development](https://img.shields.io/github/go-mod/go-version/leukipp/cortile)](#development-)
-You need [go >= 1.18](https://go.dev/dl/) to compile cortile.
+You need [go >= 1.20](https://go.dev/dl/) to compile cortile.
 
 <details><summary>Install - go</summary><div>
 
@@ -199,8 +199,8 @@ sudo pacman -S go
 ### Option 2: Install go via archive download
 Download a binary release suitable for your system:
 ```bash
-cd /tmp/ && wget https://dl.google.com/go/go1.18.linux-amd64.tar.gz
-sudo tar -xvf go1.18.linux-amd64.tar.gz
+cd /tmp/ && wget https://dl.google.com/go/go1.20.linux-amd64.tar.gz
+sudo tar -xvf go1.20.linux-amd64.tar.gz
 sudo mv -fi go /usr/local
 ```
 

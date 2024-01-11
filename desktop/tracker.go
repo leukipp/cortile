@@ -10,8 +10,8 @@ import (
 	"github.com/BurntSushi/xgbutil/xevent"
 	"github.com/BurntSushi/xgbutil/xprop"
 
-	"github.com/leukipp/cortile/common"
-	"github.com/leukipp/cortile/store"
+	"github.com/leukipp/cortile/v2/common"
+	"github.com/leukipp/cortile/v2/store"
 
 	log "github.com/sirupsen/logrus"
 )

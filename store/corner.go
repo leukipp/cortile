@@ -2,7 +2,7 @@ package store
 
 import (
 	"github.com/BurntSushi/xgbutil/xrect"
-	"github.com/leukipp/cortile/common"
+	"github.com/leukipp/cortile/v2/common"
 )
 
 type Corner struct {

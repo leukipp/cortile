@@ -12,11 +12,11 @@ import (
 
 	"github.com/BurntSushi/xgbutil/xevent"
 
-	"github.com/leukipp/cortile/common"
-	"github.com/leukipp/cortile/desktop"
-	"github.com/leukipp/cortile/input"
-	"github.com/leukipp/cortile/store"
-	"github.com/leukipp/cortile/ui"
+	"github.com/leukipp/cortile/v2/common"
+	"github.com/leukipp/cortile/v2/desktop"
+	"github.com/leukipp/cortile/v2/input"
+	"github.com/leukipp/cortile/v2/store"
+	"github.com/leukipp/cortile/v2/ui"
 
 	log "github.com/sirupsen/logrus"
 )
