@@ -2,8 +2,8 @@
 
 ################################################################
 # Usage:                                                       #
-#   ./send.sh -s /tmp/cortile.sock -m '{"Action":"tile"}'      #
-#   ./send.sh -s /tmp/cortile.sock -m '{"Action":"untile"}'    #
+#   ./send.sh -s /tmp/cortile.sock -m '{"Action":"enable"}'    #
+#   ./send.sh -s /tmp/cortile.sock -m '{"Action":"disable"}'   #
 #   ./send.sh -s /tmp/cortile.sock -m '{"Action":"........"}'  #
 #   ./send.sh -s /tmp/cortile.sock -m '{"State":"workspaces"}' #
 #   ./send.sh -s /tmp/cortile.sock -m '{"State":"arguments"}'  #
