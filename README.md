@@ -29,15 +29,13 @@ The _go_ implementation ensures a fast and responsive system, where _multiple la
 ## Installation [![installation](https://img.shields.io/github/v/release/leukipp/cortile)](#installation-)
 Manually `download`/`extract` the latest binary file from [releases](https://github.com/leukipp/cortile/releases/latest) or use `wget`/`tar`:
 ```bash
-# download and extract binary file (e.g. amd64 build)
 wget -qO- $(wget -qO- https://api.github.com/repos/leukipp/cortile/releases/latest | \
 jq -r '.assets[] | select(.name | contains ("amd64.tar.gz")) | .browser_download_url') | \
 tar -xvz
 ```
 
-If you execute the binary, cortile will perform auto tiling until you stop it:
+Execute the binary and cortile will perform auto tiling until you stop it:
 ```bash
-# execute the binary file
 ./cortile
 ```
 Alternative installation methods can be found in the [development](#development-) section.
@@ -99,10 +97,10 @@ If some of them are already in use by your system, update the default values in 
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_5</kbd>        | Make the active window master            |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_6</kbd>        | Make the next window master              |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_4</kbd>        | Make the previous window master          |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Plus</kbd>        | Increase number of master windows        |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Minus</kbd>       | Decrease number of master windows        |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_Add</kbd>      | Increase number of maximum slave windows |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_Subtract</kbd> | Decrease number of maximum slave windows |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_Add</kbd>      | Increase number of master windows        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_Subtract</kbd> | Decrease number of master windows        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Plus</kbd>        | Increase number of maximum slave windows |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Minus</kbd>       | Decrease number of maximum slave windows |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_3</kbd>        | Increase proportion of master-slave area |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_1</kbd>        | Decrease proportion of master-slave area |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_2</kbd>        | Focus next window                        |
