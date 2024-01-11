@@ -154,17 +154,17 @@ master_make_next = "Control-Shift-KP_6"
 # Make the previous window a master (KP_4 = Num_4).
 master_make_previous = "Control-Shift-KP_4"
 
-# Increase the number of masters (Plus = +).
-master_increase = "Control-Shift-Plus"
+# Increase the number of masters (KP_Add = Num_+).
+master_increase = "Control-Shift-KP_Add"
 
-# Decrease the number of masters (Minus = -).
-master_decrease = "Control-Shift-Minus"
+# Decrease the number of masters (KP_Subtract = Num_-).
+master_decrease = "Control-Shift-KP_Subtract"
 
-# Increase the number of slaves (KP_Add = Num_+).
-slave_increase = "Control-Shift-KP_Add"
+# Increase the number of slaves (Plus = +).
+slave_increase = "Control-Shift-Plus"
 
-# Decrease the number of slaves (KP_Subtract = Num_-).
-slave_decrease = "Control-Shift-KP_Subtract"
+# Decrease the number of slaves (Minus = -).
+slave_decrease = "Control-Shift-Minus"
 
 # Increase the proportion of master-slave area (KP_3 = Num_3).
 proportion_increase = "Control-Shift-KP_3"
