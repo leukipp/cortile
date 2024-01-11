@@ -51,7 +51,9 @@ type Head struct {
 func InitRoot() {
 
 	// Connect to X server
-	X = Connect()
+	if !Connected() {
+		log.Fatal("Connection to X server failed: exit")
+	}
 
 	// Init root properties
 	DeskCount = NumberOfDesktopsGet(X)
@@ -67,45 +69,46 @@ func InitRoot() {
 	xevent.PropertyNotifyFun(StateUpdate).Connect(X, root.Id)
 }
 
-func Connect() *xgbutil.XUtil {
+func Connected() bool {
 	var err error
+	var connected bool
 
 	// Retry to connect
-	for i := 0; i < 10; i++ {
+	retry := 10
+	for i := 0; i <= retry && !connected; i++ {
 		if i > 0 {
-			log.Warn("Retry in 1 second...")
+			log.Warn("Retry in 1 second (", i, "/", retry, ")...")
 			time.Sleep(1000 * time.Millisecond)
 		}
 
 		// Connect to X server
 		X, err = xgbutil.NewConn()
 		if err != nil {
-			log.Error("Connection to X server failed ", err)
+			log.Error("Connection to X server failed: ", err)
 			continue
 		}
 
 		// Check EWMH compliance
 		wm, err := ewmh.GetEwmhWM(X)
 		if err != nil {
-			log.Error("Window manager is not EWMH compliant ", err)
+			log.Error("Window manager is not EWMH compliant: ", err)
 			continue
 		}
 
 		// Validate ROOT properties
 		_, err = ewmh.ClientListStackingGet(X)
 		if err != nil {
-			log.Error("Error retrieving ROOT properties ", err)
+			log.Error("Error retrieving ROOT properties: ", err)
 			continue
 		}
 
-		// Connection established
+		// Connection to X established
 		log.Info("Connected to X server [", wm, "]")
 		randr.Init(X.Conn())
-
-		break
+		connected = true
 	}
 
-	return X
+	return connected
 }
 
 func NumberOfDesktopsGet(X *xgbutil.XUtil) uint {
@@ -113,7 +116,7 @@ func NumberOfDesktopsGet(X *xgbutil.XUtil) uint {
 
 	// Validate number of desktops
 	if err != nil {
-		log.Error("Error retrieving number of desktops ", err)
+		log.Error("Error retrieving number of desktops: ", err)
 		return DeskCount
 	}
 
@@ -125,7 +128,7 @@ func CurrentDesktopGet(X *xgbutil.XUtil) uint {
 
 	// Validate current desktop
 	if err != nil {
-		log.Error("Error retrieving current desktop ", err)
+		log.Error("Error retrieving current desktop: ", err)
 		return CurrentDesk
 	}
 
@@ -137,7 +140,7 @@ func ActiveWindowGet(X *xgbutil.XUtil) xproto.Window {
 
 	// Validate active window
 	if err != nil {
-		log.Error("Error retrieving active window ", err)
+		log.Error("Error retrieving active window: ", err)
 		return ActiveWindow
 	}
 
@@ -149,7 +152,7 @@ func ClientListStackingGet(X *xgbutil.XUtil) []xproto.Window {
 
 	// Validate client list
 	if err != nil {
-		log.Error("Error retrieving client list ", err)
+		log.Error("Error retrieving client list: ", err)
 		return Windows
 	}
 
@@ -161,7 +164,7 @@ func DisplaysGet(X *xgbutil.XUtil) Heads {
 	// Get geometry of root window
 	rGeom, err := xwindow.New(X, X.RootWin()).Geometry()
 	if err != nil {
-		log.Fatal("Error retrieving root geometry ", err)
+		log.Fatal("Error retrieving root geometry: ", err)
 	}
 
 	// Get physical heads
@@ -203,13 +206,13 @@ func PhysicalHeadsGet(X *xgbutil.XUtil) []Head {
 	// Get screen resources
 	resources, err := randr.GetScreenResources(X.Conn(), X.RootWin()).Reply()
 	if err != nil {
-		log.Fatal("Error retrieving screen resources ", err)
+		log.Fatal("Error retrieving screen resources: ", err)
 	}
 
 	// Get primary output
 	primary, err := randr.GetOutputPrimary(X.Conn(), X.RootWin()).Reply()
 	if err != nil {
-		log.Fatal("Error retrieving primary screen ", err)
+		log.Fatal("Error retrieving primary screen: ", err)
 	}
 	hasPrimary := false
 
@@ -219,7 +222,7 @@ func PhysicalHeadsGet(X *xgbutil.XUtil) []Head {
 	for _, output := range resources.Outputs {
 		oinfo, err := randr.GetOutputInfo(X.Conn(), output, 0).Reply()
 		if err != nil {
-			log.Fatal("Error retrieving screen information ", err)
+			log.Fatal("Error retrieving screen information: ", err)
 		}
 
 		// Ignored screens (disconnected or off)
@@ -230,7 +233,7 @@ func PhysicalHeadsGet(X *xgbutil.XUtil) []Head {
 		// Get crtc information (cathode ray tube controller)
 		cinfo, err := randr.GetCrtcInfo(X.Conn(), oinfo.Crtc, 0).Reply()
 		if err != nil {
-			log.Fatal("Error retrieving screen crtc information ", err)
+			log.Fatal("Error retrieving screen crtc information: ", err)
 		}
 
 		// Append output heads
@@ -271,7 +274,7 @@ func PointerGet(X *xgbutil.XUtil) *common.Pointer {
 	// Get current pointer position and button states
 	p, err := xproto.QueryPointer(X.Conn(), X.RootWin()).Reply()
 	if err != nil {
-		log.Warn("Error retrieving pointer position ", err)
+		log.Warn("Error retrieving pointer position: ", err)
 		return CurrentPointer
 	}
 
@@ -340,7 +343,7 @@ func StateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	// Obtain atom name from property event
 	aname, err := xprop.AtomName(X, e.Atom)
 	if err != nil {
-		log.Warn("Error retrieving atom name ", err)
+		log.Warn("Error retrieving atom name: ", err)
 		return
 	}
 
