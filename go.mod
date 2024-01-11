@@ -3,20 +3,20 @@ module github.com/leukipp/cortile
 go 1.18
 
 require (
-	fyne.io/systray v1.10.1-0.20230722100817-88df1e0ffa9a
+	fyne.io/systray v1.10.1-0.20231115130155-104f5ef7839e
 	github.com/BurntSushi/freetype-go v0.0.0-20160129220410-b763ddbfe298
-	github.com/BurntSushi/toml v1.3.3-0.20230608112459-cfb3ca96c431
+	github.com/BurntSushi/toml v1.3.3-0.20240103001115-0e879cbdab10
 	github.com/BurntSushi/xgb v0.0.0-20210121224620-deaf085860bc
 	github.com/BurntSushi/xgbutil v0.0.0-20190907113008-ad855c713046
-	github.com/fsnotify/fsnotify v1.7.0
-	github.com/godbus/dbus/v5 v5.1.0
-	github.com/sirupsen/logrus v1.9.3
-	golang.org/x/exp v0.0.0-20231127185646-65229373498e
-	golang.org/x/image v0.14.0
+	github.com/fsnotify/fsnotify v1.7.1-0.20231207092505-c94b93b06027
+	github.com/godbus/dbus/v5 v5.1.1-0.20230522191255-76236955d466
+	github.com/sirupsen/logrus v1.9.4-0.20230606125235-dd1b4c2e81af
+	golang.org/x/exp v0.0.0-20240110193028-0dcbfd608b1e
+	golang.org/x/image v0.15.0
 )
 
 require (
 	github.com/BurntSushi/graphics-go v0.0.0-20160129215708-b43f31a4a966 // indirect
 	github.com/tevino/abool v1.2.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/sys v0.16.1-0.20240110015235-f69d32aa924f // indirect
 )
