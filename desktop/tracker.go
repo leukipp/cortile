@@ -367,7 +367,7 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 
 	// Add client to new workspace
 	ws = tr.ClientWorkspace(c)
-	if tr.Handler.SwapScreen.Active {
+	if tr.Handler.SwapScreen.Active && tr.ActiveWorkspace().Enabled() {
 		ws = tr.ActiveWorkspace()
 	}
 	mg = ws.ActiveLayout().GetManager()
