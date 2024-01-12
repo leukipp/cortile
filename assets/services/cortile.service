@@ -5,7 +5,6 @@ After=graphical.target
 [Service]
 ExecStart=/usr/local/bin/cortile
 Restart=always
-RestartSec=0
 
 [Install]
 WantedBy=default.target
