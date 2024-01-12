@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"encoding/json"
-	"io/ioutil"
 	"path/filepath"
 
 	"github.com/BurntSushi/xgb/xproto"
@@ -214,7 +213,7 @@ func (c *Client) Write() {
 
 	// Write client cache
 	path := filepath.Join(cache.Folder, cache.Name)
-	err = ioutil.WriteFile(path, data, 0644)
+	err = os.WriteFile(path, data, 0644)
 	if err != nil {
 		log.Warn("Error writing client cache [", c.Latest.Class, "]")
 		return
@@ -233,7 +232,7 @@ func (c *Client) Read() *Info {
 
 	// Read client info
 	path := filepath.Join(cache.Folder, cache.Name)
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		log.Info("No client cache found [", c.Latest.Class, "]")
 		return c.Latest

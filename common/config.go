@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"io/ioutil"
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
@@ -50,7 +49,7 @@ func InitConfig() {
 
 	// Write default config if not exists
 	if _, err := os.Stat(Args.Config); os.IsNotExist(err) {
-		ioutil.WriteFile(Args.Config, File.Toml, 0644)
+		os.WriteFile(Args.Config, File.Toml, 0644)
 	}
 
 	// Read config file into memory
