@@ -72,7 +72,7 @@ func items(tr *desktop.Tracker) {
 		go func() {
 			for {
 				<-version.ClickedCh
-				exec.Command("xdg-open", common.Build.Source).Start()
+				exec.Command("xdg-open", common.Build.Source+"/releases/tag/v"+common.Build.Latest).Start()
 			}
 		}()
 	} else {

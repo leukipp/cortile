@@ -21,7 +21,7 @@ type BuildInfo struct {
 	Version string // Build version
 	Commit  string // Build commit
 	Date    string // Build date
-	Source  string // Build summary
+	Source  string // Build source
 	Latest  string // Build latest
 	Summary string // Build summary
 }
@@ -83,7 +83,7 @@ func InitArgs(name, version, commit, date, source string) {
 func Latest(source string) string {
 
 	// Request latest version from github
-	res, err := http.Get(strings.Trim(source, "/") + "/releases/latest")
+	res, err := http.Get(source + "/releases/latest")
 	if err != nil {
 		return Build.Version
 	}
