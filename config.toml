@@ -17,36 +17,36 @@ tiling_gui = 1500
 
 # Menu entries in systray which shows the tiling state as icon ([] = disabled).
 # tiling_icon = [
-#   ['ACTION', 'TEXT'] = ['action strings from [keys] section', 'text to show in the menu'],
-#   ['', ''] = 'show a separator line',
+#   ["ACTION", "TEXT"] = ["action strings from [keys] section", "text to show in the menu"],
+#   ["", ""] = "show a separator line",
 # ]
 tiling_icon = [
-    ['toggle', 'Enabled'],
-    ['', ''],
-    ['master_increase', 'Add Master'],
-    ['master_decrease', 'Remove Master'],
-    ['', ''],
-    ['slave_increase', 'Add Slave'],
-    ['slave_decrease', 'Remove Slave'],
-    ['', ''],
-    ['exit', 'Exit'],
+    ["toggle", "Enabled"],
+    ["", ""],
+    ["master_increase", "Add Master"],
+    ["master_decrease", "Remove Master"],
+    ["", ""],
+    ["slave_increase", "Add Slave"],
+    ["slave_decrease", "Remove Slave"],
+    ["", ""],
+    ["exit", "Exit"],
 ]
 
 #################################### Window ####################################
 
-# Regex RE2 syntax to ignore windows (WM_CLASS string can be found by running 'xprop WM_CLASS').
+# Regex RE2 syntax to ignore windows (WM_CLASS string can be found by running `xprop WM_CLASS`).
 # window_ignore = [
-#   ['WM_CLASS', 'WM_NAME'] = ['ignore all windows with this class', 'but allow those with this name']
+#   ["WM_CLASS", "WM_NAME"] = ["ignore all windows with this class", "but allow those with this name"]
 # ]
 window_ignore = [
-    ['nm.*', ''],
-    ['gcr.*', ''],
-    ['polkit.*', ''],
-    ['wrapper.*', ''],
-    ['lightdm.*', ''],
-    ['blueman.*', ''],
-    ['pavucontrol.*', ''],
-    ['firefox.*', '.*Mozilla Firefox'],
+    ["nm.*", ""],
+    ["gcr.*", ""],
+    ["polkit.*", ""],
+    ["wrapper.*", ""],
+    ["lightdm.*", ""],
+    ["blueman.*", ""],
+    ["pavucontrol.*", ""],
+    ["firefox.*", ".*Mozilla Firefox"],
 ]
 
 # Maximum number of allowed master windows (0 - 5).
@@ -109,7 +109,7 @@ icon_background = [0, 0, 0, 0]
 icon_foreground = [255, 255, 255, 255]
 
 ################################################################################
-[keys]                            # Key symbols can be found by running 'xev'. #
+[keys]                            # Key symbols can be found by running `xev`. #
 ################################################################################
 
 # Enable tiling on the current screen (Home = Fn_Left).
