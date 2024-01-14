@@ -34,6 +34,11 @@ type Clients struct {
 	MaxAllowed int       // Currently maximum allowed clients
 }
 
+const (
+	Stacked uint8 = 1 // Flag for stacked (all) clients
+	Visible uint8 = 2 // Flag for visible (top) clients
+)
+
 func CreateManager(deskNum uint, screenNum uint) *Manager {
 	return &Manager{
 		DeskNum:   deskNum,
@@ -134,7 +139,7 @@ func (mg *Manager) SwapClient(c1 *Client, c2 *Client) {
 }
 
 func (mg *Manager) NextClient() *Client {
-	clients := mg.Clients(true)
+	clients := mg.Clients(Stacked)
 	last := len(clients) - 1
 
 	// Get next window
@@ -158,7 +163,7 @@ func (mg *Manager) NextClient() *Client {
 }
 
 func (mg *Manager) PreviousClient() *Client {
-	clients := mg.Clients(true)
+	clients := mg.Clients(Stacked)
 	last := len(clients) - 1
 
 	// Get previous window
@@ -321,11 +326,15 @@ func (mg *Manager) Visible(windows *Clients) []*Client {
 	return visible
 }
 
-func (mg *Manager) Clients(stacked bool) []*Client {
-	if stacked {
+func (mg *Manager) Clients(flag uint8) []*Client {
+	switch flag {
+	case Stacked:
 		return append(mg.Masters.Items, mg.Slaves.Items...)
+	case Visible:
+		return append(mg.Visible(mg.Masters), mg.Visible(mg.Slaves)...)
+	default:
+		return make([]*Client, 0)
 	}
-	return append(mg.Visible(mg.Masters), mg.Visible(mg.Slaves)...)
 }
 
 func (mg *Manager) updateMasters(cs []*Client) {

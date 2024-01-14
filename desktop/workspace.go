@@ -108,7 +108,7 @@ func (ws *Workspace) Tile() {
 
 func (ws *Workspace) Restore(flag uint8) {
 	mg := ws.ActiveLayout().GetManager()
-	clients := mg.Clients(true)
+	clients := mg.Clients(store.Stacked)
 
 	log.Info("Untile ", len(clients), " windows [workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
 

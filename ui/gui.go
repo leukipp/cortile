@@ -74,14 +74,16 @@ func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
 	mg := al.GetManager()
 
 	// Obtain visible clients
-	clients := mg.Clients(false)
+	clients := mg.Clients(store.Visible)
 	for _, c := range clients {
 		if c == nil {
 			continue
 		}
+
+		// Obtain fullscreen client
 		for _, state := range c.Latest.States {
 			if state == "_NET_WM_STATE_FULLSCREEN" || layout == "fullscreen" {
-				clients = mg.Visible(&store.Clients{Items: mg.Clients(true), MaxAllowed: 1})
+				clients = mg.Visible(&store.Clients{Items: mg.Clients(store.Stacked), MaxAllowed: 1})
 				break
 			}
 		}
@@ -103,6 +105,9 @@ func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
 
 	// Draw master and slave rectangle
 	for _, c := range clients {
+		if c == nil {
+			continue
+		}
 
 		// Calculate scaled client dimensions
 		cx, cy, cw, ch := c.OuterGeometry()

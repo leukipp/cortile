@@ -303,7 +303,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 		// Check if pointer hovers another client
 		tr.Handler.SwapClient.Active = false
-		for _, co := range mg.Clients(false) {
+		for _, co := range mg.Clients(store.Visible) {
 			if co == nil || c.Win.Id == co.Win.Id {
 				continue
 			}
@@ -455,7 +455,7 @@ func (tr *Tracker) onPointerUpdate(button uint16) {
 			// Unlock clients
 			ws := tr.ActiveWorkspace()
 			mg := ws.ActiveLayout().GetManager()
-			for _, c := range mg.Clients(false) {
+			for _, c := range mg.Clients(store.Visible) {
 				if c == nil {
 					continue
 				}

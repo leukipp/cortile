@@ -35,7 +35,7 @@ func CreateVerticalRightLayout(deskNum uint, screenNum uint) *VerticalLayout {
 }
 
 func (l *VerticalLayout) Apply() {
-	clients := l.Clients(true)
+	clients := l.Clients(store.Stacked)
 
 	dx, dy, dw, dh := store.DesktopDimensions(l.ScreenNum)
 	gap := common.Config.WindowGapSize

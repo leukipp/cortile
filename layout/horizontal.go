@@ -35,7 +35,7 @@ func CreateHorizontalBottomLayout(deskNum uint, screenNum uint) *HorizontalLayou
 }
 
 func (l *HorizontalLayout) Apply() {
-	clients := l.Clients(true)
+	clients := l.Clients(store.Stacked)
 
 	dx, dy, dw, dh := store.DesktopDimensions(l.ScreenNum)
 	gap := common.Config.WindowGapSize
