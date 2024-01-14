@@ -422,6 +422,7 @@ func (tr *Tracker) onStateUpdate(aname string) {
 }
 
 func (tr *Tracker) onPointerUpdate(button uint16) {
+	release := button == 0
 
 	// Reset timer
 	if tr.Handler.Timer != nil {
@@ -430,7 +431,7 @@ func (tr *Tracker) onPointerUpdate(button uint16) {
 
 	// Wait on button release
 	var t time.Duration = 0
-	if button == 0 {
+	if release {
 		t = 50
 	}
 
@@ -463,7 +464,9 @@ func (tr *Tracker) onPointerUpdate(button uint16) {
 			}
 
 			// Tile workspace
-			tr.ActiveWorkspace().Tile()
+			if release {
+				tr.ActiveWorkspace().Tile()
+			}
 		}
 	})
 }
