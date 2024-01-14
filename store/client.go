@@ -28,6 +28,7 @@ type Client struct {
 	Created  time.Time       // Internal client creation time
 	Locked   bool            // Internal client move/resize lock
 	Original *Info           // Original client window information
+	Cached   *Info           // Cached client window information
 	Latest   *Info           // Latest client window information
 }
 
@@ -67,14 +68,20 @@ type Hints struct {
 	Motif  motif.Hints       // Client window decoration hints
 }
 
+const (
+	Original uint8 = 1 // Flag to restore original info
+	Cached   uint8 = 2 // Flag to restore cached info
+	Latest   uint8 = 3 // Flag to restore latest info
+)
+
 func CreateClient(w xproto.Window) *Client {
-	i := GetInfo(w)
 	c := &Client{
 		Win:      xwindow.New(X, w),
 		Created:  time.Now(),
 		Locked:   false,
-		Original: i,
-		Latest:   i,
+		Original: GetInfo(w),
+		Cached:   GetInfo(w),
+		Latest:   GetInfo(w),
 	}
 
 	// Read client geometry from cache
@@ -84,16 +91,16 @@ func CreateClient(w xproto.Window) *Client {
 	geom := cached.Dimensions.Geometry
 	geom.Rect = xrect.New(geom.X, geom.Y, geom.Width, geom.Height)
 
-	c.Original.States = cached.States
-	c.Original.Dimensions.Geometry = geom
-	c.Original.Location.ScreenNum = GetScreenNum(geom.Rect)
+	c.Cached.States = cached.States
+	c.Cached.Dimensions.Geometry = geom
+	c.Cached.Location.ScreenNum = GetScreenNum(geom.Rect)
 
 	c.Latest.States = cached.States
 	c.Latest.Dimensions.Geometry = geom
 	c.Latest.Location.ScreenNum = GetScreenNum(geom.Rect)
 
 	// Restore window position
-	c.Restore(true)
+	c.Restore(Cached)
 
 	return c
 }
@@ -116,7 +123,7 @@ func (c *Client) UnDecorate() {
 	}
 
 	// Remove window decorations
-	mhints := c.Original.Dimensions.Hints.Motif
+	mhints := c.Cached.Dimensions.Hints.Motif
 	mhints.Flags |= motif.HintDecorations
 	mhints.Decoration = motif.DecorationNone
 	motif.WmHintsSet(X, c.Win.Id, &mhints)
@@ -175,7 +182,7 @@ func (c *Client) LimitDimensions(w, h int) {
 	dw, dh := ext.Left+ext.Right, ext.Top+ext.Bottom
 
 	// Set window size limits
-	nhints := c.Original.Dimensions.Hints.Normal
+	nhints := c.Cached.Dimensions.Hints.Normal
 	nhints.Flags |= icccm.SizeHintPMinSize
 	nhints.MinWidth = uint(w - dw)
 	nhints.MinHeight = uint(h - dh)
@@ -270,13 +277,16 @@ func (c *Client) Cache() common.Cache[*Info] {
 	return cache
 }
 
-func (c *Client) Restore(original bool) {
+func (c *Client) Restore(flag uint8) {
+	if flag == Latest {
+		c.Update()
+	}
 
 	// Restore window size limits
-	icccm.WmNormalHintsSet(X, c.Win.Id, &c.Original.Dimensions.Hints.Normal)
+	icccm.WmNormalHintsSet(X, c.Win.Id, &c.Cached.Dimensions.Hints.Normal)
 
 	// Restore window decorations
-	motif.WmHintsSet(X, c.Win.Id, &c.Original.Dimensions.Hints.Motif)
+	motif.WmHintsSet(X, c.Win.Id, &c.Cached.Dimensions.Hints.Motif)
 
 	// Restore window states
 	if common.IsInList("_NET_WM_STATE_STICKY", c.Latest.States) {
@@ -292,8 +302,11 @@ func (c *Client) Restore(original bool) {
 
 	// Move window to restore position
 	geom := c.Latest.Dimensions.Geometry
-	if original {
+	switch flag {
+	case Original:
 		geom = c.Original.Dimensions.Geometry
+	case Cached:
+		geom = c.Cached.Dimensions.Geometry
 	}
 	c.MoveResize(geom.X, geom.Y, geom.Width, geom.Height)
 }

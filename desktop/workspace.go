@@ -106,7 +106,7 @@ func (ws *Workspace) Tile() {
 	ws.ActiveLayout().Apply()
 }
 
-func (ws *Workspace) Restore(original bool) {
+func (ws *Workspace) Restore(flag uint8) {
 	mg := ws.ActiveLayout().GetManager()
 	clients := mg.Clients(true)
 
@@ -117,7 +117,7 @@ func (ws *Workspace) Restore(original bool) {
 		if c == nil {
 			continue
 		}
-		c.Restore(original)
+		c.Restore(flag)
 	}
 }
 
