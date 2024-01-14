@@ -393,6 +393,12 @@ func IsSpecial(info *Info) bool {
 
 func IsIgnored(info *Info) bool {
 
+	// Check invalid windows
+	if len(info.Class) == 0 {
+		log.Info("Ignore invalid window")
+		return true
+	}
+
 	// Check ignored windows
 	for _, s := range common.Config.WindowIgnore {
 		conf_class := s[0]
