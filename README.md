@@ -267,6 +267,7 @@ However, it`s still possible that you may encounter problems during usage.
 
 Windows:
 - It's recommended to disable all build-in window snapping features (snap to other windows, snap to screen borders).
+- Automatic panel detection may not work under some window managers, use the `edge_margin` property to adjust for additional margins.
 - Particularly in GNOME based desktop environments, window displacements or resizing issues may occur.
 - Sticky windows are unstable and may cause unwanted layout modifications during workspace changes.
 
