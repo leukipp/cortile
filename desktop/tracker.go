@@ -433,6 +433,11 @@ func (tr *Tracker) onPointerUpdate(button uint16) {
 	var t time.Duration = 0
 	if release {
 		t = 50
+	} else {
+		tr.Handler.ResizeClient.Active = false
+		tr.Handler.MoveClient.Active = false
+		tr.Handler.SwapClient.Active = false
+		tr.Handler.SwapScreen.Active = false
 	}
 
 	// Wait for structure events
