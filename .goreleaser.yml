@@ -2,6 +2,7 @@ builds:
   - dir: .
     goos:
       - linux
+      - freebsd
     goarch:
       - 386
       - amd64
