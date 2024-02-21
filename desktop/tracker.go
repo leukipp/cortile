@@ -237,13 +237,10 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 
 	// Check size changes
 	resized := cw != pw || ch != ph
-	directions := &store.Directions{Top: cy != py, Right: cx == px && cw != pw, Bottom: cy == py && ch != ph, Left: cx != px}
+	moved := (cx != px || cy != py) && (cw == pw && ch == ph)
+	added := time.Since(c.Created) < 1000*time.Millisecond
 
-	// Check window lifetime
-	lifetime := time.Since(c.Created)
-	added := lifetime < 1000*time.Millisecond
-
-	if resized && !tr.Handler.MoveClient.Active {
+	if resized && !moved && !tr.Handler.MoveClient.Active {
 		al := ws.ActiveLayout()
 
 		// Set client resize event
@@ -252,6 +249,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		}
 		log.Debug("Client resize handler fired [", c.Latest.Class, "]")
 
+		// Check window lifetime
 		if !added {
 
 			// Set client resize lock
@@ -261,7 +259,13 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 			}
 
 			// Update proportions
-			al.UpdateProportions(c, directions)
+			dir := &store.Directions{
+				Top:    cy != py,
+				Right:  cx == px && cw != pw,
+				Bottom: cy == py && ch != ph,
+				Left:   cx != px,
+			}
+			al.UpdateProportions(c, dir)
 		}
 
 		// Tile workspace
@@ -275,18 +279,18 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 		return
 	}
 
-	// Previous position
+	// Previous dimensions
 	pGeom := c.Latest.Dimensions.Geometry
 	px, py, pw, ph := pGeom.Pieces()
 
-	// Current position
+	// Current dimensions
 	cGeom, err := c.Win.DecorGeometry()
 	if err != nil {
 		return
 	}
 	cx, cy, cw, ch := cGeom.Pieces()
 
-	// Check position change
+	// Check position changes
 	moved := cx != px || cy != py
 	resized := cw != pw || ch != ph
 	active := c.Win.Id == store.ActiveWindow
@@ -433,11 +437,6 @@ func (tr *Tracker) onPointerUpdate(button uint16) {
 	var t time.Duration = 0
 	if release {
 		t = 50
-	} else {
-		tr.Handler.ResizeClient.Active = false
-		tr.Handler.MoveClient.Active = false
-		tr.Handler.SwapClient.Active = false
-		tr.Handler.SwapScreen.Active = false
 	}
 
 	// Wait for structure events
