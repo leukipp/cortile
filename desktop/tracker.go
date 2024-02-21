@@ -391,6 +391,19 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 	tr.Handler.SwapScreen.Active = false
 }
 
+func (tr *Tracker) unlockClients() {
+	ws := tr.ActiveWorkspace()
+	mg := ws.ActiveLayout().GetManager()
+
+	// Unlock clients
+	for _, c := range mg.Clients(store.Stacked) {
+		if c == nil {
+			continue
+		}
+		c.UnLock()
+	}
+}
+
 func (tr *Tracker) onStateUpdate(aname string) {
 	viewportChanged := common.IsInList(aname, []string{"_NET_NUMBER_OF_DESKTOPS", "_NET_DESKTOP_LAYOUT", "_NET_DESKTOP_GEOMETRY", "_NET_DESKTOP_VIEWPORT", "_NET_WORKAREA"})
 	clientsChanged := common.IsInList(aname, []string{"_NET_CLIENT_LIST_STACKING", "_NET_ACTIVE_WINDOW"})
@@ -415,13 +428,18 @@ func (tr *Tracker) onStateUpdate(aname string) {
 
 	// Viewport changed or clients changed
 	if viewportChanged || clientsChanged {
-		tr.Update()
 
 		// Deactivate handlers
 		tr.Handler.ResizeClient.Active = false
 		tr.Handler.MoveClient.Active = false
 		tr.Handler.SwapClient.Active = false
 		tr.Handler.SwapScreen.Active = false
+
+		// Unlock clients
+		tr.unlockClients()
+
+		// Update trackable clients
+		tr.Update()
 	}
 }
 
@@ -458,14 +476,7 @@ func (tr *Tracker) onPointerUpdate(button uint16) {
 			tr.Handler.ResizeClient.Active = false
 
 			// Unlock clients
-			ws := tr.ActiveWorkspace()
-			mg := ws.ActiveLayout().GetManager()
-			for _, c := range mg.Clients(store.Visible) {
-				if c == nil {
-					continue
-				}
-				c.UnLock()
-			}
+			tr.unlockClients()
 
 			// Tile workspace
 			if release {
