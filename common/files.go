@@ -1,6 +1,8 @@
 package common
 
-var File FileData
+var (
+	File FileData // Embedded file bytes
+)
 
 type FileData struct {
 	Toml []byte // Default config file

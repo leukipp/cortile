@@ -1,10 +1,11 @@
 package input
 
 import (
-	"encoding/json"
 	"net"
 	"os"
 	"strings"
+
+	"encoding/json"
 
 	"github.com/leukipp/cortile/v2/common"
 	"github.com/leukipp/cortile/v2/desktop"
