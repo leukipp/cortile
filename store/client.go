@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"regexp"
@@ -84,7 +85,7 @@ func CreateClient(w xproto.Window) *Client {
 		Latest:   GetInfo(w),
 	}
 
-	// Read client geometry from cache
+	// Read client from cache
 	cached := c.Read()
 
 	// Overwrite states, geometry and location
@@ -95,12 +96,12 @@ func CreateClient(w xproto.Window) *Client {
 	c.Cached.Dimensions.Geometry = geom
 	c.Cached.Location.ScreenNum = GetScreenNum(geom.Rect)
 
-	c.Latest.States = cached.States
-	c.Latest.Dimensions.Geometry = geom
-	c.Latest.Location.ScreenNum = GetScreenNum(geom.Rect)
-
 	// Restore window position
 	c.Restore(Cached)
+
+	c.Latest.States = c.Cached.States
+	c.Latest.Dimensions.Geometry = c.Cached.Dimensions.Geometry
+	c.Latest.Location.ScreenNum = c.Cached.Location.ScreenNum
 
 	return c
 }
@@ -198,23 +199,20 @@ func (c *Client) Update() {
 
 	// Update client info
 	c.Latest = info
-
-	// Write client cache
-	c.Write()
 }
 
 func (c *Client) Write() {
-	if common.Args.Cache == "0" {
+	if !common.CacheEnabled() {
 		return
 	}
 
 	// Obtain cache object
 	cache := c.Cache()
 
-	// Parse client info
+	// Parse client cache
 	data, err := json.MarshalIndent(cache.Data, "", "  ")
 	if err != nil {
-		log.Warn("Error parsing client info [", c.Latest.Class, "]")
+		log.Warn("Error parsing client cache [", c.Latest.Class, "]")
 		return
 	}
 
@@ -230,14 +228,14 @@ func (c *Client) Write() {
 }
 
 func (c *Client) Read() *Info {
-	if common.Args.Cache == "0" {
+	if !common.CacheEnabled() {
 		return c.Latest
 	}
 
 	// Obtain cache object
 	cache := c.Cache()
 
-	// Read client info
+	// Read client cache
 	path := filepath.Join(cache.Folder, cache.Name)
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
@@ -245,9 +243,9 @@ func (c *Client) Read() *Info {
 		return c.Latest
 	}
 
-	// Parse client info
-	var info *Info
-	err = json.Unmarshal([]byte(data), &info)
+	// Parse client cache
+	cached := &Info{}
+	err = json.Unmarshal([]byte(data), &cached)
 	if err != nil {
 		log.Warn("Error reading client cache [", c.Latest.Class, "]")
 		return c.Latest
@@ -255,22 +253,23 @@ func (c *Client) Read() *Info {
 
 	log.Debug("Read client cache data ", cache.Name, " [", c.Latest.Class, "]")
 
-	return info
+	return cached
 }
 
 func (c *Client) Cache() common.Cache[*Info] {
+	name := c.Latest.Class
+	hash := fmt.Sprintf("%s-%d", c.Latest.Class, c.Latest.Location.DeskNum)
 
 	// Create client cache folder
-	folder := filepath.Join(common.Args.Cache, "clients", c.Latest.Class)
+	folder := filepath.Join(common.Args.Cache, Displays.Name, "clients", name)
 	if _, err := os.Stat(folder); os.IsNotExist(err) {
-		os.MkdirAll(folder, 0700)
+		os.MkdirAll(folder, 0755)
 	}
 
 	// Create client cache object
-	hash := common.Hash(c.Latest.Class)
 	cache := common.Cache[*Info]{
 		Folder: folder,
-		Name:   hash + ".json",
+		Name:   common.Hash(hash) + ".json",
 		Data:   c.Latest,
 	}
 
@@ -289,7 +288,7 @@ func (c *Client) Restore(flag uint8) {
 	motif.WmHintsSet(X, c.Win.Id, &c.Cached.Dimensions.Hints.Motif)
 
 	// Restore window states
-	if common.IsInList("_NET_WM_STATE_STICKY", c.Latest.States) {
+	if common.IsInList("_NET_WM_STATE_STICKY", c.Cached.States) {
 		ewmh.WmStateReq(X, c.Win.Id, 1, "_NET_WM_STATE_STICKY")
 		ewmh.WmDesktopSet(X, c.Win.Id, ^uint(0))
 	}

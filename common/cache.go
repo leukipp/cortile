@@ -2,6 +2,7 @@ package common
 
 import (
 	"os"
+	"strings"
 
 	"path/filepath"
 
@@ -15,14 +16,14 @@ type Cache[T any] struct {
 }
 
 func InitCache() {
-	if Args.Cache == "0" {
+	if !CacheEnabled() {
 		return
 	}
 
 	// Create cache folder if not exists
 	cacheFolderPath := Args.Cache
 	if _, err := os.Stat(cacheFolderPath); os.IsNotExist(err) {
-		os.MkdirAll(cacheFolderPath, 0700)
+		os.MkdirAll(cacheFolderPath, 0755)
 	}
 }
 
@@ -35,4 +36,9 @@ func CacheFolderPath(name string) string {
 	}
 
 	return filepath.Join(userCacheDir, name)
+}
+
+func CacheEnabled() bool {
+	arg := strings.ToLower(strings.TrimSpace(Args.Cache))
+	return !IsInList(arg, []string{"", "0", "off", "false", "disabled"})
 }

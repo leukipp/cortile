@@ -26,7 +26,6 @@ type Configuration struct {
 	WindowSlavesMax   int               `toml:"window_slaves_max"`   // Maximum number of allowed slaves
 	WindowGapSize     int               `toml:"window_gap_size"`     // Gap size between windows
 	WindowDecoration  bool              `toml:"window_decoration"`   // Show window decorations
-	Proportion        float64           `toml:"proportion"`          // Master-slave area initial proportion
 	ProportionStep    float64           `toml:"proportion_step"`     // Master-slave area step size proportion
 	ProportionMin     float64           `toml:"proportion_min"`      // Window size minimum proportion
 	EdgeMargin        []int             `toml:"edge_margin"`         // Margin values of tiling area
@@ -44,7 +43,7 @@ func InitConfig() {
 	// Create config folder if not exists
 	configFolderPath := filepath.Dir(Args.Config)
 	if _, err := os.Stat(configFolderPath); os.IsNotExist(err) {
-		os.MkdirAll(configFolderPath, 0700)
+		os.MkdirAll(configFolderPath, 0755)
 	}
 
 	// Write default config if not exists

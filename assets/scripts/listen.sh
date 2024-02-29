@@ -58,16 +58,16 @@ while json=$(nc -Ulw 1 $sockout | jq -r "."); do
 
     case ${type} in
         "Action")
-            desk=$(echo $data | jq -r ".Desk")
-            screen=$(echo $data | jq -r ".Screen")
+            desk=$(echo $data | jq -r ".DeskNum")
+            screen=$(echo $data | jq -r ".ScreenNum")
 
             # EXAMPLE: retrieve action event on active workspace
             echo "Received 'action' with name '$name' on 'desktop = $desk' and 'screen = $screen'";;
         "State")
             case ${name} in
                 "workspaces")
-                    desk=$(echo $data | jq -r ".Desk")
-                    screen=$(echo $data | jq -r ".Screen")                    
+                    desk=$(echo $data | jq -r ".DeskNum")
+                    screen=$(echo $data | jq -r ".ScreenNum")                    
                     workspace=$(echo $data | jq -r ".Workspaces[] | select((.Location.DeskNum==$desk) and (.Location.ScreenNum==$screen))")
                     enabled=$(echo $workspace | jq -r ".TilingEnabled")
                     layout=$(echo $workspace | jq -r ".ActiveLayoutNum")

@@ -10,26 +10,35 @@ import (
 )
 
 type FullscreenLayout struct {
-	*store.Manager        // Layout store manager
 	Name           string // Layout name
+	*store.Manager        // Layout store manager
 }
 
-func CreateFullscreenLayout(deskNum uint, screenNum uint) *FullscreenLayout {
-	return &FullscreenLayout{
-		Manager: store.CreateManager(deskNum, screenNum),
+func CreateFullscreenLayout(loc store.Location) *FullscreenLayout {
+	layout := &FullscreenLayout{
 		Name:    "fullscreen",
+		Manager: store.CreateManager(loc),
 	}
+	layout.Reset()
+	return layout
+}
+
+func (l *FullscreenLayout) Reset() {
+	mg := store.CreateManager(*l.Location)
+
+	// Reset layout proportions
+	l.Manager.Proportions = mg.Proportions
 }
 
 func (l *FullscreenLayout) Apply() {
 	clients := l.Clients(store.Stacked)
 
-	dx, dy, dw, dh := store.DesktopDimensions(l.ScreenNum)
+	dx, dy, dw, dh := store.DesktopDimensions(l.Location.ScreenNum)
 	gap := common.Config.WindowGapSize
 
 	csize := len(clients)
 
-	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.DeskNum, "-", l.ScreenNum, "]")
+	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.Location.DeskNum, "-", l.Location.ScreenNum, "]")
 
 	// Main area layout
 	for _, c := range clients {
@@ -45,7 +54,7 @@ func (l *FullscreenLayout) Apply() {
 }
 
 func (l *FullscreenLayout) UpdateProportions(c *store.Client, d *store.Directions) {
-	l.Proportions.MasterSlave = []float64{1.0}
+	l.Reset()
 }
 
 func (l *FullscreenLayout) GetManager() *store.Manager {

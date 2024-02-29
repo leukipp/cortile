@@ -10,34 +10,55 @@ import (
 )
 
 type VerticalLayout struct {
-	*store.Manager        // Layout store manager
 	Name           string // Layout name
+	*store.Manager        // Layout store manager
 }
 
-func CreateVerticalLeftLayout(deskNum uint, screenNum uint) *VerticalLayout {
-	manager := store.CreateManager(deskNum, screenNum)
-	manager.SetProportions(manager.Proportions.MasterSlave, common.Config.Proportion, 0, 1)
-
-	return &VerticalLayout{
-		Manager: manager,
+func CreateVerticalLeftLayout(loc store.Location) *VerticalLayout {
+	layout := &VerticalLayout{
 		Name:    "vertical-left",
+		Manager: store.CreateManager(loc),
 	}
+	layout.Reset()
+	return layout
 }
 
-func CreateVerticalRightLayout(deskNum uint, screenNum uint) *VerticalLayout {
-	manager := store.CreateManager(deskNum, screenNum)
-	manager.SetProportions(manager.Proportions.MasterSlave, common.Config.Proportion, 1, 0)
-
-	return &VerticalLayout{
-		Manager: manager,
+func CreateVerticalRightLayout(loc store.Location) *VerticalLayout {
+	layout := &VerticalLayout{
 		Name:    "vertical-right",
+		Manager: store.CreateManager(loc),
 	}
+	layout.Reset()
+	return layout
+}
+
+func (l *VerticalLayout) Reset() {
+	mg := store.CreateManager(*l.Location)
+
+	// Reset number of masters
+	for l.Masters.MaxAllowed < mg.Masters.MaxAllowed {
+		l.IncreaseMaster()
+	}
+	for l.Masters.MaxAllowed > mg.Masters.MaxAllowed {
+		l.DecreaseMaster()
+	}
+
+	// Reset number of slaves
+	for l.Slaves.MaxAllowed < mg.Slaves.MaxAllowed {
+		l.IncreaseSlave()
+	}
+	for l.Slaves.MaxAllowed > mg.Slaves.MaxAllowed {
+		l.DecreaseSlave()
+	}
+
+	// Reset layout proportions
+	l.Manager.Proportions = mg.Proportions
 }
 
 func (l *VerticalLayout) Apply() {
 	clients := l.Clients(store.Stacked)
 
-	dx, dy, dw, dh := store.DesktopDimensions(l.ScreenNum)
+	dx, dy, dw, dh := store.DesktopDimensions(l.Location.ScreenNum)
 	gap := common.Config.WindowGapSize
 
 	mmax := l.Masters.MaxAllowed
@@ -48,11 +69,11 @@ func (l *VerticalLayout) Apply() {
 	csize := len(clients)
 
 	mx := dx
-	mw := int(math.Round(float64(dw) * l.Proportions.MasterSlave[0]))
+	mw := int(math.Round(float64(dw) * l.Proportions.MasterSlave[2][0]))
 	sx := mx + mw
 	sw := dw - mw
 
-	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.DeskNum, "-", l.ScreenNum, "]")
+	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.Location.DeskNum, "-", l.Location.ScreenNum, "]")
 
 	// Swap values if master is on right
 	if l.Name == "vertical-right" && csize > mmax {
@@ -95,7 +116,7 @@ func (l *VerticalLayout) Apply() {
 			c.LimitDimensions(minw, minh)
 
 			// Move and resize master
-			mp := l.Proportions.MasterMaster[i%msize]
+			mp := l.Proportions.MasterMaster[msize][i%msize]
 			mh := int(math.Round(float64(dh-(msize+1)*gap) * mp))
 			c.MoveResize(mx+gap, my, mw-2*gap, mh)
 
@@ -133,7 +154,7 @@ func (l *VerticalLayout) Apply() {
 			c.LimitDimensions(minw, minh)
 
 			// Move and resize slave
-			sp := l.Proportions.SlaveSlave[i%ssize]
+			sp := l.Proportions.SlaveSlave[ssize][i%ssize]
 			sh := int(math.Round(float64(dh-(ssize+1)*gap) * sp))
 			c.MoveResize(sx, sy, sw-gap, sh)
 
@@ -144,7 +165,7 @@ func (l *VerticalLayout) Apply() {
 }
 
 func (l *VerticalLayout) UpdateProportions(c *store.Client, d *store.Directions) {
-	_, _, dw, dh := store.DesktopDimensions(l.ScreenNum)
+	_, _, dw, dh := store.DesktopDimensions(l.Location.ScreenNum)
 	_, _, cw, ch := c.OuterGeometry()
 
 	gap := common.Config.WindowGapSize
@@ -178,14 +199,14 @@ func (l *VerticalLayout) UpdateProportions(c *store.Client, d *store.Directions)
 
 		// Set master-slave proportions
 		if d.Left {
-			l.Manager.SetProportions(l.Proportions.MasterSlave, px, idxms, idxms^1)
+			l.Manager.SetProportions(l.Proportions.MasterSlave[2], px, idxms, idxms^1)
 		}
 
 		// Set master-master proportions
 		if d.Top {
-			l.Manager.SetProportions(l.Proportions.MasterMaster, py, idxmm, idxmm-1)
+			l.Manager.SetProportions(l.Proportions.MasterMaster[msize], py, idxmm, idxmm-1)
 		} else if d.Bottom {
-			l.Manager.SetProportions(l.Proportions.MasterMaster, py, idxmm, idxmm+1)
+			l.Manager.SetProportions(l.Proportions.MasterMaster[msize], py, idxmm, idxmm+1)
 		}
 	} else {
 		px := float64(cw+gap) / float64(dw)
@@ -194,14 +215,14 @@ func (l *VerticalLayout) UpdateProportions(c *store.Client, d *store.Directions)
 
 		// Set master-slave proportions
 		if d.Right {
-			l.Manager.SetProportions(l.Proportions.MasterSlave, px, idxms, idxms^1)
+			l.Manager.SetProportions(l.Proportions.MasterSlave[2], px, idxms, idxms^1)
 		}
 
 		// Set slave-slave proportions
 		if d.Top {
-			l.Manager.SetProportions(l.Proportions.SlaveSlave, py, idxss, idxss-1)
+			l.Manager.SetProportions(l.Proportions.SlaveSlave[ssize], py, idxss, idxss-1)
 		} else if d.Bottom {
-			l.Manager.SetProportions(l.Proportions.SlaveSlave, py, idxss, idxss+1)
+			l.Manager.SetProportions(l.Proportions.SlaveSlave[ssize], py, idxss, idxss+1)
 		}
 	}
 }

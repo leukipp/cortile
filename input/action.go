@@ -86,6 +86,8 @@ func Execute(action string, mod string, tr *desktop.Tracker) bool {
 			success = NextWindow(tr, ws)
 		case "window_previous":
 			success = PreviousWindow(tr, ws)
+		case "reset":
+			success = Reset(tr, ws)
 		case "exit":
 			success = Exit(tr)
 		default:
@@ -98,13 +100,13 @@ func Execute(action string, mod string, tr *desktop.Tracker) bool {
 
 		// Notify socket
 		type Action struct {
-			Desk   uint
-			Screen uint
+			DeskNum   uint
+			ScreenNum uint
 		}
 		NotifySocket(Message[Action]{
 			Type: "Action",
 			Name: action,
-			Data: Action{Desk: ws.Location.DeskNum, Screen: ws.Location.ScreenNum},
+			Data: Action{DeskNum: ws.Location.DeskNum, ScreenNum: ws.Location.ScreenNum},
 		})
 	}
 
@@ -128,14 +130,14 @@ func Query(state string, tr *desktop.Tracker) bool {
 	switch state {
 	case "workspaces":
 		type Workspaces struct {
-			Desk       uint
-			Screen     uint
+			DeskNum    uint
+			ScreenNum  uint
 			Workspaces []*desktop.Workspace
 		}
 		NotifySocket(Message[Workspaces]{
 			Type: "State",
 			Name: state,
-			Data: Workspaces{Desk: ws.Location.DeskNum, Screen: ws.Location.ScreenNum, Workspaces: maps.Values(tr.Workspaces)},
+			Data: Workspaces{DeskNum: ws.Location.DeskNum, ScreenNum: ws.Location.ScreenNum, Workspaces: maps.Values(tr.Workspaces)},
 		})
 		success = true
 	case "arguments":
@@ -453,7 +455,22 @@ func PreviousWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	return true
 }
 
+func Reset(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.Disabled() {
+		return false
+	}
+	ws.ResetLayouts()
+	ws.Tile()
+
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
+
+	return true
+}
+
 func Exit(tr *desktop.Tracker) bool {
+	tr.Write()
+
 	for _, ws := range tr.Workspaces {
 		if ws.Disabled() {
 			continue

@@ -1,6 +1,13 @@
 package desktop
 
 import (
+	"fmt"
+	"math"
+	"os"
+
+	"encoding/json"
+	"path/filepath"
+
 	"github.com/leukipp/cortile/v2/common"
 	"github.com/leukipp/cortile/v2/layout"
 	"github.com/leukipp/cortile/v2/store"
@@ -9,6 +16,7 @@ import (
 )
 
 type Workspace struct {
+	Name            string         // Workspace location name
 	Location        store.Location // Desktop and screen location
 	Layouts         []Layout       // List of available layouts
 	TilingEnabled   bool           // Tiling is enabled or not
@@ -23,20 +31,37 @@ func CreateWorkspaces() map[store.Location]*Workspace {
 			location := store.Location{DeskNum: deskNum, ScreenNum: screenNum}
 
 			// Create layouts for each desktop and screen
-			layouts := CreateLayouts(location)
 			ws := &Workspace{
+				Name:            fmt.Sprintf("workspace-%d-%d", location.DeskNum, location.ScreenNum),
 				Location:        location,
-				Layouts:         layouts,
+				Layouts:         CreateLayouts(location),
 				TilingEnabled:   common.Config.TilingEnabled,
 				ActiveLayoutNum: 0,
 			}
 
-			// Activate default layout
-			for i, l := range layouts {
+			// Set default layout
+			for i, l := range ws.Layouts {
 				if l.GetName() == common.Config.TilingLayout {
 					ws.SetLayout(uint(i))
 				}
 			}
+
+			// Read workspace from cache
+			cached := ws.Read()
+
+			// Overwrite default layout, proportions and tiling state
+			ws.SetLayout(cached.ActiveLayoutNum)
+			for _, l := range ws.Layouts {
+				for _, cl := range cached.Layouts {
+					if l.GetName() == cl.GetName() {
+						mg, cmg := l.GetManager(), cl.GetManager()
+						mg.Masters.MaxAllowed = int(math.Min(float64(cmg.Masters.MaxAllowed), float64(common.Config.WindowMastersMax)))
+						mg.Slaves.MaxAllowed = int(math.Min(float64(cmg.Slaves.MaxAllowed), float64(common.Config.WindowSlavesMax)))
+						mg.Proportions = cmg.Proportions
+					}
+				}
+			}
+			ws.TilingEnabled = cached.TilingEnabled
 
 			// Map location to workspace
 			workspaces[location] = ws
@@ -46,13 +71,19 @@ func CreateWorkspaces() map[store.Location]*Workspace {
 	return workspaces
 }
 
-func CreateLayouts(l store.Location) []Layout {
+func CreateLayouts(loc store.Location) []Layout {
 	return []Layout{
-		layout.CreateFullscreenLayout(l.DeskNum, l.ScreenNum),
-		layout.CreateVerticalLeftLayout(l.DeskNum, l.ScreenNum),
-		layout.CreateVerticalRightLayout(l.DeskNum, l.ScreenNum),
-		layout.CreateHorizontalTopLayout(l.DeskNum, l.ScreenNum),
-		layout.CreateHorizontalBottomLayout(l.DeskNum, l.ScreenNum),
+		layout.CreateFullscreenLayout(loc),
+		layout.CreateVerticalLeftLayout(loc),
+		layout.CreateVerticalRightLayout(loc),
+		layout.CreateHorizontalTopLayout(loc),
+		layout.CreateHorizontalBottomLayout(loc),
+	}
+}
+
+func (ws *Workspace) ResetLayouts() {
+	for _, l := range ws.Layouts {
+		l.Reset()
 	}
 }
 
@@ -110,7 +141,7 @@ func (ws *Workspace) Restore(flag uint8) {
 	mg := ws.ActiveLayout().GetManager()
 	clients := mg.Clients(store.Stacked)
 
-	log.Info("Untile ", len(clients), " windows [workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
+	log.Info("Untile ", len(clients), " windows [", ws.Name, "]")
 
 	// Restore client dimensions
 	for _, c := range clients {
@@ -138,7 +169,82 @@ func (ws *Workspace) Enabled() bool {
 
 func (ws *Workspace) Disabled() bool {
 	if ws == nil {
-		return false
+		return true
 	}
 	return !ws.TilingEnabled
+}
+
+func (ws *Workspace) Write() {
+	if !common.CacheEnabled() {
+		return
+	}
+
+	// Obtain cache object
+	cache := ws.Cache()
+
+	// Parse workspace cache
+	data, err := json.MarshalIndent(cache.Data, "", "  ")
+	if err != nil {
+		log.Warn("Error parsing workspace cache [", ws.Name, "]")
+		return
+	}
+
+	// Write workspace cache
+	path := filepath.Join(cache.Folder, cache.Name)
+	err = os.WriteFile(path, data, 0644)
+	if err != nil {
+		log.Warn("Error writing workspace cache [", ws.Name, "]")
+		return
+	}
+
+	log.Debug("Write workspace cache data ", cache.Name, " [", ws.Name, "]")
+}
+
+func (ws *Workspace) Read() *Workspace {
+	if !common.CacheEnabled() {
+		return ws
+	}
+
+	// Obtain cache object
+	cache := ws.Cache()
+
+	// Read workspace cache
+	path := filepath.Join(cache.Folder, cache.Name)
+	data, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		log.Info("No workspace cache found [", ws.Name, "]")
+		return ws
+	}
+
+	// Parse workspace cache
+	cached := &Workspace{Layouts: CreateLayouts(ws.Location)}
+	err = json.Unmarshal([]byte(data), &cached)
+	if err != nil {
+		log.Warn("Error reading workspace cache [", ws.Name, "]")
+		return ws
+	}
+
+	log.Debug("Read workspace cache data ", cache.Name, " [", ws.Name, "]")
+
+	return cached
+}
+
+func (ws *Workspace) Cache() common.Cache[*Workspace] {
+	name := fmt.Sprintf("workspace-%d", ws.Location.DeskNum)
+	hash := fmt.Sprintf("%s-%d", name, ws.Location.ScreenNum)
+
+	// Create workspace cache folder
+	folder := filepath.Join(common.Args.Cache, store.Displays.Name, "workspaces", name)
+	if _, err := os.Stat(folder); os.IsNotExist(err) {
+		os.MkdirAll(folder, 0755)
+	}
+
+	// Create workspace cache object
+	cache := common.Cache[*Workspace]{
+		Folder: folder,
+		Name:   common.Hash(hash) + ".json",
+		Data:   ws,
+	}
+
+	return cache
 }

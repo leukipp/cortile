@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/leukipp/cortile/v2/common"
@@ -9,9 +10,9 @@ import (
 )
 
 type Manager struct {
-	DeskNum     uint         // Index of managed desktop
-	ScreenNum   uint         // Index of managed screen
-	Proportions *Proportions // Layout proportions of window clients
+	Name        string       // Manager name with window clients
+	Location    *Location    // Manager workspace and screen location
+	Proportions *Proportions // Manager proportions of window clients
 	Masters     *Clients     // List of master window clients
 	Slaves      *Clients     // List of slave window clients
 }
@@ -24,13 +25,13 @@ type Directions struct {
 }
 
 type Proportions struct {
-	MasterSlave  []float64 // Master-slave proportions
-	MasterMaster []float64 // Master-master proportions
-	SlaveSlave   []float64 // Slave-slave proportions
+	MasterSlave  map[int][]float64 // Master-slave proportions
+	MasterMaster map[int][]float64 // Master-master proportions
+	SlaveSlave   map[int][]float64 // Slave-slave proportions
 }
 
 type Clients struct {
-	Items      []*Client // List of stored window clients
+	Items      []*Client `json:"-"` // List of stored window clients
 	MaxAllowed int       // Currently maximum allowed clients
 }
 
@@ -39,10 +40,10 @@ const (
 	Visible uint8 = 2 // Flag for visible (top) clients
 )
 
-func CreateManager(deskNum uint, screenNum uint) *Manager {
+func CreateManager(loc Location) *Manager {
 	return &Manager{
-		DeskNum:   deskNum,
-		ScreenNum: screenNum,
+		Name:     fmt.Sprintf("manager-%d-%d", loc.DeskNum, loc.ScreenNum),
+		Location: &loc,
 		Proportions: &Proportions{
 			MasterSlave:  calcProportions(2),
 			MasterMaster: calcProportions(common.Config.WindowMastersMax),
@@ -50,11 +51,11 @@ func CreateManager(deskNum uint, screenNum uint) *Manager {
 		},
 		Masters: &Clients{
 			Items:      make([]*Client, 0),
-			MaxAllowed: int(math.Min(float64(common.Config.WindowMastersMax), 1)),
+			MaxAllowed: 1,
 		},
 		Slaves: &Clients{
 			Items:      make([]*Client, 0),
-			MaxAllowed: int(math.Max(float64(common.Config.WindowSlavesMax), 1)),
+			MaxAllowed: common.Config.WindowSlavesMax,
 		},
 	}
 }
@@ -64,39 +65,39 @@ func (mg *Manager) AddClient(c *Client) {
 		return
 	}
 
-	log.Debug("Add client for manager [", c.Latest.Class, ", workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
+	log.Debug("Add client for manager [", c.Latest.Class, ", ", mg.Name, "]")
 
 	// Fill up master area then slave area
 	if len(mg.Masters.Items) < mg.Masters.MaxAllowed {
-		mg.updateMasters(addClient(mg.Masters.Items, c))
+		mg.Masters.Items = addClient(mg.Masters.Items, c)
 	} else {
-		mg.updateSlaves(addClient(mg.Slaves.Items, c))
+		mg.Slaves.Items = addClient(mg.Slaves.Items, c)
 	}
 }
 
 func (mg *Manager) RemoveClient(c *Client) {
-	log.Debug("Remove client from manager [", c.Latest.Class, ", workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
+	log.Debug("Remove client from manager [", c.Latest.Class, ", ", mg.Name, "]")
 
 	// Remove master window
 	mi := mg.Index(mg.Masters, c)
 	if mi >= 0 {
 		if len(mg.Slaves.Items) > 0 {
 			mg.SwapClient(mg.Masters.Items[mi], mg.Slaves.Items[0])
-			mg.updateSlaves(mg.Slaves.Items[1:])
+			mg.Slaves.Items = mg.Slaves.Items[1:]
 		} else {
-			mg.updateMasters(removeClient(mg.Masters.Items, mi))
+			mg.Masters.Items = removeClient(mg.Masters.Items, mi)
 		}
 	}
 
 	// Remove slave window
 	si := mg.Index(mg.Slaves, c)
 	if si >= 0 {
-		mg.updateSlaves(removeClient(mg.Slaves.Items, si))
+		mg.Slaves.Items = removeClient(mg.Slaves.Items, si)
 	}
 }
 
 func (mg *Manager) MakeMaster(c *Client) {
-	log.Info("Make window master [", c.Latest.Class, ", workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
+	log.Info("Make window master [", c.Latest.Class, ", ", mg.Name, "]")
 
 	// Swap window with first master
 	if len(mg.Masters.Items) > 0 {
@@ -105,7 +106,7 @@ func (mg *Manager) MakeMaster(c *Client) {
 }
 
 func (mg *Manager) SwapClient(c1 *Client, c2 *Client) {
-	log.Info("Swap clients [", c1.Latest.Class, "-", c2.Latest.Class, ", workspace-", mg.DeskNum, "-", mg.ScreenNum, "]")
+	log.Info("Swap clients [", c1.Latest.Class, "-", c2.Latest.Class, ", ", mg.Name, "]")
 
 	mIndex1 := mg.Index(mg.Masters, c1)
 	sIndex1 := mg.Index(mg.Slaves, c1)
@@ -191,8 +192,8 @@ func (mg *Manager) IncreaseMaster() {
 	// Increase master area
 	if len(mg.Slaves.Items) > 1 && mg.Masters.MaxAllowed < common.Config.WindowMastersMax {
 		mg.Masters.MaxAllowed += 1
-		mg.updateMasters(append(mg.Masters.Items, mg.Slaves.Items[0]))
-		mg.updateSlaves(mg.Slaves.Items[1:])
+		mg.Masters.Items = append(mg.Masters.Items, mg.Slaves.Items[0])
+		mg.Slaves.Items = mg.Slaves.Items[1:]
 	}
 
 	log.Info("Increase masters to ", mg.Masters.MaxAllowed)
@@ -203,8 +204,8 @@ func (mg *Manager) DecreaseMaster() {
 	// Decrease master area
 	if len(mg.Masters.Items) > 0 {
 		mg.Masters.MaxAllowed -= 1
-		mg.updateSlaves(append([]*Client{mg.Masters.Items[len(mg.Masters.Items)-1]}, mg.Slaves.Items...))
-		mg.updateMasters(mg.Masters.Items[:len(mg.Masters.Items)-1])
+		mg.Slaves.Items = append([]*Client{mg.Masters.Items[len(mg.Masters.Items)-1]}, mg.Slaves.Items...)
+		mg.Masters.Items = mg.Masters.Items[:len(mg.Masters.Items)-1]
 	}
 
 	log.Info("Decrease masters to ", mg.Masters.MaxAllowed)
@@ -215,7 +216,6 @@ func (mg *Manager) IncreaseSlave() {
 	// Increase slave area
 	if mg.Slaves.MaxAllowed < common.Config.WindowSlavesMax {
 		mg.Slaves.MaxAllowed += 1
-		mg.updateSlaves(mg.Slaves.Items)
 	}
 
 	log.Info("Increase slaves to ", mg.Slaves.MaxAllowed)
@@ -226,7 +226,6 @@ func (mg *Manager) DecreaseSlave() {
 	// Decrease slave area
 	if mg.Slaves.MaxAllowed > 1 {
 		mg.Slaves.MaxAllowed -= 1
-		mg.updateSlaves(mg.Slaves.Items)
 	}
 
 	log.Info("Decrease slaves to ", mg.Slaves.MaxAllowed)
@@ -234,18 +233,18 @@ func (mg *Manager) DecreaseSlave() {
 
 func (mg *Manager) IncreaseProportion() {
 	precision := 1.0 / common.Config.ProportionStep
+	proportion := math.Round(mg.Proportions.MasterSlave[2][0]*precision)/precision + common.Config.ProportionStep
 
 	// Increase root proportion
-	proportion := math.Round(mg.Proportions.MasterSlave[0]*precision)/precision + common.Config.ProportionStep
-	mg.SetProportions(mg.Proportions.MasterSlave, proportion, 0, 1)
+	mg.SetProportions(mg.Proportions.MasterSlave[2], proportion, 0, 1)
 }
 
 func (mg *Manager) DecreaseProportion() {
 	precision := 1.0 / common.Config.ProportionStep
+	proportion := math.Round(mg.Proportions.MasterSlave[2][0]*precision)/precision - common.Config.ProportionStep
 
 	// Decrease root proportion
-	proportion := math.Round(mg.Proportions.MasterSlave[0]*precision)/precision - common.Config.ProportionStep
-	mg.SetProportions(mg.Proportions.MasterSlave, proportion, 0, 1)
+	mg.SetProportions(mg.Proportions.MasterSlave[2], proportion, 0, 1)
 }
 
 func (mg *Manager) SetProportions(ps []float64, pi float64, i int, j int) bool {
@@ -332,19 +331,8 @@ func (mg *Manager) Clients(flag uint8) []*Client {
 		return append(mg.Masters.Items, mg.Slaves.Items...)
 	case Visible:
 		return append(mg.Visible(mg.Masters), mg.Visible(mg.Slaves)...)
-	default:
-		return make([]*Client, 0)
 	}
-}
-
-func (mg *Manager) updateMasters(cs []*Client) {
-	mg.Masters.Items = mg.Ordered(&Clients{Items: cs})
-	mg.Proportions.MasterMaster = calcProportions(int(math.Min(float64(len(mg.Masters.Items)), float64(mg.Masters.MaxAllowed))))
-}
-
-func (mg *Manager) updateSlaves(cs []*Client) {
-	mg.Slaves.Items = mg.Ordered(&Clients{Items: cs})
-	mg.Proportions.SlaveSlave = calcProportions(int(math.Min(float64(len(mg.Slaves.Items)), float64(mg.Slaves.MaxAllowed))))
+	return make([]*Client, 0)
 }
 
 func addClient(cs []*Client, c *Client) []*Client {
@@ -355,10 +343,12 @@ func removeClient(cs []*Client, i int) []*Client {
 	return append(cs[:i], cs[i+1:]...)
 }
 
-func calcProportions(n int) []float64 {
-	p := []float64{}
-	for i := 0; i < n; i++ {
-		p = append(p, 1.0/float64(n))
+func calcProportions(n int) map[int][]float64 {
+	p := map[int][]float64{}
+	for i := 1; i <= n; i++ {
+		for j := 1; j <= i; j++ {
+			p[i] = append(p[i], 1.0/float64(i))
+		}
 	}
 	return p
 }

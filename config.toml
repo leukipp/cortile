@@ -29,6 +29,7 @@ tiling_icon = [
     ["slave_increase", "Add Slave"],
     ["slave_decrease", "Remove Slave"],
     ["", ""],
+    ["reset", "Reset"],
     ["exit", "Exit"],
 ]
 
@@ -62,9 +63,6 @@ window_gap_size = 10
 window_decoration = true
 
 ################################## Proportion ##################################
-
-# Initial division of master-slave area (0.0 - 1.0).
-proportion = 0.6
 
 # How much to increment/decrement master-slave area (0.0 - 1.0).
 proportion_step = 0.05
@@ -123,6 +121,9 @@ restore = "Control-Shift-R"
 
 # Toggle between enable and disable on the current screen.
 toggle = "Control-Shift-T"
+
+# Reset layouts to default proportions (BackSpace = Delete_Left)
+reset = "Control-Shift-BackSpace"
 
 # Cycles through next layouts (Next = Page_Down).
 cycle_next = "Control-Shift-Next"

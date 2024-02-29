@@ -37,10 +37,10 @@ type HandlerClient struct {
 	Target *store.Client // Stores hovered client
 }
 
-func CreateTracker(ws map[store.Location]*Workspace) *Tracker {
+func CreateTracker() *Tracker {
 	tr := Tracker{
 		Clients:    make(map[xproto.Window]*store.Client),
-		Workspaces: ws,
+		Workspaces: CreateWorkspaces(),
 		Action:     make(chan string),
 		Handler: &Handler{
 			ResizeClient: &HandlerClient{},
@@ -53,11 +53,6 @@ func CreateTracker(ws map[store.Location]*Workspace) *Tracker {
 	// Attach to root events
 	store.OnStateUpdate(tr.onStateUpdate)
 	store.OnPointerUpdate(tr.onPointerUpdate)
-
-	// Populate clients on startup
-	if common.Config.TilingEnabled {
-		tr.Update()
-	}
 
 	return &tr
 }
@@ -102,6 +97,19 @@ func (tr *Tracker) Reset() {
 	tr.Workspaces = CreateWorkspaces()
 }
 
+func (tr *Tracker) Write() {
+
+	// Write client cache
+	for _, c := range tr.Clients {
+		c.Write()
+	}
+
+	// Write workspace cache
+	for _, ws := range tr.Workspaces {
+		ws.Write()
+	}
+}
+
 func (tr *Tracker) ActiveWorkspace() *Workspace {
 	location := store.Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
 
@@ -124,6 +132,19 @@ func (tr *Tracker) ClientWorkspace(c *store.Client) *Workspace {
 	}
 
 	return ws
+}
+
+func (tr *Tracker) unlockClients() {
+	ws := tr.ActiveWorkspace()
+	mg := ws.ActiveLayout().GetManager()
+
+	// Unlock clients
+	for _, c := range mg.Clients(store.Stacked) {
+		if c == nil {
+			continue
+		}
+		c.UnLock()
+	}
 }
 
 func (tr *Tracker) trackWindow(w xproto.Window) bool {
@@ -391,19 +412,6 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 	tr.Handler.SwapScreen.Active = false
 }
 
-func (tr *Tracker) unlockClients() {
-	ws := tr.ActiveWorkspace()
-	mg := ws.ActiveLayout().GetManager()
-
-	// Unlock clients
-	for _, c := range mg.Clients(store.Stacked) {
-		if c == nil {
-			continue
-		}
-		c.UnLock()
-	}
-}
-
 func (tr *Tracker) onStateUpdate(aname string) {
 	viewportChanged := common.IsInList(aname, []string{"_NET_NUMBER_OF_DESKTOPS", "_NET_DESKTOP_LAYOUT", "_NET_DESKTOP_GEOMETRY", "_NET_DESKTOP_VIEWPORT", "_NET_WORKAREA"})
 	clientsChanged := common.IsInList(aname, []string{"_NET_CLIENT_LIST_STACKING", "_NET_ACTIVE_WINDOW"})
@@ -441,6 +449,9 @@ func (tr *Tracker) onStateUpdate(aname string) {
 		// Update trackable clients
 		tr.Update()
 	}
+
+	// Write client and workspace cache
+	tr.Write()
 }
 
 func (tr *Tracker) onPointerUpdate(button uint16) {

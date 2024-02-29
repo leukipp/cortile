@@ -1,6 +1,9 @@
 package store
 
 import (
+	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/BurntSushi/xgb/randr"
@@ -37,6 +40,7 @@ var (
 )
 
 type Heads struct {
+	Name     string // Unique heads name (display summary)
 	Screens  []Head // Screen dimensions (full display size)
 	Desktops []Head // Desktop dimensions (desktop without panels)
 }
@@ -161,6 +165,7 @@ func ClientListStackingGet(X *xgbutil.XUtil) []xproto.Window {
 }
 
 func DisplaysGet(X *xgbutil.XUtil) Heads {
+	var name string
 
 	// Get geometry of root window
 	rGeom, err := xwindow.New(X, X.RootWin()).Geometry()
@@ -172,13 +177,20 @@ func DisplaysGet(X *xgbutil.XUtil) Heads {
 	screens := PhysicalHeadsGet(X)
 	desktops := PhysicalHeadsGet(X)
 
-	// Get bounding rects
-	rects := []xrect.Rect{}
+	// Get heads name
+	for _, screen := range screens {
+		x, y, w, h := screen.Rect.Pieces()
+		name += fmt.Sprintf("%s-%d-%d-%d-%d-%d-", screen.Name, screen.Id, x, y, w, h)
+	}
+	name = strings.Trim(name, "-")
+
+	// Get desktop rects
+	dRects := []xrect.Rect{}
 	for _, desktop := range desktops {
-		rects = append(rects, desktop.Rect)
+		dRects = append(dRects, desktop.Rect)
 	}
 
-	// Adjust desktop geometry
+	// Account for desktop panels
 	for _, win := range Windows {
 		strut, err := ewmh.WmStrutPartialGet(X, win)
 		if err != nil {
@@ -186,7 +198,8 @@ func DisplaysGet(X *xgbutil.XUtil) Heads {
 		}
 
 		// Apply in place struts to desktop
-		xrect.ApplyStrut(rects, uint(rGeom.Width()), uint(rGeom.Height()),
+		_, _, w, h := rGeom.Pieces()
+		xrect.ApplyStrut(dRects, uint(w), uint(h),
 			strut.Left, strut.Right, strut.Top, strut.Bottom,
 			strut.LeftStartY, strut.LeftEndY, strut.RightStartY, strut.RightEndY,
 			strut.TopStartX, strut.TopEndX, strut.BottomStartX, strut.BottomEndX,
@@ -199,7 +212,11 @@ func DisplaysGet(X *xgbutil.XUtil) Heads {
 	log.Info("Screens ", screens)
 	log.Info("Desktops ", desktops)
 
-	return Heads{Screens: screens, Desktops: desktops}
+	return Heads{
+		Name:     name,
+		Screens:  screens,
+		Desktops: desktops,
+	}
 }
 
 func PhysicalHeadsGet(X *xgbutil.XUtil) []Head {
@@ -266,6 +283,11 @@ func PhysicalHeadsGet(X *xgbutil.XUtil) []Head {
 			}
 		}
 	}
+
+	// Sort output heads
+	sort.Slice(heads, func(i, j int) bool {
+		return heads[i].X() < heads[j].X()
+	})
 
 	return heads
 }

@@ -3,6 +3,7 @@ package desktop
 import "github.com/leukipp/cortile/v2/store"
 
 type Layout interface {
+	Reset()
 	Apply()
 	AddClient(c *store.Client)
 	RemoveClient(c *store.Client)

@@ -76,11 +76,8 @@ func run() {
 		}
 	}()
 
-	// Create workspaces and tracker
-	workspaces := desktop.CreateWorkspaces()
-	tracker := desktop.CreateTracker(workspaces)
-
-	// Show initial layout
+	// Create tracker
+	tracker := desktop.CreateTracker()
 	ws := tracker.ActiveWorkspace()
 	if !ws.Disabled() {
 		ui.ShowLayout(ws)
