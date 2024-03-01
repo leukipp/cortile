@@ -1,4 +1,10 @@
 # Cortile
+![build](https://img.shields.io/github/actions/workflow/status/leukipp/cortile/release.yaml?style=flat-square)
+![date](https://img.shields.io/github/release-date/leukipp/cortile?style=flat-square)
+![downloads](https://img.shields.io/github/downloads/leukipp/cortile/total?style=flat-square)
+![os](https://img.shields.io/badge/os-%20linux%20|%20freebsd%20-blue?style=flat-square)
+![platform](https://img.shields.io/badge/platform-%20amd64%20|%20arm64%20|%20armv6%20|%20386%20-teal?style=flat-square)
+
 <a href="https://github.com/leukipp/cortile"><img src="https://raw.githubusercontent.com/leukipp/cortile/main/assets/images/logo.png" style="display:inline-block;width:95px;margin-right:10px;" align="left"/></a>
 
 Linux auto tiling manager with hot corner support for Openbox, Fluxbox, IceWM, Xfwm, KWin, Marco, Muffin, Mutter and other [EWMH](https://en.wikipedia.org/wiki/Extended_Window_Manager_Hints#List_of_window_managers_that_support_Extended_Window_Manager_Hints) compliant window managers using the [X11](https://en.wikipedia.org/wiki/X_Window_System) window system.
@@ -8,17 +14,18 @@ Simply keep your current window manager and install **cortile on top** of it.
 Once enabled, the tiling manager will handle _resizing_ and _positioning_ of _existing_ and _new_ windows.
 <br clear="left"/>
 
-## Features [![features](https://img.shields.io/github/stars/leukipp/cortile)](#features-)
+## Features [![features](https://img.shields.io/github/stars/leukipp/cortile?style=flat-square)](#features-)
 - [x] Workspace based tiling.
 - [x] Auto detection of panels.
 - [x] User interface for tiling mode.
 - [x] Systray icon indicator and menu.
-- [x] Keyboard, hot corner and systray events.
+- [x] Keyboard, hot corner and systray bindings.
 - [x] Vertical, horizontal and fullscreen mode.
 - [x] Socket communication commands.
-- [x] Adjustment of layout proportions.
+- [x] Remember layout proportions.
 - [x] Floating and sticky windows.
 - [x] Drag & drop window swap.
+- [x] Workplace aware layouts.
 - [x] Multi monitor support.
 
 Support for **keyboard and mouse** events sets cortile apart from other tiling solutions.
@@ -26,19 +33,21 @@ The _go_ implementation ensures a fast and responsive system, where _multiple la
 
 [![demo](https://raw.githubusercontent.com/leukipp/cortile/main/assets/images/demo.gif)](https://github.com/leukipp/cortile/blob/main/assets/images/demo.gif)
 
-## Installation [![installation](https://img.shields.io/github/v/release/leukipp/cortile)](#installation-)
+## Installation [![installation](https://img.shields.io/github/v/release/leukipp/cortile?style=flat-square)](#installation-)
 Manually `download`/`extract` the latest binary file from [releases](https://github.com/leukipp/cortile/releases/latest) or use `wget`/`tar`:
 ```bash
 wget -qO- $(wget -qO- https://api.github.com/repos/leukipp/cortile/releases/latest | \
-jq -r '.assets[] | select(.name | contains ("amd64.tar.gz")) | .browser_download_url') | \
+jq -r '.assets[] | select(.name | contains ("linux_amd64.tar.gz")) | .browser_download_url') | \
 tar -xvz
 ```
 
-Execute the binary and cortile will perform auto tiling until you stop it:
+Run the binary file and cortile will automatically tile until you stop it:
 ```bash
 ./cortile
 ```
-Alternative installation methods can be found in the [development](#development-) section.
+Another installation method can be found in the [development](#development-) section.
+The latest official release is published on GitHub.
+Versions distributed via package managers are community supported and may be outdated.
 
 ### Service
 To enable auto tiling on startup, you can run cortile as a service after the graphical user interface has been loaded.
@@ -64,7 +73,7 @@ The layouts are based on the master-slave concept, where one side of the screen 
 - `vertical-left:` split the screen vertically, master area on the left.
 - `horizontal-top:` split the screen horizontally, master area on the top.
 - `horizontal-bottom:` split the screen horizontally, master area on the bottom.
-- `fullscreen:` single window in fullscreen mode.
+- `fullscreen:` single window that fills the entire tiling area.
   
 The number of windows per side and the occupied space can be changed dynamically.
 Adjustments to window sizes are considered to be proportion changes of the underlying layout.
@@ -72,7 +81,7 @@ Adjustments to window sizes are considered to be proportion changes of the under
 Windows placed on the master side are static and the layout will only change as long the space is not fully occupied.
 Once the master area is full, the slave area is used, where the layout changes dynamically based on available space and configuration settings.
 
-## Configuration [![configuration](https://img.shields.io/github/release-date/leukipp/cortile)](#configuration-)
+## Configuration [![configuration](https://img.shields.io/badge/file-%20config.toml%20-gold?style=flat-square)](#configuration-)
 The configuration file is located at `~/.config/cortile/config.toml` (or `XDG_CONFIG_HOME`) and is created with default values during the first startup.
 Additional information about individual entries can be found in the comments section of the [config.toml](https://github.com/leukipp/cortile/blob/main/config.toml) file.
 
@@ -87,6 +96,7 @@ If some of them are already in use by your system, update the default values in 
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>End</kbd>         | Disable tiling on the current screen     |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>           | Disable tiling and restore windows       |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>           | Toggle between enable and disable        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>BackSpace</kbd>   | Reset layouts to default proportions     |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Next</kbd>        | Cycle through next layouts               |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Prior</kbd>       | Cycle through previous layouts           |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>       | Activate fullscreen layout               |
@@ -128,7 +138,7 @@ Common pointer shortcuts used in some environments:
 - Resize window: <kbd>Alt</kbd>+<kbd>Right-Click</kbd>.
 - Maximize window: <kbd>Alt</kbd>+<kbd>Double-Click</kbd>.
 
-## Communication [![communication](https://img.shields.io/badge/platform-%20amd64%20|%20arm64%20|%20armv6%20|%20386%20-lightgrey)](#communication-)
+## Communication [![communication](https://img.shields.io/badge/api-%20unix%20domain%20sockets%20-darksalmon?style=flat-square)](#communication-)
 External processes may communicate directly with cortile using [unix domain sockets](https://en.wikipedia.org/wiki/Unix_domain_socket).
 The sock parameter (`-sock /tmp/cortile.sock`) defines a path for a socket file that can be used to exchange data between processes.
 Internally however, two socket files are used.
@@ -175,7 +185,7 @@ Since the communication is asynchronous, it is necessary to listen to the outgoi
 
 Example files for sending commands and receiving states can be found in the [scripts](https://github.com/leukipp/cortile/tree/main/assets/scripts) folder.
 
-## Development [![development](https://img.shields.io/github/go-mod/go-version/leukipp/cortile)](#development-)
+## Development [![development](https://img.shields.io/github/go-mod/go-version/leukipp/cortile?label=go&style=flat-square)](#development-)
 You need [go >= 1.20](https://go.dev/dl/) to compile cortile.
 
 <details><summary>Install - go</summary><div>
@@ -245,7 +255,7 @@ Start cortile in verbose mode:
 $GOPATH/bin/cortile -v
 ```
 
-## Additional [![additional](https://img.shields.io/github/issues-pr-closed/leukipp/cortile)](#additional-)
+## Additional [![additional](https://img.shields.io/github/issues-pr-closed/leukipp/cortile?style=flat-square)](#additional-)
 Special settings:
 - Use the `edge_margin` property to account for additional spaces.
   - e.g. for deskbar panels or conky infographics.
@@ -261,7 +271,7 @@ Systray:
 - Use the `tiling_icon` property to add any external command to the systray menu.
   - e.g. use `tiling_icon = [...,['firefox', 'Open Browser'],...]` to add a web browser entry.
 
-## Issues [![issues](https://img.shields.io/github/issues-closed/leukipp/cortile)](#issues-)
+## Issues [![issues](https://img.shields.io/github/issues-closed/leukipp/cortile?style=flat-square)](#issues-)
 Cortile works best with Xfwm and Openbox window systems.
 However, it`s still possible that you may encounter problems during usage.
 
@@ -269,7 +279,7 @@ Windows:
 - It's recommended to disable all build-in window snapping features (snap to other windows, snap to screen borders).
 - Automatic panel detection may not work under some window managers, use the `edge_margin` property to adjust for additional margins.
 - Particularly in GNOME based desktop environments, window displacements or resizing issues may occur.
-- Sticky windows are unstable and may cause unwanted layout modifications during workspace changes.
+- Sticky windows may cause unwanted layout modifications during workspace changes.
 
 Systray:
 - Adjust the bindings in the `[systray]` section, as some pointer events may not fire across different desktop environments.
@@ -279,9 +289,9 @@ Debugging:
 - If you encounter problems start the process with `cortile -vv`, which provides additional debug outputs.
 - A log file is created by default under `/tmp/cortile.log`.
 
-## Credits [![credits](https://img.shields.io/github/contributors/leukipp/cortile)](#credits-)
+## Credits [![credits](https://img.shields.io/github/contributors/leukipp/cortile?style=flat-square)](#credits-)
 Based on [zentile](https://github.com/blrsn/zentile) ([Berin Larson](https://github.com/blrsn)) and [pytyle3](https://github.com/BurntSushi/pytyle3) ([Andrew Gallant](https://github.com/BurntSushi)).  
 The main libraries used in this project are [xgbutil](https://github.com/BurntSushi/xgbutil), [toml](https://github.com/BurntSushi/toml), [systray](https://github.com/fyne-io/systray), [dbus](https://github.com/godbus/dbus), [fsnotify](https://github.com/fsnotify/fsnotify) and [logrus](https://github.com/sirupsen/logrus).
 
-## License [![license](https://img.shields.io/github/license/leukipp/cortile)](#license-)
+## License [![license](https://img.shields.io/github/license/leukipp/cortile?style=flat-square)](#license-)
 [MIT](https://github.com/leukipp/cortile/blob/main/LICENSE)
