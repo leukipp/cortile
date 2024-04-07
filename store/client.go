@@ -44,8 +44,8 @@ type Info struct {
 }
 
 type Location struct {
-	DeskNum   uint // Client workspace desktop number
-	ScreenNum uint // Client workspace screen number
+	DeskNum   uint // Workspace desktop number
+	ScreenNum uint // Workspace screen number
 }
 
 type Dimensions struct {

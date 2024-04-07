@@ -126,12 +126,11 @@ func messages(tr *desktop.Tracker) {
 	// Request owner of shared session
 	conn, err := dbus.SessionBus()
 	if err != nil {
-		log.Warn("Error initializing tray events ", err)
+		log.Warn("Error initializing tray owner ", err)
 		return
 	}
 	name := fmt.Sprintf("org.kde.StatusNotifierItem-%d-1", os.Getpid())
 	conn.BusObject().Call("org.freedesktop.DBus.GetNameOwner", 0, name).Store(&destination)
-
 	if len(destination) == 0 {
 		log.Warn("Error requesting tray owner ", name)
 		return
@@ -140,22 +139,25 @@ func messages(tr *desktop.Tracker) {
 	// Monitor method calls in separate session
 	conn, err = dbus.ConnectSessionBus()
 	if err != nil {
-		log.Warn("Error monitoring tray messages ", err)
+		log.Warn("Error initializing tray methods ", err)
 		return
 	}
-	conn.BusObject().Call("org.freedesktop.DBus.Monitoring.BecomeMonitor", 0, []string{
+	call := conn.BusObject().Call("org.freedesktop.DBus.Monitoring.BecomeMonitor", 0, []string{
 		fmt.Sprintf("type='method_call',path='/StatusNotifierMenu',interface='com.canonical.dbusmenu',destination='%s'", destination),
 		fmt.Sprintf("type='method_call',path='/StatusNotifierItem',interface='org.kde.StatusNotifierItem',destination='%s'", destination),
 	}, uint(0))
+	if call.Err != nil {
+		log.Warn("Error monitoring tray methods ", call.Err)
+		return
+	}
 
+	// Listen to channel events
 	ch := make(chan *dbus.Message, 10)
 	conn.Eavesdrop(ch)
 
-	// Listen to channel events
 	go func() {
 		var iface string
 		var method string
-
 		for msg := range ch {
 			msg.Headers[2].Store(&iface)
 			msg.Headers[3].Store(&method)

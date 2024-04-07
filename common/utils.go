@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -35,6 +36,13 @@ func IsType(a interface{}, b interface{}) bool {
 	return reflect.TypeOf(a) == reflect.TypeOf(b)
 }
 
+func IsInt(s string) bool {
+	s = strings.TrimPrefix(s, "-")
+	re := fmt.Sprintf("\\d{%d}", len(s))
+	match, err := regexp.MatchString(re, s)
+	return match && err == nil
+}
+
 func IsZero(items []uint) bool {
 	mask := uint(0)
 	for _, s := range items {
@@ -54,12 +62,18 @@ func IsInList(item string, items []string) bool {
 
 func IsInsideRect(p *Pointer, r xrect.Rect) bool {
 	x, y, w, h := r.Pieces()
-
-	// Check if x and y are inside rectangle
 	xInRect := int(p.X) >= x && int(p.X) <= (x+w)
 	yInRect := int(p.Y) >= y && int(p.Y) <= (y+h)
-
 	return xInRect && yInRect
+}
+
+func ReverseList[T any](items []T) []T {
+	for i, j := 0, len(items)-1; i < j; {
+		items[i], items[j] = items[j], items[i]
+		i++
+		j--
+	}
+	return items
 }
 
 func VersionToInt(version string) int {
