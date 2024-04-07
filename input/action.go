@@ -2,8 +2,9 @@ package input
 
 import (
 	"os"
-	"os/exec"
 	"strings"
+
+	"os/exec"
 
 	"golang.org/x/exp/maps"
 

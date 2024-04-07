@@ -2,8 +2,9 @@ package input
 
 import (
 	"os"
-	"os/signal"
 	"syscall"
+
+	"os/signal"
 
 	"github.com/leukipp/cortile/v2/desktop"
 )

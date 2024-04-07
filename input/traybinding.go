@@ -3,14 +3,16 @@ package input
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
+	"os/exec"
+
 	"fyne.io/systray"
 
-	"github.com/BurntSushi/xgb/xproto"
 	"github.com/godbus/dbus/v5"
+
+	"github.com/jezek/xgb/xproto"
 
 	"github.com/leukipp/cortile/v2/common"
 	"github.com/leukipp/cortile/v2/desktop"

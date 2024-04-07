@@ -10,7 +10,7 @@ import (
 
 	"runtime/debug"
 
-	"github.com/BurntSushi/xgbutil/xevent"
+	"github.com/jezek/xgbutil/xevent"
 
 	"github.com/leukipp/cortile/v2/common"
 	"github.com/leukipp/cortile/v2/desktop"

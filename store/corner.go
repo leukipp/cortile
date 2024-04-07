@@ -1,7 +1,8 @@
 package store
 
 import (
-	"github.com/BurntSushi/xgbutil/xrect"
+	"github.com/jezek/xgbutil/xrect"
+
 	"github.com/leukipp/cortile/v2/common"
 )
 

@@ -2,20 +2,22 @@ package ui
 
 import (
 	"image"
-	"image/draw"
 	"math"
 	"time"
+
+	"image/draw"
 
 	"golang.org/x/image/font/gofont/goregular"
 
 	"github.com/BurntSushi/freetype-go/freetype/truetype"
-	"github.com/BurntSushi/xgbutil/ewmh"
-	"github.com/BurntSushi/xgbutil/icccm"
-	"github.com/BurntSushi/xgbutil/motif"
-	"github.com/BurntSushi/xgbutil/xevent"
-	"github.com/BurntSushi/xgbutil/xgraphics"
-	"github.com/BurntSushi/xgbutil/xrect"
-	"github.com/BurntSushi/xgbutil/xwindow"
+
+	"github.com/jezek/xgbutil/ewmh"
+	"github.com/jezek/xgbutil/icccm"
+	"github.com/jezek/xgbutil/motif"
+	"github.com/jezek/xgbutil/xevent"
+	"github.com/jezek/xgbutil/xgraphics"
+	"github.com/jezek/xgbutil/xrect"
+	"github.com/jezek/xgbutil/xwindow"
 
 	"github.com/leukipp/cortile/v2/common"
 	"github.com/leukipp/cortile/v2/desktop"

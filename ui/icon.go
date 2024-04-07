@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"image"
+
 	"image/color"
 	"image/draw"
 	"image/png"

@@ -1,14 +1,15 @@
 package common
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/BurntSushi/xgbutil/xrect"
+	"crypto/sha1"
+	"encoding/hex"
+
+	"github.com/jezek/xgbutil/xrect"
 )
 
 type Pointer struct {
