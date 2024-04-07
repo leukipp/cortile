@@ -47,10 +47,6 @@ func poll(t time.Duration, fun func()) {
 	fun()
 	go func() {
 		for range time.Tick(t * time.Millisecond) {
-			_, err := store.X.Conn().PollForEvent()
-			if err != nil {
-				continue
-			}
 			fun()
 		}
 	}()
