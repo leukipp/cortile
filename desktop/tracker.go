@@ -18,10 +18,15 @@ import (
 )
 
 type Tracker struct {
-	Clients    map[xproto.Window]*store.Client // List of clients that are being tracked
+	Clients    map[xproto.Window]*store.Client // List of tracked clients
 	Workspaces map[store.Location]*Workspace   // List of workspaces per location
-	Action     chan string                     // Event channel for actions
+	Channel    *Channel                        // Helper for channel communication
 	Handler    *Handler                        // Helper for event handlers
+
+}
+type Channel struct {
+	Event  chan string // Channel for events
+	Action chan string // Channel for actions
 }
 
 type Handler struct {
@@ -42,7 +47,10 @@ func CreateTracker() *Tracker {
 	tr := Tracker{
 		Clients:    make(map[xproto.Window]*store.Client),
 		Workspaces: CreateWorkspaces(),
-		Action:     make(chan string),
+		Channel: &Channel{
+			Event:  make(chan string),
+			Action: make(chan string),
+		},
 		Handler: &Handler{
 			ResizeClient: &HandlerClient{},
 			MoveClient:   &HandlerClient{},
@@ -63,11 +71,11 @@ func (tr *Tracker) Update() {
 	if ws.Disabled() {
 		return
 	}
-	log.Debug("Update trackable clients [", len(tr.Clients), "/", len(store.Windows), "]")
+	log.Debug("Update trackable clients [", len(tr.Clients), "/", len(store.Windows.Stacked), "]")
 
 	// Map trackable windows
 	trackable := make(map[xproto.Window]bool)
-	for _, w := range store.Windows {
+	for _, w := range store.Windows.Stacked {
 		trackable[w] = tr.isTrackable(w)
 	}
 
@@ -79,7 +87,7 @@ func (tr *Tracker) Update() {
 	}
 
 	// Add trackable windows
-	for _, w := range store.Windows {
+	for _, w := range store.Windows.Stacked {
 		if trackable[w] {
 			tr.trackWindow(w)
 		}
@@ -87,7 +95,7 @@ func (tr *Tracker) Update() {
 }
 
 func (tr *Tracker) Reset() {
-	log.Debug("Reset trackable clients [", len(tr.Clients), "/", len(store.Windows), "]")
+	log.Debug("Reset trackable clients [", len(tr.Clients), "/", len(store.Windows.Stacked), "]")
 
 	// Reset client list
 	for w := range tr.Clients {
@@ -112,7 +120,7 @@ func (tr *Tracker) Write() {
 }
 
 func (tr *Tracker) ActiveWorkspace() *Workspace {
-	location := store.Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
+	location := store.Location{DeskNum: store.Workplace.CurrentDesk, ScreenNum: store.Workplace.CurrentScreen}
 
 	// Validate active workspace
 	ws := tr.Workspaces[location]
@@ -209,7 +217,7 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 
 			// Set fullscreen layout
 			c.UnMaximize()
-			tr.Action <- "layout_fullscreen"
+			tr.Channel.Action <- "layout_fullscreen"
 			c.Activate()
 
 			break
@@ -315,7 +323,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 	// Check position changes
 	moved := cx != px || cy != py
 	resized := cw != pw || ch != ph
-	active := c.Win.Id == store.ActiveWindow
+	active := c.Win.Id == store.Windows.Active
 
 	if active && moved && !resized && !tr.Handler.ResizeClient.Active {
 		mg := ws.ActiveLayout().GetManager()
@@ -335,7 +343,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 			}
 
 			// Store moved client and hovered client
-			if common.IsInsideRect(pt, co.Latest.Dimensions.Geometry.Rect) {
+			if common.IsInsideRect(pt.Position, co.Latest.Dimensions.Geometry.Rect) {
 				tr.Handler.SwapClient = &HandlerClient{Active: true, Source: c, Target: co}
 				log.Debug("Client move handler active [", c.Latest.Class, "-", co.Latest.Class, "]")
 				break
@@ -344,7 +352,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 		// Check if pointer moves to another screen
 		tr.Handler.SwapScreen.Active = false
-		if c.Latest.Location.ScreenNum != store.CurrentScreen {
+		if c.Latest.Location.ScreenNum != store.Workplace.CurrentScreen {
 			tr.Handler.SwapScreen = &HandlerClient{Active: true, Source: c}
 		}
 	}
@@ -413,12 +421,12 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 	tr.Handler.SwapScreen.Active = false
 }
 
-func (tr *Tracker) onStateUpdate(aname string) {
-	viewportChanged := common.IsInList(aname, []string{"_NET_NUMBER_OF_DESKTOPS", "_NET_DESKTOP_LAYOUT", "_NET_DESKTOP_GEOMETRY", "_NET_DESKTOP_VIEWPORT", "_NET_WORKAREA"})
-	clientsChanged := common.IsInList(aname, []string{"_NET_CLIENT_LIST_STACKING", "_NET_ACTIVE_WINDOW"})
+func (tr *Tracker) onStateUpdate(state string, desk uint, screen uint) {
+	viewportChanged := common.IsInList(state, []string{"_NET_NUMBER_OF_DESKTOPS", "_NET_DESKTOP_LAYOUT", "_NET_DESKTOP_GEOMETRY", "_NET_DESKTOP_VIEWPORT", "_NET_WORKAREA"})
+	clientsChanged := common.IsInList(state, []string{"_NET_CLIENT_LIST_STACKING", "_NET_ACTIVE_WINDOW"})
 
-	workspacesChanged := store.DeskCount*store.ScreenCount != uint(len(tr.Workspaces))
-	workspaceChanged := common.IsInList(aname, []string{"_NET_CURRENT_DESKTOP"})
+	workspacesChanged := store.Workplace.DeskCount*store.Workplace.ScreenCount != uint(len(tr.Workspaces))
+	workspaceChanged := common.IsInList(state, []string{"_NET_CURRENT_DESKTOP"})
 
 	// Number of desktops or screens changed
 	if workspacesChanged {
@@ -429,7 +437,7 @@ func (tr *Tracker) onStateUpdate(aname string) {
 	if workspaceChanged {
 		for _, c := range tr.Clients {
 			sticky := common.IsInList("_NET_WM_STATE_STICKY", c.Latest.States)
-			if sticky && c.Latest.Location.DeskNum != store.CurrentDesk {
+			if sticky && c.Latest.Location.DeskNum != store.Workplace.CurrentDesk {
 				ewmh.WmDesktopSet(store.X, c.Win.Id, ^uint(0))
 			}
 		}
@@ -453,9 +461,12 @@ func (tr *Tracker) onStateUpdate(aname string) {
 
 	// Write client and workspace cache
 	tr.Write()
+
+	// Communicate state update
+	tr.Channel.Event <- "state_update"
 }
 
-func (tr *Tracker) onPointerUpdate(button uint16) {
+func (tr *Tracker) onPointerUpdate(button uint16, desk uint, screen uint) {
 	release := button == 0
 
 	// Reset timer
@@ -529,7 +540,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 		log.Trace("Client focus in event [", c.Latest.Class, "]")
 
 		// Update active window
-		store.ActiveWindow = store.ActiveWindowGet(store.X)
+		store.Windows.Active = store.ActiveWindowGet(store.X)
 	}).Connect(store.X, c.Win.Id)
 
 	// Attach focus out events
@@ -537,7 +548,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 		log.Trace("Client focus out event [", c.Latest.Class, "]")
 
 		// Update active window
-		store.ActiveWindow = store.ActiveWindowGet(store.X)
+		store.Windows.Active = store.ActiveWindowGet(store.X)
 	}).Connect(store.X, c.Win.Id)
 }
 

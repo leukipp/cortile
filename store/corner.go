@@ -22,10 +22,10 @@ func CreateCorner(name string, screenNum uint, x int, y int, w int, h int) *Corn
 	}
 }
 
-func CreateCorners() []*Corner {
+func CreateCorners(screens []*XHead) []*Corner {
 	corners := []*Corner{}
 
-	for i, screen := range Displays.Screens {
+	for i, screen := range screens {
 		screenNum := uint(i)
 		xw, yw, ww, hw := screen.Pieces()
 
@@ -49,10 +49,10 @@ func CreateCorners() []*Corner {
 	return corners
 }
 
-func (c *Corner) IsActive(p *common.Pointer) bool {
+func (c *Corner) IsActive(p *XPointer) bool {
 
 	// Check if pointer is inside rectangle
-	c.Active = common.IsInsideRect(p, c.Area)
+	c.Active = common.IsInsideRect(p.Position, c.Area)
 
 	return c.Active
 }

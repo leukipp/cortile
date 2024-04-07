@@ -45,12 +45,12 @@ func BindTray(tr *desktop.Tracker) {
 	}, func() {})
 
 	// Attach execute events
-	OnExecute(func(action string) {
+	OnExecute(func(action string, desk uint, screen uint) {
 		onExecute(tr, action)
 	})
 
 	// Attach pointer events
-	store.OnPointerUpdate(func(button uint16) {
+	store.OnPointerUpdate(func(button uint16, desk uint, screen uint) {
 		onPointerClick(tr, button)
 	})
 }

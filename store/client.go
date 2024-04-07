@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 
+	"github.com/jezek/xgb/render"
 	"github.com/jezek/xgb/xproto"
 
 	"github.com/jezek/xgbutil/ewmh"
@@ -262,7 +263,7 @@ func (c *Client) Cache() common.Cache[*Info] {
 	hash := fmt.Sprintf("%s-%d", c.Latest.Class, c.Latest.Location.DeskNum)
 
 	// Create client cache folder
-	folder := filepath.Join(common.Args.Cache, Displays.Name, "clients", name)
+	folder := filepath.Join(common.Args.Cache, Workplace.Displays.Name, "clients", name)
 	if _, err := os.Stat(folder); os.IsNotExist(err) {
 		os.MkdirAll(folder, 0755)
 	}
@@ -468,7 +469,7 @@ func GetInfo(w xproto.Window) *Info {
 
 	// Window desktop and screen (window workspace location)
 	deskNum, err := ewmh.WmDesktopGet(X, w)
-	sticky := deskNum > DeskCount
+	sticky := deskNum > Workplace.DeskCount
 	if err != nil || sticky {
 		deskNum = CurrentDesktopGet(X)
 	}
@@ -553,9 +554,9 @@ func GetInfo(w xproto.Window) *Info {
 func GetScreenNum(geom xrect.Rect) uint {
 
 	// Window center position
-	center := &common.Pointer{
-		X: int16(geom.X() + geom.Width()/2),
-		Y: int16(geom.Y() + geom.Height()/2),
+	center := render.Pointfix{
+		X: render.Fixed(geom.X() + geom.Width()/2),
+		Y: render.Fixed(geom.Y() + geom.Height()/2),
 	}
 
 	return ScreenNumGet(center)

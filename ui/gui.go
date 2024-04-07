@@ -37,7 +37,7 @@ var (
 )
 
 func ShowLayout(ws *desktop.Workspace) {
-	location := store.Location{DeskNum: store.CurrentDesk, ScreenNum: store.CurrentScreen}
+	location := store.Location{DeskNum: store.Workplace.CurrentDesk, ScreenNum: store.Workplace.CurrentScreen}
 	if ws == nil || ws.Location.DeskNum != location.DeskNum || common.Config.TilingGui <= 0 {
 		return
 	}
@@ -85,7 +85,7 @@ func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
 		// Obtain fullscreen client
 		for _, state := range c.Latest.States {
 			if state == "_NET_WM_STATE_FULLSCREEN" || layout == "fullscreen" {
-				clients = mg.Visible(&store.Clients{Items: mg.Clients(store.Stacked), MaxAllowed: 1})
+				clients = mg.Visible(&store.Clients{Stacked: mg.Clients(store.Stacked), MaxAllowed: 1})
 				break
 			}
 		}

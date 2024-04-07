@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -10,14 +9,10 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 
+	"github.com/jezek/xgb/render"
+
 	"github.com/jezek/xgbutil/xrect"
 )
-
-type Pointer struct {
-	X      int16  // Pointer X position relative to root
-	Y      int16  // Pointer Y position relative to root
-	Button uint16 // Pointer button states of device
-}
 
 func Hash(text string) string {
 	hash := sha1.New()
@@ -34,13 +29,6 @@ func Truncate(s string, max int) string {
 
 func IsType(a interface{}, b interface{}) bool {
 	return reflect.TypeOf(a) == reflect.TypeOf(b)
-}
-
-func IsInt(s string) bool {
-	s = strings.TrimPrefix(s, "-")
-	re := fmt.Sprintf("\\d{%d}", len(s))
-	match, err := regexp.MatchString(re, s)
-	return match && err == nil
 }
 
 func IsZero(items []uint) bool {
@@ -60,7 +48,7 @@ func IsInList(item string, items []string) bool {
 	return false
 }
 
-func IsInsideRect(p *Pointer, r xrect.Rect) bool {
+func IsInsideRect(p render.Pointfix, r xrect.Rect) bool {
 	x, y, w, h := r.Pieces()
 	xInRect := int(p.X) >= x && int(p.X) <= (x+w)
 	yInRect := int(p.Y) >= y && int(p.Y) <= (y+h)

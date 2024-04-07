@@ -27,8 +27,8 @@ func BindMouse(tr *desktop.Tracker) {
 		}
 
 		// Evaluate corner states
-		for i := range store.Corners {
-			hc := store.Corners[i]
+		for i := range store.Workplace.Displays.Corners {
+			hc := store.Workplace.Displays.Corners[i]
 
 			wasActive := hc.Active
 			isActive := hc.IsActive(pt)

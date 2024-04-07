@@ -64,8 +64,8 @@ func (l *HorizontalLayout) Apply() {
 	mmax := l.Masters.MaxAllowed
 	smax := l.Slaves.MaxAllowed
 
-	msize := int(math.Min(float64(len(l.Masters.Items)), float64(mmax)))
-	ssize := int(math.Min(float64(len(l.Slaves.Items)), float64(smax)))
+	msize := int(math.Min(float64(len(l.Masters.Stacked)), float64(mmax)))
+	ssize := int(math.Min(float64(len(l.Slaves.Stacked)), float64(smax)))
 	csize := len(clients)
 
 	my := dy
@@ -103,7 +103,7 @@ func (l *HorizontalLayout) Apply() {
 		}
 
 		mx := 0
-		for i, c := range l.Masters.Items {
+		for i, c := range l.Masters.Stacked {
 
 			// Reset x position
 			if i%mmax == 0 {
@@ -141,7 +141,7 @@ func (l *HorizontalLayout) Apply() {
 		}
 
 		sx := 0
-		for i, c := range l.Slaves.Items {
+		for i, c := range l.Slaves.Stacked {
 
 			// Reset x position
 			if i%smax == 0 {
@@ -173,8 +173,8 @@ func (l *HorizontalLayout) UpdateProportions(c *store.Client, d *store.Direction
 	mmax := l.Masters.MaxAllowed
 	smax := l.Slaves.MaxAllowed
 
-	msize := int(math.Min(float64(len(l.Masters.Items)), float64(mmax)))
-	ssize := int(math.Min(float64(len(l.Slaves.Items)), float64(smax)))
+	msize := int(math.Min(float64(len(l.Masters.Stacked)), float64(mmax)))
+	ssize := int(math.Min(float64(len(l.Slaves.Stacked)), float64(smax)))
 
 	// Swap values if master is on top
 	idxms := 0

@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	executeCallbacksFun []func(string) // Execute events callback functions
+	executeCallbacksFun []func(string, uint, uint) // Execute events callback functions
 )
 
 func Execute(action string, mod string, tr *desktop.Tracker) bool {
@@ -99,20 +99,16 @@ func Execute(action string, mod string, tr *desktop.Tracker) bool {
 			return false
 		}
 
-		// Notify socket
-		type Action struct {
-			DeskNum   uint
-			ScreenNum uint
-		}
-		NotifySocket(Message[Action]{
+		// Notify socket (deprecated)
+		NotifySocket(Message[store.Location]{
 			Type: "Action",
 			Name: action,
-			Data: Action{DeskNum: ws.Location.DeskNum, ScreenNum: ws.Location.ScreenNum},
+			Data: ws.Location,
 		})
-	}
 
-	// Execute callbacks
-	executeCallbacks(action)
+		// Execute callbacks
+		executeCallbacks(action, ws.Location.DeskNum, ws.Location.ScreenNum)
+	}
 
 	return true
 }
@@ -135,6 +131,7 @@ func Query(state string, tr *desktop.Tracker) bool {
 			ScreenNum  uint
 			Workspaces []*desktop.Workspace
 		}
+		// Notify socket (deprecated)
 		NotifySocket(Message[Workspaces]{
 			Type: "State",
 			Name: state,
@@ -142,6 +139,7 @@ func Query(state string, tr *desktop.Tracker) bool {
 		})
 		success = true
 	case "arguments":
+		// Notify socket (deprecated)
 		NotifySocket(Message[common.Arguments]{
 			Type: "State",
 			Name: state,
@@ -149,6 +147,7 @@ func Query(state string, tr *desktop.Tracker) bool {
 		})
 		success = true
 	case "configs":
+		// Notify socket (deprecated)
 		NotifySocket(Message[common.Configuration]{
 			Type: "State",
 			Name: state,
@@ -317,7 +316,7 @@ func MakeMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.Disabled() {
 		return false
 	}
-	if c, ok := tr.Clients[store.ActiveWindow]; ok {
+	if c, ok := tr.Clients[store.Windows.Active]; ok {
 		ws.ActiveLayout().MakeMaster(c)
 		ws.Tile()
 		return true
@@ -505,14 +504,14 @@ func External(command string) bool {
 	return true
 }
 
-func OnExecute(fun func(string)) {
+func OnExecute(fun func(string, uint, uint)) {
 	executeCallbacksFun = append(executeCallbacksFun, fun)
 }
 
-func executeCallbacks(arg string) {
-	log.Info("Execute event ", arg)
+func executeCallbacks(action string, desk uint, screen uint) {
+	log.Info("Execute event ", action)
 
 	for _, fun := range executeCallbacksFun {
-		fun(arg)
+		fun(action, desk, screen)
 	}
 }

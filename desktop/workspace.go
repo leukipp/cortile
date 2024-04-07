@@ -26,8 +26,8 @@ type Workspace struct {
 func CreateWorkspaces() map[store.Location]*Workspace {
 	workspaces := make(map[store.Location]*Workspace)
 
-	for deskNum := uint(0); deskNum < store.DeskCount; deskNum++ {
-		for screenNum := uint(0); screenNum < store.ScreenCount; screenNum++ {
+	for deskNum := uint(0); deskNum < store.Workplace.DeskCount; deskNum++ {
+		for screenNum := uint(0); screenNum < store.Workplace.ScreenCount; screenNum++ {
 			location := store.Location{DeskNum: deskNum, ScreenNum: screenNum}
 
 			// Create layouts for each desktop and screen
@@ -234,7 +234,7 @@ func (ws *Workspace) Cache() common.Cache[*Workspace] {
 	hash := fmt.Sprintf("%s-%d", name, ws.Location.ScreenNum)
 
 	// Create workspace cache folder
-	folder := filepath.Join(common.Args.Cache, store.Displays.Name, "workspaces", name)
+	folder := filepath.Join(common.Args.Cache, store.Workplace.Displays.Name, "workspaces", name)
 	if _, err := os.Stat(folder); os.IsNotExist(err) {
 		os.MkdirAll(folder, 0755)
 	}
