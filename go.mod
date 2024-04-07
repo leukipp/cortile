@@ -11,11 +11,11 @@ require (
 	github.com/jezek/xgb v1.1.1
 	github.com/jezek/xgbutil v0.0.0-20231116234834-47f30c120111
 	github.com/sirupsen/logrus v1.9.4-0.20230606125235-dd1b4c2e81af
-	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
+	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0
 	golang.org/x/image v0.15.0
 )
 
 require (
 	github.com/BurntSushi/graphics-go v0.0.0-20160129215708-b43f31a4a966 // indirect
-	golang.org/x/sys v0.17.1-0.20240216133109-360f961f8978 // indirect
+	golang.org/x/sys v0.19.0 // indirect
 )
