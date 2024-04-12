@@ -63,7 +63,7 @@ func ConfigFolderPath(name string) string {
 	// Obtain user config directory
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
-		log.Fatal("Error obtaining config directory ", err)
+		log.Fatal("Error obtaining config directory: ", err)
 	}
 
 	return filepath.Join(userConfigDir, name)

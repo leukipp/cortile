@@ -32,7 +32,7 @@ func CacheFolderPath(name string) string {
 	// Obtain user cache directory
 	userCacheDir, err := os.UserCacheDir()
 	if err != nil {
-		log.Fatal("Error obtaining cache directory ", err)
+		log.Fatal("Error obtaining cache directory: ", err)
 	}
 
 	return filepath.Join(userCacheDir, name)
