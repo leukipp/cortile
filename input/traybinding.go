@@ -2,7 +2,6 @@ package input
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -12,8 +11,6 @@ import (
 
 	"github.com/godbus/dbus/v5"
 
-	"github.com/jezek/xgb/xproto"
-
 	"github.com/leukipp/cortile/v2/common"
 	"github.com/leukipp/cortile/v2/desktop"
 	"github.com/leukipp/cortile/v2/store"
@@ -22,10 +19,10 @@ import (
 )
 
 var (
-	clicked bool        // Tray clicked state from dbus
-	pointer uint16      // Pointer button state of device
-	timer   *time.Timer // Timer to compress pointer events
-	menu    *Menu       // Items collection of systray menu
+	clicked bool          // Tray clicked state from dbus
+	button  store.XButton // Pointer button state of device
+	timer   *time.Timer   // Timer to compress pointer events
+	menu    *Menu         // Items collection of systray menu
 )
 
 type Menu struct {
@@ -50,8 +47,8 @@ func BindTray(tr *desktop.Tracker) {
 	})
 
 	// Attach pointer events
-	store.OnPointerUpdate(func(button uint16, desk uint, screen uint) {
-		onPointerClick(tr, button)
+	store.OnPointerUpdate(func(pointer store.XPointer, desk uint, screen uint) {
+		onPointerClick(tr, pointer)
 	})
 }
 
@@ -114,7 +111,7 @@ func items(tr *desktop.Tracker) {
 		go func() {
 			for {
 				<-item.ClickedCh
-				Execute(action, "current", tr)
+				ExecuteAction(action, tr, tr.ActiveWorkspace())
 			}
 		}()
 	}
@@ -126,20 +123,20 @@ func messages(tr *desktop.Tracker) {
 	// Request owner of shared session
 	conn, err := dbus.SessionBus()
 	if err != nil {
-		log.Warn("Error initializing tray owner ", err)
+		log.Warn("Error initializing tray owner: ", err)
 		return
 	}
-	name := fmt.Sprintf("org.kde.StatusNotifierItem-%d-1", os.Getpid())
+	name := fmt.Sprintf("org.kde.StatusNotifierItem-%d-1", common.Process.Id)
 	conn.BusObject().Call("org.freedesktop.DBus.GetNameOwner", 0, name).Store(&destination)
 	if len(destination) == 0 {
-		log.Warn("Error requesting tray owner ", name)
+		log.Warn("Error requesting tray owner: ", name)
 		return
 	}
 
 	// Monitor method calls in separate session
 	conn, err = dbus.ConnectSessionBus()
 	if err != nil {
-		log.Warn("Error initializing tray methods ", err)
+		log.Warn("Error initializing tray methods: ", err)
 		return
 	}
 	call := conn.BusObject().Call("org.freedesktop.DBus.Monitoring.BecomeMonitor", 0, []string{
@@ -147,7 +144,7 @@ func messages(tr *desktop.Tracker) {
 		fmt.Sprintf("type='method_call',path='/StatusNotifierItem',interface='org.kde.StatusNotifierItem',destination='%s'", destination),
 	}, uint(0))
 	if call.Err != nil {
-		log.Warn("Error monitoring tray methods ", call.Err)
+		log.Warn("Error monitoring tray methods: ", call.Err)
 		return
 	}
 
@@ -210,9 +207,9 @@ func onActivate(tr *desktop.Tracker) {
 	}
 }
 
-func onPointerClick(tr *desktop.Tracker, button uint16) {
-	if button != 0 {
-		pointer = button
+func onPointerClick(tr *desktop.Tracker, pointer store.XPointer) {
+	if pointer.Pressed() {
+		button = pointer.Button
 	}
 
 	// Reset timer
@@ -222,17 +219,16 @@ func onPointerClick(tr *desktop.Tracker, button uint16) {
 
 	// Wait for dbus events
 	timer = time.AfterFunc(150*time.Millisecond, func() {
-		if clicked {
-			switch pointer {
-			case pointer & xproto.ButtonMask1:
-				Execute(common.Config.Systray["click_left"], "current", tr)
-			case pointer & xproto.ButtonMask2:
-				Execute(common.Config.Systray["click_middle"], "current", tr)
-			case pointer & xproto.ButtonMask3:
-				Execute(common.Config.Systray["click_right"], "current", tr)
-			}
-			clicked = false
+		if clicked && button.Left {
+			ExecuteAction(common.Config.Systray["click_left"], tr, tr.ActiveWorkspace())
 		}
+		if clicked && button.Middle {
+			ExecuteAction(common.Config.Systray["click_middle"], tr, tr.ActiveWorkspace())
+		}
+		if clicked && button.Right {
+			ExecuteAction(common.Config.Systray["click_right"], tr, tr.ActiveWorkspace())
+		}
+		clicked = false
 	})
 }
 
@@ -248,15 +244,15 @@ func onPointerScroll(tr *desktop.Tracker, delta int32, orientation string) {
 		switch orientation {
 		case "vertical":
 			if delta >= 0 {
-				Execute(common.Config.Systray["scroll_down"], "current", tr)
+				ExecuteAction(common.Config.Systray["scroll_down"], tr, tr.ActiveWorkspace())
 			} else {
-				Execute(common.Config.Systray["scroll_up"], "current", tr)
+				ExecuteAction(common.Config.Systray["scroll_up"], tr, tr.ActiveWorkspace())
 			}
 		case "horizontal":
 			if delta >= 0 {
-				Execute(common.Config.Systray["scroll_right"], "current", tr)
+				ExecuteAction(common.Config.Systray["scroll_right"], tr, tr.ActiveWorkspace())
 			} else {
-				Execute(common.Config.Systray["scroll_left"], "current", tr)
+				ExecuteAction(common.Config.Systray["scroll_left"], tr, tr.ActiveWorkspace())
 			}
 		}
 	})

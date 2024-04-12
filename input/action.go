@@ -8,6 +8,8 @@ import (
 
 	"golang.org/x/exp/maps"
 
+	"github.com/jezek/xgbutil/xevent"
+
 	"github.com/leukipp/cortile/v2/common"
 	"github.com/leukipp/cortile/v2/desktop"
 	"github.com/leukipp/cortile/v2/store"
@@ -20,16 +22,93 @@ var (
 	executeCallbacksFun []func(string, uint, uint) // Execute events callback functions
 )
 
-func Execute(action string, mod string, tr *desktop.Tracker) bool {
+func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	success := false
-	if len(strings.TrimSpace(action)) == 0 {
+	if tr == nil || ws == nil {
 		return false
 	}
 
-	log.Info("Execute action [", action, "-", mod, "]")
+	log.Info("Execute action ", action, " [", ws.Name, "]")
 
+	// Choose action command
+	switch action {
+	case "":
+		success = false
+	case "enable":
+		success = Enable(tr, ws)
+	case "disable":
+		success = Disable(tr, ws)
+	case "restore":
+		success = Restore(tr, ws)
+	case "toggle":
+		success = Toggle(tr, ws)
+	case "cycle_next":
+		success = CycleNext(tr, ws)
+	case "cycle_previous":
+		success = CyclePrevious(tr, ws)
+	case "layout_fullscreen":
+		success = FullscreenLayout(tr, ws)
+	case "layout_vertical_left":
+		success = VerticalLeftLayout(tr, ws)
+	case "layout_vertical_right":
+		success = VerticalRightLayout(tr, ws)
+	case "layout_horizontal_top":
+		success = HorizontalTopLayout(tr, ws)
+	case "layout_horizontal_bottom":
+		success = HorizontalBottomLayout(tr, ws)
+	case "master_make":
+		success = MakeMaster(tr, ws)
+	case "master_make_next":
+		success = MakeMasterNext(tr, ws)
+	case "master_make_previous":
+		success = MakeMasterPrevious(tr, ws)
+	case "master_increase":
+		success = IncreaseMaster(tr, ws)
+	case "master_decrease":
+		success = DecreaseMaster(tr, ws)
+	case "slave_increase":
+		success = IncreaseSlave(tr, ws)
+	case "slave_decrease":
+		success = DecreaseSlave(tr, ws)
+	case "proportion_increase":
+		success = IncreaseProportion(tr, ws)
+	case "proportion_decrease":
+		success = DecreaseProportion(tr, ws)
+	case "window_next":
+		success = NextWindow(tr, ws)
+	case "window_previous":
+		success = PreviousWindow(tr, ws)
+	case "reset":
+		success = Reset(tr, ws)
+	case "exit":
+		success = Exit(tr)
+	default:
+		success = External(action)
+	}
+
+	// Check success
+	if !success {
+		return false
+	}
+
+	// Notify socket (deprecated)
+	NotifySocket(Message[store.Location]{
+		Type: "Action",
+		Name: action,
+		Data: ws.Location,
+	})
+
+	// Execute callbacks
+	executeCallbacks(action, ws.Location.DeskNum, ws.Location.ScreenNum)
+
+	return true
+}
+
+func ExecuteActions(action string, tr *desktop.Tracker, mod string) bool {
+	results := []bool{}
+
+	active := tr.ActiveWorkspace()
 	for _, ws := range tr.Workspaces {
-		active := tr.ActiveWorkspace()
 
 		// Execute only on active screen
 		if mod == "current" && ws.Location != active.Location {
@@ -41,76 +120,12 @@ func Execute(action string, mod string, tr *desktop.Tracker) bool {
 			continue
 		}
 
-		// Choose action command
-		switch action {
-		case "enable":
-			success = Enable(tr, ws)
-		case "disable":
-			success = Disable(tr, ws)
-		case "restore":
-			success = Restore(tr, ws)
-		case "toggle":
-			success = Toggle(tr, ws)
-		case "cycle_next":
-			success = CycleNext(tr, ws)
-		case "cycle_previous":
-			success = CyclePrevious(tr, ws)
-		case "layout_fullscreen":
-			success = FullscreenLayout(tr, ws)
-		case "layout_vertical_left":
-			success = VerticalLeftLayout(tr, ws)
-		case "layout_vertical_right":
-			success = VerticalRightLayout(tr, ws)
-		case "layout_horizontal_top":
-			success = HorizontalTopLayout(tr, ws)
-		case "layout_horizontal_bottom":
-			success = HorizontalBottomLayout(tr, ws)
-		case "master_make":
-			success = MakeMaster(tr, ws)
-		case "master_make_next":
-			success = MakeMasterNext(tr, ws)
-		case "master_make_previous":
-			success = MakeMasterPrevious(tr, ws)
-		case "master_increase":
-			success = IncreaseMaster(tr, ws)
-		case "master_decrease":
-			success = DecreaseMaster(tr, ws)
-		case "slave_increase":
-			success = IncreaseSlave(tr, ws)
-		case "slave_decrease":
-			success = DecreaseSlave(tr, ws)
-		case "proportion_increase":
-			success = IncreaseProportion(tr, ws)
-		case "proportion_decrease":
-			success = DecreaseProportion(tr, ws)
-		case "window_next":
-			success = NextWindow(tr, ws)
-		case "window_previous":
-			success = PreviousWindow(tr, ws)
-		case "reset":
-			success = Reset(tr, ws)
-		case "exit":
-			success = Exit(tr)
-		default:
-			success = External(action)
-		}
-
-		if !success {
-			return false
-		}
-
-		// Notify socket (deprecated)
-		NotifySocket(Message[store.Location]{
-			Type: "Action",
-			Name: action,
-			Data: ws.Location,
-		})
-
-		// Execute callbacks
-		executeCallbacks(action, ws.Location.DeskNum, ws.Location.ScreenNum)
+		// Execute action and store results
+		success := ExecuteAction(action, tr, ws)
+		results = append(results, success)
 	}
 
-	return true
+	return common.AllTrue(results)
 }
 
 func Query(state string, tr *desktop.Tracker) bool {
@@ -162,7 +177,7 @@ func Query(state string, tr *desktop.Tracker) bool {
 func Enable(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	ws.Enable()
 	tr.Update()
-	ws.Tile()
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -208,6 +223,7 @@ func CycleNext(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 	ws.CycleLayout(1)
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -220,6 +236,7 @@ func CyclePrevious(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 	ws.CycleLayout(-1)
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -236,7 +253,7 @@ func FullscreenLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 			ws.SetLayout(uint(i))
 		}
 	}
-	ws.Tile()
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -253,7 +270,7 @@ func VerticalLeftLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 			ws.SetLayout(uint(i))
 		}
 	}
-	ws.Tile()
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -270,7 +287,7 @@ func VerticalRightLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 			ws.SetLayout(uint(i))
 		}
 	}
-	ws.Tile()
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -287,7 +304,7 @@ func HorizontalTopLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 			ws.SetLayout(uint(i))
 		}
 	}
-	ws.Tile()
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -304,7 +321,7 @@ func HorizontalBottomLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 			ws.SetLayout(uint(i))
 		}
 	}
-	ws.Tile()
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -316,9 +333,9 @@ func MakeMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.Disabled() {
 		return false
 	}
-	if c, ok := tr.Clients[store.Windows.Active]; ok {
+	if c, ok := tr.Clients[store.Windows.Active.Id]; ok {
 		ws.ActiveLayout().MakeMaster(c)
-		ws.Tile()
+		tr.Tile(ws)
 		return true
 	}
 
@@ -335,7 +352,7 @@ func MakeMasterNext(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	}
 
 	ws.ActiveLayout().MakeMaster(c)
-	ws.Tile()
+	tr.Tile(ws)
 
 	return NextWindow(tr, ws)
 }
@@ -350,7 +367,7 @@ func MakeMasterPrevious(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	}
 
 	ws.ActiveLayout().MakeMaster(c)
-	ws.Tile()
+	tr.Tile(ws)
 
 	return PreviousWindow(tr, ws)
 }
@@ -360,7 +377,7 @@ func IncreaseMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 	ws.ActiveLayout().IncreaseMaster()
-	ws.Tile()
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -373,7 +390,7 @@ func DecreaseMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 	ws.ActiveLayout().DecreaseMaster()
-	ws.Tile()
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -386,7 +403,7 @@ func IncreaseSlave(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 	ws.ActiveLayout().IncreaseSlave()
-	ws.Tile()
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -399,7 +416,7 @@ func DecreaseSlave(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 	ws.ActiveLayout().DecreaseSlave()
-	ws.Tile()
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -412,7 +429,7 @@ func IncreaseProportion(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 	ws.ActiveLayout().IncreaseProportion()
-	ws.Tile()
+	tr.Tile(ws)
 
 	return true
 }
@@ -422,7 +439,7 @@ func DecreaseProportion(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 	ws.ActiveLayout().DecreaseProportion()
-	ws.Tile()
+	tr.Tile(ws)
 
 	return true
 }
@@ -436,7 +453,7 @@ func NextWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 
-	c.Activate()
+	store.ActiveWindowSet(store.X, c.Window)
 
 	return true
 }
@@ -450,7 +467,7 @@ func PreviousWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 
-	c.Activate()
+	store.ActiveWindowSet(store.X, c.Window)
 
 	return true
 }
@@ -460,7 +477,7 @@ func Reset(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 	ws.ResetLayouts()
-	ws.Tile()
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -470,6 +487,8 @@ func Reset(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 
 func Exit(tr *desktop.Tracker) bool {
 	tr.Write()
+
+	xevent.Detach(store.X, store.X.RootWin())
 
 	for _, ws := range tr.Workspaces {
 		if ws.Disabled() {
@@ -492,7 +511,12 @@ func Exit(tr *desktop.Tracker) bool {
 func External(command string) bool {
 	params := strings.Split(command, " ")
 
-	log.Info("Execute command ", params[0], " ", params[1:])
+	if !common.Feature("enable-external-commands") {
+		log.Warn("Executing external command \"", params[0], "\" disabled")
+		return false
+	}
+
+	log.Info("Executing external command \"", params[0], " ", params[1:], "\"")
 
 	// Execute external command
 	cmd := exec.Command(params[0], params[1:]...)

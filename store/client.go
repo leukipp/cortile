@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/jezek/xgb/render"
 	"github.com/jezek/xgb/xproto"
 
 	"github.com/jezek/xgbutil/ewmh"
@@ -27,12 +26,11 @@ import (
 )
 
 type Client struct {
-	Win      *xwindow.Window `json:"-"` // X window object
-	Created  time.Time       // Internal client creation time
-	Locked   bool            // Internal client move/resize lock
-	Original *Info           // Original client window information
-	Cached   *Info           // Cached client window information
-	Latest   *Info           // Latest client window information
+	Window   *XWindow // X window object
+	Original *Info    `json:"-"` // Original client window information
+	Cached   *Info    `json:"-"` // Cached client window information
+	Latest   *Info    // Latest client window information
+	Locked   bool     // Internal client move/resize lock
 }
 
 type Info struct {
@@ -44,26 +42,13 @@ type Info struct {
 	Dimensions Dimensions // Client window dimensions
 }
 
-type Location struct {
-	DeskNum   uint // Workspace desktop number
-	ScreenNum uint // Workspace screen number
-}
-
 type Dimensions struct {
-	Geometry   Geometry          // Client window geometry
+	Geometry   common.Geometry   // Client window geometry
 	Hints      Hints             // Client window dimension hints
 	Extents    ewmh.FrameExtents // Client window geometry extents
 	AdjPos     bool              // Position adjustments on move/resize
 	AdjSize    bool              // Size adjustments on move/resize
 	AdjRestore bool              // Disable adjustments on restore
-}
-
-type Geometry struct {
-	xrect.Rect `json:"-"` // Client window geometry functions
-	X          int        // Client window geometry x position
-	Y          int        // Client window geometry y position
-	Width      int        // Client window geometry width dimension
-	Height     int        // Client window geometry height dimension
 }
 
 type Hints struct {
@@ -79,24 +64,20 @@ const (
 
 func CreateClient(w xproto.Window) *Client {
 	c := &Client{
-		Win:      xwindow.New(X, w),
-		Created:  time.Now(),
-		Locked:   false,
+		Window:   CreateXWindow(w),
 		Original: GetInfo(w),
 		Cached:   GetInfo(w),
 		Latest:   GetInfo(w),
+		Locked:   false,
 	}
 
 	// Read client from cache
 	cached := c.Read()
 
 	// Overwrite states, geometry and location
-	geom := cached.Dimensions.Geometry
-	geom.Rect = xrect.New(geom.X, geom.Y, geom.Width, geom.Height)
-
-	c.Cached.States = cached.States
-	c.Cached.Dimensions.Geometry = geom
-	c.Cached.Location.ScreenNum = GetScreenNum(geom.Rect)
+	c.Cached.States = cached.Latest.States
+	c.Cached.Dimensions.Geometry = cached.Latest.Dimensions.Geometry
+	c.Cached.Location.ScreenNum = ScreenNumGet(cached.Latest.Dimensions.Geometry.Center())
 
 	// Restore window position
 	c.Restore(Cached)
@@ -106,10 +87,6 @@ func CreateClient(w xproto.Window) *Client {
 	c.Latest.Location.ScreenNum = c.Cached.Location.ScreenNum
 
 	return c
-}
-
-func (c *Client) Activate() {
-	ewmh.ActiveWindowReq(X, c.Win.Id)
 }
 
 func (c *Client) Lock() {
@@ -129,22 +106,29 @@ func (c *Client) UnDecorate() {
 	mhints := c.Cached.Dimensions.Hints.Motif
 	mhints.Flags |= motif.HintDecorations
 	mhints.Decoration = motif.DecorationNone
-	motif.WmHintsSet(X, c.Win.Id, &mhints)
+	motif.WmHintsSet(X, c.Window.Id, &mhints)
 }
 
 func (c *Client) UnMaximize() {
 
 	// Unmaximize window
-	for _, state := range c.Latest.States {
-		if strings.HasPrefix(state, "_NET_WM_STATE_MAXIMIZED") {
-			ewmh.WmStateReq(X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_VERT")
-			ewmh.WmStateReq(X, c.Win.Id, 0, "_NET_WM_STATE_MAXIMIZED_HORZ")
-			break
-		}
+	if common.IsInList("_NET_WM_STATE_MAXIMIZED_VERT", c.Latest.States) || common.IsInList("_NET_WM_STATE_MAXIMIZED_HORZ", c.Latest.States) {
+		ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_MAXIMIZED_VERT")
+		ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_MAXIMIZED_HORZ")
 	}
 }
 
-func (c *Client) MoveResize(x, y, w, h int) {
+func (c *Client) MoveDesktop(deskNum uint32) {
+	if deskNum == ^uint32(0) {
+		ewmh.WmStateReq(X, c.Window.Id, ewmh.StateAdd, "_NET_WM_STATE_STICKY")
+	}
+
+	// Set client desktop
+	ewmh.WmDesktopSet(X, c.Window.Id, uint(deskNum))
+	ewmh.ClientEvent(X, c.Window.Id, "_NET_WM_DESKTOP", int(deskNum), int(2))
+}
+
+func (c *Client) MoveWindow(x, y, w, h int) {
 	if c.Locked {
 		log.Info("Reject window move/resize [", c.Latest.Class, "]")
 
@@ -153,7 +137,7 @@ func (c *Client) MoveResize(x, y, w, h int) {
 		return
 	}
 
-	// Remove unwanted
+	// Remove unwanted properties
 	c.UnDecorate()
 	c.UnMaximize()
 
@@ -168,10 +152,11 @@ func (c *Client) MoveResize(x, y, w, h int) {
 		dw, dh = ext.Left+ext.Right, ext.Top+ext.Bottom
 	}
 
-	// Move and resize window
-	err := ewmh.MoveresizeWindow(X, c.Win.Id, x+dx, y+dy, w-dw, h-dh)
-	if err != nil {
-		log.Warn("Error on window move/resize [", c.Latest.Class, "]")
+	// Move and/or resize window
+	if w > 0 && h > 0 {
+		ewmh.MoveresizeWindow(X, c.Window.Id, x+dx, y+dy, w-dw, h-dh)
+	} else {
+		ewmh.MoveWindow(X, c.Window.Id, x+dx, y+dy)
 	}
 
 	// Update stored dimensions
@@ -189,11 +174,11 @@ func (c *Client) LimitDimensions(w, h int) {
 	nhints.Flags |= icccm.SizeHintPMinSize
 	nhints.MinWidth = uint(w - dw)
 	nhints.MinHeight = uint(h - dh)
-	icccm.WmNormalHintsSet(X, c.Win.Id, &nhints)
+	icccm.WmNormalHintsSet(X, c.Window.Id, &nhints)
 }
 
 func (c *Client) Update() {
-	info := GetInfo(c.Win.Id)
+	info := GetInfo(c.Window.Id)
 	if len(info.Class) == 0 {
 		return
 	}
@@ -226,12 +211,12 @@ func (c *Client) Write() {
 		return
 	}
 
-	log.Debug("Write client cache data ", cache.Name, " [", c.Latest.Class, "]")
+	log.Trace("Write client cache data ", cache.Name, " [", c.Latest.Class, "]")
 }
 
-func (c *Client) Read() *Info {
+func (c *Client) Read() *Client {
 	if !common.CacheEnabled() {
-		return c.Latest
+		return c
 	}
 
 	// Obtain cache object
@@ -242,15 +227,15 @@ func (c *Client) Read() *Info {
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		log.Info("No client cache found [", c.Latest.Class, "]")
-		return c.Latest
+		return c
 	}
 
 	// Parse client cache
-	cached := &Info{}
+	cached := &Client{}
 	err = json.Unmarshal([]byte(data), &cached)
 	if err != nil {
 		log.Warn("Error reading client cache [", c.Latest.Class, "]")
-		return c.Latest
+		return c
 	}
 
 	log.Debug("Read client cache data ", cache.Name, " [", c.Latest.Class, "]")
@@ -258,7 +243,7 @@ func (c *Client) Read() *Info {
 	return cached
 }
 
-func (c *Client) Cache() common.Cache[*Info] {
+func (c *Client) Cache() common.Cache[*Client] {
 	name := c.Latest.Class
 	hash := fmt.Sprintf("%s-%d", c.Latest.Class, c.Latest.Location.DeskNum)
 
@@ -269,10 +254,10 @@ func (c *Client) Cache() common.Cache[*Info] {
 	}
 
 	// Create client cache object
-	cache := common.Cache[*Info]{
+	cache := common.Cache[*Client]{
 		Folder: folder,
-		Name:   common.Hash(hash) + ".json",
-		Data:   c.Latest,
+		Name:   common.HashString(hash) + ".json",
+		Data:   c,
 	}
 
 	return cache
@@ -283,17 +268,18 @@ func (c *Client) Restore(flag uint8) {
 		c.Update()
 	}
 
+	// Restore window states
+	if flag == Cached {
+		if IsSticky(c.Cached) {
+			c.MoveDesktop(^uint32(0))
+		}
+	}
+
 	// Restore window size limits
-	icccm.WmNormalHintsSet(X, c.Win.Id, &c.Cached.Dimensions.Hints.Normal)
+	icccm.WmNormalHintsSet(X, c.Window.Id, &c.Cached.Dimensions.Hints.Normal)
 
 	// Restore window decorations
-	motif.WmHintsSet(X, c.Win.Id, &c.Cached.Dimensions.Hints.Motif)
-
-	// Restore window states
-	if common.IsInList("_NET_WM_STATE_STICKY", c.Cached.States) {
-		ewmh.WmStateReq(X, c.Win.Id, 1, "_NET_WM_STATE_STICKY")
-		ewmh.WmDesktopSet(X, c.Win.Id, ^uint(0))
-	}
+	motif.WmHintsSet(X, c.Window.Id, &c.Cached.Dimensions.Hints.Motif)
 
 	// Disable adjustments on restore
 	if c.Latest.Dimensions.AdjRestore {
@@ -309,19 +295,19 @@ func (c *Client) Restore(flag uint8) {
 	case Cached:
 		geom = c.Cached.Dimensions.Geometry
 	}
-	c.MoveResize(geom.X, geom.Y, geom.Width, geom.Height)
+	c.MoveWindow(geom.X, geom.Y, geom.Width, geom.Height)
 }
 
 func (c *Client) OuterGeometry() (x, y, w, h int) {
 
 	// Outer window dimensions (x/y relative to workspace)
-	oGeom, err := c.Win.DecorGeometry()
+	oGeom, err := c.Window.Instance.DecorGeometry()
 	if err != nil {
 		return
 	}
 
 	// Inner window dimensions (x/y relative to outer window)
-	iGeom, err := xwindow.RawGeometry(X, xproto.Drawable(c.Win.Id))
+	iGeom, err := xwindow.RawGeometry(X, xproto.Drawable(c.Window.Id))
 	if err != nil {
 		return
 	}
@@ -340,6 +326,11 @@ func (c *Client) OuterGeometry() (x, y, w, h int) {
 	x, y, w, h = oGeom.X()+iGeom.X()-dx, oGeom.Y()+iGeom.Y()-dy, iGeom.Width()+dw, iGeom.Height()+dh
 
 	return
+}
+
+func (c *Client) IsNew() bool {
+	created := time.UnixMilli(c.Window.Created)
+	return time.Since(created) < 1000*time.Millisecond
 }
 
 func IsSpecial(info *Info) bool {
@@ -423,18 +414,16 @@ func IsIgnored(info *Info) bool {
 	return false
 }
 
-func IsMaximized(w xproto.Window) bool {
-	info := GetInfo(w)
+func IsMaximized(info *Info) bool {
+	return common.IsInList("_NET_WM_STATE_MAXIMIZED_VERT", info.States) && common.IsInList("_NET_WM_STATE_MAXIMIZED_HORZ", info.States)
+}
 
-	// Check maximized windows
-	for _, state := range info.States {
-		if strings.HasPrefix(state, "_NET_WM_STATE_MAXIMIZED") {
-			log.Info("Ignore maximized window [", info.Class, "]")
-			return true
-		}
-	}
+func IsMinimized(info *Info) bool {
+	return common.IsInList("_NET_WM_STATE_HIDDEN", info.States)
+}
 
-	return false
+func IsSticky(info *Info) bool {
+	return common.IsInList("_NET_WM_STATE_STICKY", info.States)
 }
 
 func GetInfo(w xproto.Window) *Info {
@@ -450,7 +439,7 @@ func GetInfo(w xproto.Window) *Info {
 	// Window class (internal class name of the window)
 	cls, err := icccm.WmClassGet(X, w)
 	if err != nil {
-		log.Trace("Error on request ", err)
+		log.Trace("Error on request: ", err)
 	} else if cls != nil {
 		class = cls.Class
 	}
@@ -462,7 +451,7 @@ func GetInfo(w xproto.Window) *Info {
 	}
 
 	// Window geometry (dimensions of the window)
-	geom, err := xwindow.New(X, w).DecorGeometry()
+	geom, err := CreateXWindow(w).Instance.DecorGeometry()
 	if err != nil {
 		geom = &xrect.XRect{}
 	}
@@ -475,7 +464,7 @@ func GetInfo(w xproto.Window) *Info {
 	}
 	location = Location{
 		DeskNum:   deskNum,
-		ScreenNum: GetScreenNum(geom),
+		ScreenNum: ScreenNumGet(common.CreateGeometry(geom).Center()),
 	}
 
 	// Window types (types of the window)
@@ -519,13 +508,7 @@ func GetInfo(w xproto.Window) *Info {
 
 	// Window dimensions (geometry/extent information for move/resize)
 	dimensions = Dimensions{
-		Geometry: Geometry{
-			Rect:   geom,
-			X:      geom.X(),
-			Y:      geom.Y(),
-			Width:  geom.Width(),
-			Height: geom.Height(),
-		},
+		Geometry: *common.CreateGeometry(geom),
 		Hints: Hints{
 			Normal: *nhints,
 			Motif:  *mhints,
@@ -536,9 +519,9 @@ func GetInfo(w xproto.Window) *Info {
 			Top:    int(ext[2]),
 			Bottom: int(ext[3]),
 		},
-		AdjPos:     !common.IsZero(extNet) && (mhints.Decoration > 1 || nhints.WinGravity > 1) || !common.IsZero(extGtk),
-		AdjSize:    !common.IsZero(extNet) || !common.IsZero(extGtk),
-		AdjRestore: !common.IsZero(extGtk),
+		AdjPos:     !common.AllZero(extNet) && (mhints.Decoration > 1 || nhints.WinGravity > 1) || !common.AllZero(extGtk),
+		AdjSize:    !common.AllZero(extNet) || !common.AllZero(extGtk),
+		AdjRestore: !common.AllZero(extGtk),
 	}
 
 	return &Info{
@@ -549,15 +532,4 @@ func GetInfo(w xproto.Window) *Info {
 		Location:   location,
 		Dimensions: dimensions,
 	}
-}
-
-func GetScreenNum(geom xrect.Rect) uint {
-
-	// Window center position
-	center := render.Pointfix{
-		X: render.Fixed(geom.X() + geom.Width()/2),
-		Y: render.Fixed(geom.Y() + geom.Height()/2),
-	}
-
-	return ScreenNumGet(center)
 }

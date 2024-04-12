@@ -48,11 +48,55 @@ var (
 
 func main() {
 
+	// Init process and build informations
+	common.InitInfo(name, version, commit, date, source)
+
 	// Init command line arguments
-	common.InitArgs(name, version, commit, date, source)
+	common.InitArgs(input.Introspect())
 
 	// Init embedded files
 	common.InitFiles(toml, icon)
+
+	// Run dbus instance
+	runDbus()
+
+	// Run main instance
+	runMain()
+}
+
+func runDbus() {
+	property := len(common.Args.Dbus.Property) > 0
+	method := len(common.Args.Dbus.Method) > 0
+	listen := common.Args.Dbus.Listen
+
+	// Receive dbus property
+	if property {
+		input.Property(common.Args.Dbus.Property)
+	}
+
+	// Execute dbus method
+	if method {
+		input.Method(common.Args.Dbus.Method, common.Args.Dbus.Args)
+	}
+
+	// Listen to dbus events
+	if listen {
+		go input.Listen(common.Args.Dbus.Args)
+		select {}
+	}
+
+	// Prevent main instance start
+	if property || method || listen {
+		os.Exit(1)
+	}
+}
+
+func runMain() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Fatal(fmt.Errorf("%s\n%s", err, debug.Stack()))
+		}
+	}()
 
 	// Init lock and log files
 	defer InitLock().Close()
@@ -62,24 +106,13 @@ func main() {
 	common.InitCache()
 	common.InitConfig()
 
-	// Init root window properties
+	// Init root properties
 	store.InitRoot()
-
-	// Run main application
-	run()
-}
-
-func run() {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Fatal(fmt.Errorf("%s\n%s", err, debug.Stack()))
-		}
-	}()
 
 	// Create tracker
 	tracker := desktop.CreateTracker()
 	ws := tracker.ActiveWorkspace()
-	if !ws.Disabled() {
+	if ws.Enabled() {
 		ui.ShowLayout(ws)
 	}
 
@@ -89,6 +122,7 @@ func run() {
 	input.BindMouse(tracker)
 	input.BindKeys(tracker)
 	input.BindTray(tracker)
+	input.BindDbus(tracker)
 
 	// Run X event loop
 	xevent.Main(store.X)

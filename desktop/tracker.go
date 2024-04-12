@@ -1,13 +1,11 @@
 package desktop
 
 import (
-	"strings"
 	"time"
 
 	"github.com/jezek/xgb/xproto"
 
 	"github.com/jezek/xgbutil"
-	"github.com/jezek/xgbutil/ewmh"
 	"github.com/jezek/xgbutil/xevent"
 	"github.com/jezek/xgbutil/xprop"
 
@@ -20,42 +18,50 @@ import (
 type Tracker struct {
 	Clients    map[xproto.Window]*store.Client // List of tracked clients
 	Workspaces map[store.Location]*Workspace   // List of workspaces per location
-	Channel    *Channel                        // Helper for channel communication
-	Handler    *Handler                        // Helper for event handlers
+	Channels   *Channels                       // Helper for channel communication
+	Handlers   *Handlers                       // Helper for event handlers
 
 }
-type Channel struct {
+type Channels struct {
 	Event  chan string // Channel for events
 	Action chan string // Channel for actions
 }
 
-type Handler struct {
-	Timer        *time.Timer    // Timer to handle delayed structure events
-	ResizeClient *HandlerClient // Stores client for proportion change
-	MoveClient   *HandlerClient // Stores client for tiling after move
-	SwapClient   *HandlerClient // Stores clients for window swap
-	SwapScreen   *HandlerClient // Stores client for screen swap
+type Handlers struct {
+	Timer        *time.Timer // Timer to handle delayed structure events
+	ResizeClient *Handler    // Stores client for proportion change
+	MoveClient   *Handler    // Stores client for tiling after move
+	SwapClient   *Handler    // Stores clients for window swap
+	SwapScreen   *Handler    // Stores client for screen swap
 }
 
-type HandlerClient struct {
-	Active bool          // Indicates active handler event
-	Source *store.Client // Stores moving/resizing client
-	Target *store.Client // Stores hovered client
+type Handler struct {
+	Dragging bool        // Indicates pointer dragging event
+	Source   interface{} // Stores moved/resized client
+	Target   interface{} // Stores client/workspace
+}
+
+func (h *Handler) Active() bool {
+	return h.Source != nil
+}
+
+func (h *Handler) Reset() {
+	*h = Handler{}
 }
 
 func CreateTracker() *Tracker {
 	tr := Tracker{
 		Clients:    make(map[xproto.Window]*store.Client),
 		Workspaces: CreateWorkspaces(),
-		Channel: &Channel{
+		Channels: &Channels{
 			Event:  make(chan string),
 			Action: make(chan string),
 		},
-		Handler: &Handler{
-			ResizeClient: &HandlerClient{},
-			MoveClient:   &HandlerClient{},
-			SwapClient:   &HandlerClient{},
-			SwapScreen:   &HandlerClient{},
+		Handlers: &Handlers{
+			ResizeClient: &Handler{},
+			MoveClient:   &Handler{},
+			SwapClient:   &Handler{},
+			SwapScreen:   &Handler{},
 		},
 	}
 
@@ -76,7 +82,7 @@ func (tr *Tracker) Update() {
 	// Map trackable windows
 	trackable := make(map[xproto.Window]bool)
 	for _, w := range store.Windows.Stacked {
-		trackable[w] = tr.isTrackable(w)
+		trackable[w.Id] = tr.isTrackable(w.Id)
 	}
 
 	// Remove untrackable windows
@@ -88,8 +94,8 @@ func (tr *Tracker) Update() {
 
 	// Add trackable windows
 	for _, w := range store.Windows.Stacked {
-		if trackable[w] {
-			tr.trackWindow(w)
+		if trackable[w.Id] {
+			tr.trackWindow(w.Id)
 		}
 	}
 }
@@ -104,6 +110,9 @@ func (tr *Tracker) Reset() {
 
 	// Reset workspaces
 	tr.Workspaces = CreateWorkspaces()
+
+	// Communicate workplace change
+	tr.Channels.Event <- "workplace_change"
 }
 
 func (tr *Tracker) Write() {
@@ -117,30 +126,60 @@ func (tr *Tracker) Write() {
 	for _, ws := range tr.Workspaces {
 		ws.Write()
 	}
+
+	// Communicate windows change
+	tr.Channels.Event <- "windows_change"
+}
+
+func (tr *Tracker) Tile(ws *Workspace) {
+	if ws.Disabled() {
+		return
+	}
+
+	// Tile workspace
+	ws.Tile()
+
+	// Communicate clients change
+	tr.Channels.Event <- "clients_change"
+
+	// Communicate workspaces change
+	tr.Channels.Event <- "workspaces_change"
 }
 
 func (tr *Tracker) ActiveWorkspace() *Workspace {
-	location := store.Location{DeskNum: store.Workplace.CurrentDesk, ScreenNum: store.Workplace.CurrentScreen}
+	return tr.WorkspaceAt(store.Workplace.CurrentDesk, store.Workplace.CurrentScreen)
+}
 
-	// Validate active workspace
+func (tr *Tracker) ClientWorkspace(c *store.Client) *Workspace {
+	return tr.WorkspaceAt(c.Latest.Location.DeskNum, c.Latest.Location.ScreenNum)
+}
+
+func (tr *Tracker) WorkspaceAt(deskNum uint, screenNum uint) *Workspace {
+	location := store.Location{DeskNum: deskNum, ScreenNum: screenNum}
+
+	// Validate workspace
 	ws := tr.Workspaces[location]
 	if ws == nil {
-		log.Warn("Invalid active workspace [workspace-", location.DeskNum, "-", location.ScreenNum, "]")
+		log.Warn("Invalid workspace [workspace-", location.DeskNum, "-", location.ScreenNum, "]")
 	}
 
 	return ws
 }
 
-func (tr *Tracker) ClientWorkspace(c *store.Client) *Workspace {
-	location := store.Location{DeskNum: c.Latest.Location.DeskNum, ScreenNum: c.Latest.Location.ScreenNum}
+func (tr *Tracker) ClientAt(ws *Workspace, p common.Point) *store.Client {
+	mg := ws.ActiveLayout().GetManager()
 
-	// Validate client workspace
-	ws := tr.Workspaces[location]
-	if ws == nil {
-		log.Warn("Invalid client workspace [workspace-", location.DeskNum, "-", location.ScreenNum, "]")
+	// Check if point hovers visible client
+	for _, c := range mg.Clients(store.Visible) {
+		if c == nil {
+			continue
+		}
+		if common.IsInsideRect(p, c.Latest.Dimensions.Geometry) {
+			return c
+		}
 	}
 
-	return ws
+	return nil
 }
 
 func (tr *Tracker) unlockClients() {
@@ -163,13 +202,13 @@ func (tr *Tracker) trackWindow(w xproto.Window) bool {
 
 	// Add new client
 	c := store.CreateClient(w)
-	tr.Clients[c.Win.Id] = c
+	tr.Clients[c.Window.Id] = c
 	ws := tr.ClientWorkspace(c)
 	ws.AddClient(c)
 
 	// Attach handlers
 	tr.attachHandlers(c)
-	ws.Tile()
+	tr.Tile(ws)
 
 	return true
 }
@@ -192,65 +231,61 @@ func (tr *Tracker) untrackWindow(w xproto.Window) bool {
 	// Remove client
 	ws.RemoveClient(c)
 	delete(tr.Clients, w)
-	ws.Tile()
+
+	// Tile workspace
+	tr.Tile(ws)
 
 	return true
 }
 
 func (tr *Tracker) handleMaximizedClient(c *store.Client) {
-	if !tr.isTracked(c.Win.Id) {
+	if !tr.isTracked(c.Window.Id) {
 		return
 	}
 
 	// Client maximized
-	states, _ := ewmh.WmStateGet(store.X, c.Win.Id)
-	for _, state := range states {
-		if strings.HasPrefix(state, "_NET_WM_STATE_MAXIMIZED") {
-			ws := tr.ClientWorkspace(c)
-			if ws.Disabled() {
-				return
-			}
-			log.Debug("Client maximized handler fired [", c.Latest.Class, "]")
-
-			// Update client states
-			c.Update()
-
-			// Set fullscreen layout
-			c.UnMaximize()
-			tr.Channel.Action <- "layout_fullscreen"
-			c.Activate()
-
-			break
+	if store.IsMaximized(store.GetInfo(c.Window.Id)) {
+		ws := tr.ClientWorkspace(c)
+		if ws.Disabled() {
+			return
 		}
+		log.Debug("Client maximized handler fired [", c.Latest.Class, "]")
+
+		// Update client states
+		c.Update()
+
+		// Reset maximization
+		c.UnMaximize()
+
+		// Check window lifetime
+		if !c.IsNew() {
+			tr.Channels.Action <- "layout_fullscreen"
+		}
+		store.ActiveWindowSet(store.X, c.Window)
 	}
 }
 
 func (tr *Tracker) handleMinimizedClient(c *store.Client) {
-	if !tr.isTracked(c.Win.Id) {
+	if !tr.isTracked(c.Window.Id) {
 		return
 	}
 
 	// Client minimized
-	states, _ := ewmh.WmStateGet(store.X, c.Win.Id)
-	for _, state := range states {
-		if state == "_NET_WM_STATE_HIDDEN" {
-			ws := tr.ClientWorkspace(c)
-			if ws.Disabled() {
-				return
-			}
-			log.Debug("Client minimized handler fired [", c.Latest.Class, "]")
-
-			// Untrack client
-			tr.untrackWindow(c.Win.Id)
-
-			break
+	if store.IsMinimized(store.GetInfo(c.Window.Id)) {
+		ws := tr.ClientWorkspace(c)
+		if ws.Disabled() {
+			return
 		}
+		log.Debug("Client minimized handler fired [", c.Latest.Class, "]")
+
+		// Untrack client
+		tr.untrackWindow(c.Window.Id)
 	}
 }
 
 func (tr *Tracker) handleResizeClient(c *store.Client) {
 	ws := tr.ClientWorkspace(c)
-	if ws.Disabled() || !tr.isTracked(c.Win.Id) || store.IsMaximized(c.Win.Id) {
+	if ws.Disabled() || !tr.isTracked(c.Window.Id) || store.IsMaximized(store.GetInfo(c.Window.Id)) {
 		return
 	}
 
@@ -259,7 +294,7 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	px, py, pw, ph := pGeom.Pieces()
 
 	// Current dimensions
-	cGeom, err := c.Win.DecorGeometry()
+	cGeom, err := c.Window.Instance.DecorGeometry()
 	if err != nil {
 		return
 	}
@@ -268,23 +303,22 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 	// Check size changes
 	resized := cw != pw || ch != ph
 	moved := (cx != px || cy != py) && (cw == pw && ch == ph)
-	added := time.Since(c.Created) < 1000*time.Millisecond
 
-	if resized && !moved && !tr.Handler.MoveClient.Active {
-		al := ws.ActiveLayout()
+	if resized && !moved && !tr.Handlers.MoveClient.Active() {
+		pt := store.PointerUpdate(store.X)
 
 		// Set client resize event
-		if !tr.Handler.ResizeClient.Active {
-			tr.Handler.ResizeClient = &HandlerClient{Active: true, Source: c}
+		if !tr.Handlers.ResizeClient.Active() {
+			tr.Handlers.ResizeClient = &Handler{Dragging: pt.Dragging(500), Source: c}
 		}
 		log.Debug("Client resize handler fired [", c.Latest.Class, "]")
 
 		// Check window lifetime
-		if !added {
+		if tr.Handlers.ResizeClient.Dragging && !c.IsNew() {
 
 			// Set client resize lock
-			if tr.Handler.ResizeClient.Active {
-				tr.Handler.ResizeClient.Source.Lock()
+			if tr.Handlers.ResizeClient.Active() {
+				tr.Handlers.ResizeClient.Source.(*store.Client).Lock()
 				log.Debug("Client resize handler active [", c.Latest.Class, "]")
 			}
 
@@ -295,17 +329,17 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 				Bottom: cy == py && ch != ph,
 				Left:   cx != px,
 			}
-			al.UpdateProportions(c, dir)
+			ws.ActiveLayout().UpdateProportions(c, dir)
 		}
 
 		// Tile workspace
-		ws.Tile()
+		tr.Tile(ws)
 	}
 }
 
 func (tr *Tracker) handleMoveClient(c *store.Client) {
 	ws := tr.ClientWorkspace(c)
-	if !tr.isTracked(c.Win.Id) || store.IsMaximized(c.Win.Id) {
+	if !tr.isTracked(c.Window.Id) || store.IsMaximized(store.GetInfo(c.Window.Id)) {
 		return
 	}
 
@@ -314,7 +348,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 	px, py, pw, ph := pGeom.Pieces()
 
 	// Current dimensions
-	cGeom, err := c.Win.DecorGeometry()
+	cGeom, err := c.Window.Instance.DecorGeometry()
 	if err != nil {
 		return
 	}
@@ -323,61 +357,62 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 	// Check position changes
 	moved := cx != px || cy != py
 	resized := cw != pw || ch != ph
-	active := c.Win.Id == store.Windows.Active
 
-	if active && moved && !resized && !tr.Handler.ResizeClient.Active {
-		mg := ws.ActiveLayout().GetManager()
+	if moved && !resized && !tr.Handlers.ResizeClient.Active() {
 		pt := store.PointerUpdate(store.X)
 
 		// Set client move event
-		if !tr.Handler.MoveClient.Active {
-			tr.Handler.MoveClient = &HandlerClient{Active: true, Source: c}
+		if !tr.Handlers.MoveClient.Active() {
+			tr.Handlers.MoveClient = &Handler{Dragging: pt.Dragging(500), Source: c}
 		}
 		log.Debug("Client move handler fired [", c.Latest.Class, "]")
 
-		// Check if pointer hovers another client
-		tr.Handler.SwapClient.Active = false
-		for _, co := range mg.Clients(store.Visible) {
-			if co == nil || c.Win.Id == co.Win.Id {
-				continue
-			}
+		// Obtain targets based on dragging indicator
+		targetPoint := *common.CreatePoint(cx, cy)
+		if tr.Handlers.MoveClient.Dragging {
+			targetPoint = pt.Position
+		}
+		targetDesk := store.Workplace.CurrentDesk
+		targetScreen := store.ScreenNumGet(targetPoint)
 
-			// Store moved client and hovered client
-			if common.IsInsideRect(pt.Position, co.Latest.Dimensions.Geometry.Rect) {
-				tr.Handler.SwapClient = &HandlerClient{Active: true, Source: c, Target: co}
-				log.Debug("Client move handler active [", c.Latest.Class, "-", co.Latest.Class, "]")
-				break
-			}
+		// Check if target point hovers another client
+		tr.Handlers.SwapClient.Reset()
+		if co := tr.ClientAt(ws, targetPoint); co != nil {
+			tr.Handlers.SwapClient = &Handler{Source: c, Target: co}
+			log.Debug("Client swap handler active [", c.Latest.Class, "-", co.Latest.Class, "]")
 		}
 
-		// Check if pointer moves to another screen
-		tr.Handler.SwapScreen.Active = false
-		if c.Latest.Location.ScreenNum != store.Workplace.CurrentScreen {
-			tr.Handler.SwapScreen = &HandlerClient{Active: true, Source: c}
+		// Check if target point moves to another screen
+		tr.Handlers.SwapScreen.Reset()
+		if c.Latest.Location.ScreenNum != targetScreen {
+			tr.Handlers.SwapScreen = &Handler{Source: c, Target: tr.WorkspaceAt(targetDesk, targetScreen)}
+			log.Debug("Screen swap handler active [", c.Latest.Class, "]")
 		}
 	}
 }
 
-func (tr *Tracker) handleSwapClient(c *store.Client) {
+func (tr *Tracker) handleSwapClient(h *Handler) {
+	c, target := h.Source.(*store.Client), h.Target.(*store.Client)
 	ws := tr.ClientWorkspace(c)
-	if !tr.isTracked(c.Win.Id) {
+	if !tr.isTracked(c.Window.Id) {
 		return
 	}
-	log.Debug("Client swap handler fired [", tr.Handler.SwapClient.Source.Latest.Class, "-", tr.Handler.SwapClient.Target.Latest.Class, "]")
+	log.Debug("Client swap handler fired [", c.Latest.Class, "-", target.Latest.Class, "]")
 
 	// Swap clients on same desktop and screen
 	mg := ws.ActiveLayout().GetManager()
-	mg.SwapClient(tr.Handler.SwapClient.Source, tr.Handler.SwapClient.Target)
+	mg.SwapClient(c, target)
 
-	// Reset client swapping event
-	tr.Handler.SwapClient.Active = false
+	// Reset client swapping handler
+	h.Reset()
 
 	// Tile workspace
-	ws.Tile()
+	tr.Tile(ws)
 }
 
-func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
-	if !tr.isTracked(c.Win.Id) {
+func (tr *Tracker) handleWorkspaceChange(h *Handler) {
+	c, target := h.Source.(*store.Client), h.Target.(*Workspace)
+	if !tr.isTracked(c.Window.Id) {
 		return
 	}
 	log.Debug("Client workspace handler fired [", c.Latest.Class, "]")
@@ -390,19 +425,19 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 
 	// Tile current workspace
 	if ws.Enabled() {
-		ws.Tile()
+		tr.Tile(ws)
 	}
 
 	// Update client desktop and screen
-	if !tr.isTrackable(c.Win.Id) {
+	if !tr.isTrackable(c.Window.Id) {
 		return
 	}
 	c.Update()
 
 	// Add client to new workspace
 	ws = tr.ClientWorkspace(c)
-	if tr.Handler.SwapScreen.Active && tr.ActiveWorkspace().Enabled() {
-		ws = tr.ActiveWorkspace()
+	if tr.Handlers.SwapScreen.Active() && target.Enabled() {
+		ws = target
 	}
 	mg = ws.ActiveLayout().GetManager()
 	ws.AddClient(c)
@@ -412,45 +447,46 @@ func (tr *Tracker) handleWorkspaceChange(c *store.Client) {
 
 	// Tile new workspace
 	if ws.Enabled() {
-		ws.Tile()
+		tr.Tile(ws)
 	} else {
 		c.Restore(store.Latest)
 	}
 
-	// Reset screen swapping event
-	tr.Handler.SwapScreen.Active = false
+	// Reset screen swapping handler
+	h.Reset()
 }
 
 func (tr *Tracker) onStateUpdate(state string, desk uint, screen uint) {
-	viewportChanged := common.IsInList(state, []string{"_NET_NUMBER_OF_DESKTOPS", "_NET_DESKTOP_LAYOUT", "_NET_DESKTOP_GEOMETRY", "_NET_DESKTOP_VIEWPORT", "_NET_WORKAREA"})
-	clientsChanged := common.IsInList(state, []string{"_NET_CLIENT_LIST_STACKING", "_NET_ACTIVE_WINDOW"})
-
-	workspacesChanged := store.Workplace.DeskCount*store.Workplace.ScreenCount != uint(len(tr.Workspaces))
+	workplaceChanged := store.Workplace.DeskCount*store.Workplace.ScreenCount != uint(len(tr.Workspaces))
 	workspaceChanged := common.IsInList(state, []string{"_NET_CURRENT_DESKTOP"})
 
-	// Number of desktops or screens changed
-	if workspacesChanged {
+	viewportChanged := common.IsInList(state, []string{"_NET_NUMBER_OF_DESKTOPS", "_NET_DESKTOP_LAYOUT", "_NET_DESKTOP_GEOMETRY", "_NET_DESKTOP_VIEWPORT", "_NET_WORKAREA"})
+	clientsChanged := common.IsInList(state, []string{"_NET_CLIENT_LIST_STACKING"})
+	focusChanged := common.IsInList(state, []string{"_NET_ACTIVE_WINDOW"})
+
+	if workplaceChanged {
+
+		// Reset clients and workspaces
 		tr.Reset()
 	}
 
-	// Active desktop changed
 	if workspaceChanged {
+
+		// Update sticky windows
 		for _, c := range tr.Clients {
-			sticky := common.IsInList("_NET_WM_STATE_STICKY", c.Latest.States)
-			if sticky && c.Latest.Location.DeskNum != store.Workplace.CurrentDesk {
-				ewmh.WmDesktopSet(store.X, c.Win.Id, ^uint(0))
+			if store.IsSticky(c.Latest) && c.Latest.Location.DeskNum != store.Workplace.CurrentDesk {
+				c.MoveDesktop(^uint32(0))
 			}
 		}
 	}
 
-	// Viewport changed or clients changed
-	if viewportChanged || clientsChanged {
+	if viewportChanged || clientsChanged || focusChanged {
 
 		// Deactivate handlers
-		tr.Handler.ResizeClient.Active = false
-		tr.Handler.MoveClient.Active = false
-		tr.Handler.SwapClient.Active = false
-		tr.Handler.SwapScreen.Active = false
+		tr.Handlers.ResizeClient.Reset()
+		tr.Handlers.MoveClient.Reset()
+		tr.Handlers.SwapClient.Reset()
+		tr.Handlers.SwapScreen.Reset()
 
 		// Unlock clients
 		tr.unlockClients()
@@ -459,70 +495,70 @@ func (tr *Tracker) onStateUpdate(state string, desk uint, screen uint) {
 		tr.Update()
 	}
 
-	// Write client and workspace cache
-	tr.Write()
+	if clientsChanged {
 
-	// Communicate state update
-	tr.Channel.Event <- "state_update"
+		// Write client and workspace cache
+		tr.Write()
+	}
 }
 
-func (tr *Tracker) onPointerUpdate(button uint16, desk uint, screen uint) {
-	release := button == 0
+func (tr *Tracker) onPointerUpdate(pointer store.XPointer, desk uint, screen uint) {
+	buttonReleased := !pointer.Pressed()
 
 	// Reset timer
-	if tr.Handler.Timer != nil {
-		tr.Handler.Timer.Stop()
+	if tr.Handlers.Timer != nil {
+		tr.Handlers.Timer.Stop()
 	}
 
 	// Wait on button release
 	var t time.Duration = 0
-	if release {
+	if buttonReleased {
 		t = 50
 	}
 
 	// Wait for structure events
-	tr.Handler.Timer = time.AfterFunc(t*time.Millisecond, func() {
+	tr.Handlers.Timer = time.AfterFunc(t*time.Millisecond, func() {
 
 		// Window moved to another screen
-		if tr.Handler.SwapScreen.Active {
-			tr.handleWorkspaceChange(tr.Handler.SwapScreen.Source)
+		if tr.Handlers.SwapScreen.Active() {
+			tr.handleWorkspaceChange(tr.Handlers.SwapScreen)
 		}
 
 		// Window moved over another window
-		if tr.Handler.SwapClient.Active {
-			tr.handleSwapClient(tr.Handler.SwapClient.Source)
+		if tr.Handlers.SwapClient.Active() {
+			tr.handleSwapClient(tr.Handlers.SwapClient)
 		}
 
 		// Window moved or resized
-		if tr.Handler.MoveClient.Active || tr.Handler.ResizeClient.Active {
-			tr.Handler.MoveClient.Active = false
-			tr.Handler.ResizeClient.Active = false
+		if tr.Handlers.MoveClient.Active() || tr.Handlers.ResizeClient.Active() {
+			tr.Handlers.MoveClient.Reset()
+			tr.Handlers.ResizeClient.Reset()
 
 			// Unlock clients
 			tr.unlockClients()
 
 			// Tile workspace
-			if release {
-				tr.ActiveWorkspace().Tile()
+			if buttonReleased {
+				tr.Tile(tr.ActiveWorkspace())
 			}
 		}
 	})
 }
 
 func (tr *Tracker) attachHandlers(c *store.Client) {
-	c.Win.Listen(xproto.EventMaskStructureNotify | xproto.EventMaskPropertyChange | xproto.EventMaskFocusChange)
+	c.Window.Instance.Listen(xproto.EventMaskStructureNotify | xproto.EventMaskPropertyChange | xproto.EventMaskFocusChange)
 
 	// Attach structure events
-	xevent.ConfigureNotifyFun(func(x *xgbutil.XUtil, ev xevent.ConfigureNotifyEvent) {
+	xevent.ConfigureNotifyFun(func(X *xgbutil.XUtil, ev xevent.ConfigureNotifyEvent) {
 		log.Trace("Client structure event [", c.Latest.Class, "]")
 
 		// Handle structure events
 		tr.handleResizeClient(c)
 		tr.handleMoveClient(c)
-	}).Connect(store.X, c.Win.Id)
+	}).Connect(store.X, c.Window.Id)
 
 	// Attach property events
-	xevent.PropertyNotifyFun(func(x *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
+	xevent.PropertyNotifyFun(func(X *xgbutil.XUtil, ev xevent.PropertyNotifyEvent) {
 		aname, _ := xprop.AtomName(store.X, ev.Atom)
 		log.Trace("Client property event ", aname, " [", c.Latest.Class, "]")
 
@@ -531,25 +567,9 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 			tr.handleMaximizedClient(c)
 			tr.handleMinimizedClient(c)
 		} else if aname == "_NET_WM_DESKTOP" {
-			tr.handleWorkspaceChange(c)
+			tr.handleWorkspaceChange(&Handler{Source: c, Target: tr.ActiveWorkspace()})
 		}
-	}).Connect(store.X, c.Win.Id)
-
-	// Attach focus in events
-	xevent.FocusInFun(func(x *xgbutil.XUtil, ev xevent.FocusInEvent) {
-		log.Trace("Client focus in event [", c.Latest.Class, "]")
-
-		// Update active window
-		store.Windows.Active = store.ActiveWindowGet(store.X)
-	}).Connect(store.X, c.Win.Id)
-
-	// Attach focus out events
-	xevent.FocusOutFun(func(x *xgbutil.XUtil, ev xevent.FocusOutEvent) {
-		log.Trace("Client focus out event [", c.Latest.Class, "]")
-
-		// Update active window
-		store.Windows.Active = store.ActiveWindowGet(store.X)
-	}).Connect(store.X, c.Win.Id)
+	}).Connect(store.X, c.Window.Id)
 }
 
 func (tr *Tracker) isTracked(w xproto.Window) bool {

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/jezek/xgb/randr"
-	"github.com/jezek/xgb/render"
 	"github.com/jezek/xgb/xproto"
 
 	"github.com/jezek/xgbutil"
@@ -24,47 +23,98 @@ import (
 
 var (
 	X         *xgbutil.XUtil // X connection
+	Workplace *XWorkplace    // X workplace
 	Pointer   *XPointer      // X pointer
 	Windows   *XWindows      // X windows
-	Workplace *XWorkplace    // X workplace
 )
-
-var (
-	pointerCallbacksFun []func(uint16, uint, uint) // Pointer events callback functions
-	stateCallbacksFun   []func(string, uint, uint) // State events callback functions
-)
-
-type XPointer struct {
-	Button   uint16          // Pointer device button states
-	Position render.Pointfix // Pointer position coordinates
-}
-
-type XWindows struct {
-	Active  xproto.Window   // Current active window
-	Stacked []xproto.Window // List of stacked windows
-}
 
 type XWorkplace struct {
-	Displays      XHeads // Physical connected displays
-	DeskCount     uint   // Number of desktops
-	ScreenCount   uint   // Number of screens
-	CurrentDesk   uint   // Current desktop number
-	CurrentScreen uint   // Current screen number
+	DeskCount     uint      // Number of desktops
+	ScreenCount   uint      // Number of screens
+	CurrentDesk   uint      // Current desktop number
+	CurrentScreen uint      // Current screen number
+	Displays      XDisplays // Physical connected displays
 }
 
-type XHeads struct {
+type XDisplays struct {
 	Name     string    // Unique heads name (display summary)
-	Screens  []*XHead  // Screen dimensions (full display size)
-	Desktops []*XHead  // Desktop dimensions (desktop without panels)
+	Screens  []XHead   // Screen dimensions (full display size)
+	Desktops []XHead   // Desktop dimensions (desktop without panels)
 	Corners  []*Corner // Display corners (for pointer events)
 }
 
 type XHead struct {
-	Id         uint32 // Head output id (display id)
-	Name       string // Head output name (display name)
-	Primary    bool   // Head primary flag (primary display)
-	xrect.Rect        // Head dimensions (x/y/width/height)
+	Id       uint32          // Head output id (display id)
+	Name     string          // Head output name (display name)
+	Primary  bool            // Head primary flag (primary display)
+	Geometry common.Geometry // Head dimensions (x/y/width/height)
 }
+
+type XPointer struct {
+	Drag     XDrag        // Pointer device drag states
+	Button   XButton      // Pointer device button states
+	Position common.Point // Pointer position coordinates
+}
+
+func (p *XPointer) Dragging(dt time.Duration) bool {
+	return p.Drag.Left(dt) || p.Drag.Middle(dt) || p.Drag.Right(dt)
+}
+
+func (p *XPointer) Pressed() bool {
+	return p.Button.Left || p.Button.Middle || p.Button.Right
+}
+
+func (p *XPointer) Press() {
+	p.Button = XButton{true, true, true}
+}
+
+type XDrag struct {
+	LeftTime   int64 // Pointer left last drag time
+	MiddleTime int64 // Pointer middle last drag time
+	RightTime  int64 // Pointer right last drag time
+}
+
+func (d *XDrag) Left(dt time.Duration) bool {
+	return time.Since(time.UnixMilli(d.LeftTime)) < dt*time.Millisecond
+}
+
+func (d *XDrag) Middle(dt time.Duration) bool {
+	return time.Since(time.UnixMilli(d.MiddleTime)) < dt*time.Millisecond
+}
+
+func (d *XDrag) Right(dt time.Duration) bool {
+	return time.Since(time.UnixMilli(d.RightTime)) < dt*time.Millisecond
+}
+
+type XButton struct {
+	Left   bool // Pointer left click
+	Middle bool // Pointer middle click
+	Right  bool // Pointer right click
+}
+
+type XWindows struct {
+	Active  XWindow   // Current active window
+	Stacked []XWindow // List of stacked windows
+}
+
+type XWindow struct {
+	Id       xproto.Window   // Window object id
+	Created  int64           // Internal creation timestamp
+	Instance *xwindow.Window `json:"-"` // Window object instance
+}
+
+func CreateXWindow(w xproto.Window) *XWindow {
+	return &XWindow{
+		Id:       w,
+		Created:  time.Now().UnixMilli(),
+		Instance: xwindow.New(X, w),
+	}
+}
+
+var (
+	stateCallbacksFun   []func(string, uint, uint)   // State events callback functions
+	pointerCallbacksFun []func(XPointer, uint, uint) // Pointer events callback functions
+)
 
 func InitRoot() {
 
@@ -90,8 +140,8 @@ func InitRoot() {
 	Workplace.CurrentScreen = ScreenNumGet(Pointer.Position)
 
 	// Attach root events
-	root := xwindow.New(X, X.RootWin())
-	root.Listen(xproto.EventMaskSubstructureNotify | xproto.EventMaskPropertyChange)
+	root := CreateXWindow(X.RootWin())
+	root.Instance.Listen(xproto.EventMaskSubstructureNotify | xproto.EventMaskPropertyChange)
 	xevent.PropertyNotifyFun(StateUpdate).Connect(X, root.Id)
 }
 
@@ -129,7 +179,7 @@ func Connected() bool {
 		}
 
 		// Connection to X established
-		log.Info("Connected to X server [", wm, "]")
+		log.Info("Connected to X server on ", common.Process.Host, " [", common.Process.System, ", ", wm, "]")
 		randr.Init(X.Conn())
 		connected = true
 	}
@@ -161,8 +211,14 @@ func CurrentDesktopGet(X *xgbutil.XUtil) uint {
 	return currentDesk
 }
 
-func ActiveWindowGet(X *xgbutil.XUtil) xproto.Window {
-	activeWindow, err := ewmh.ActiveWindowGet(X)
+func CurrentDesktopSet(X *xgbutil.XUtil, deskNum uint) {
+	ewmh.CurrentDesktopSet(X, deskNum)
+	ewmh.ClientEvent(X, X.RootWin(), "_NET_CURRENT_DESKTOP", int(deskNum), int(0))
+	Workplace.CurrentDesk = deskNum
+}
+
+func ActiveWindowGet(X *xgbutil.XUtil) XWindow {
+	active, err := ewmh.ActiveWindowGet(X)
 
 	// Validate active window
 	if err != nil {
@@ -170,11 +226,17 @@ func ActiveWindowGet(X *xgbutil.XUtil) xproto.Window {
 		return Windows.Active
 	}
 
-	return activeWindow
+	return *CreateXWindow(active)
 }
 
-func ClientListStackingGet(X *xgbutil.XUtil) []xproto.Window {
-	windows, err := ewmh.ClientListStackingGet(X)
+func ActiveWindowSet(X *xgbutil.XUtil, w *XWindow) {
+	ewmh.ActiveWindowSet(X, w.Id)
+	ewmh.ClientEvent(X, w.Id, "_NET_ACTIVE_WINDOW", int(2), int(0), int(0))
+	Windows.Active = *CreateXWindow(w.Id)
+}
+
+func ClientListStackingGet(X *xgbutil.XUtil) []XWindow {
+	clients, err := ewmh.ClientListStackingGet(X)
 
 	// Validate client list
 	if err != nil {
@@ -182,14 +244,21 @@ func ClientListStackingGet(X *xgbutil.XUtil) []xproto.Window {
 		return Windows.Stacked
 	}
 
+	// Create windows
+	windows := []XWindow{}
+	for _, w := range clients {
+		windows = append(windows, *CreateXWindow(w))
+	}
+
 	return windows
 }
 
-func DisplaysGet(X *xgbutil.XUtil) XHeads {
+func DisplaysGet(X *xgbutil.XUtil) XDisplays {
 	var name string
 
 	// Get geometry of root window
-	rGeom, err := xwindow.New(X, X.RootWin()).Geometry()
+	root := CreateXWindow(X.RootWin())
+	geom, err := root.Instance.Geometry()
 	if err != nil {
 		log.Fatal("Error retrieving root geometry: ", err)
 	}
@@ -200,35 +269,39 @@ func DisplaysGet(X *xgbutil.XUtil) XHeads {
 
 	// Get heads name
 	for _, screen := range screens {
-		x, y, w, h := screen.Rect.Pieces()
+		x, y, w, h := screen.Geometry.Pieces()
 		name += fmt.Sprintf("%s-%d-%d-%d-%d-%d-", screen.Name, screen.Id, x, y, w, h)
 	}
 	name = strings.Trim(name, "-")
 
 	// Get desktop rects
-	dRects := []xrect.Rect{}
+	rects := []xrect.Rect{}
 	for _, desktop := range desktops {
-		dRects = append(dRects, desktop.Rect)
+		rects = append(rects, desktop.Geometry.Rect())
 	}
 
-	// Account for desktop panels
-	for _, win := range Windows.Stacked {
-		strut, err := ewmh.WmStrutPartialGet(X, win)
+	// Get margins of desktop panels
+	for _, w := range Windows.Stacked {
+		strut, err := ewmh.WmStrutPartialGet(X, w.Id)
 		if err != nil {
 			continue
 		}
 
-		// Apply in place struts to desktop
-		_, _, w, h := rGeom.Pieces()
-		xrect.ApplyStrut(dRects, uint(w), uint(h),
+		// Apply struts to rectangles in place
+		xrect.ApplyStrut(rects, uint(geom.Width()), uint(geom.Height()),
 			strut.Left, strut.Right, strut.Top, strut.Bottom,
 			strut.LeftStartY, strut.LeftEndY, strut.RightStartY, strut.RightEndY,
 			strut.TopStartX, strut.TopEndX, strut.BottomStartX, strut.BottomEndX,
 		)
 	}
 
+	// Update desktop geometry
+	for i := range desktops {
+		desktops[i].Geometry = *common.CreateGeometry(rects[i])
+	}
+
 	// Create display heads
-	heads := XHeads{Name: name}
+	heads := XDisplays{Name: name}
 	heads.Screens = screens
 	heads.Desktops = desktops
 	heads.Corners = CreateCorners(screens)
@@ -238,12 +311,11 @@ func DisplaysGet(X *xgbutil.XUtil) XHeads {
 
 	log.Info("Screens ", heads.Screens)
 	log.Info("Desktops ", heads.Desktops)
-	log.Info("Corners ", heads.Corners)
 
 	return heads
 }
 
-func PhysicalHeadsGet(X *xgbutil.XUtil) []*XHead {
+func PhysicalHeadsGet(X *xgbutil.XUtil) []XHead {
 
 	// Get screen resources
 	resources, err := randr.GetScreenResources(X.Conn(), X.RootWin()).Reply()
@@ -259,8 +331,8 @@ func PhysicalHeadsGet(X *xgbutil.XUtil) []*XHead {
 	hasPrimary := false
 
 	// Get output heads
-	heads := []*XHead{}
-	biggest := XHead{Rect: xrect.New(0, 0, 0, 0)}
+	heads := []XHead{}
+	biggest := XHead{}
 	for _, output := range resources.Outputs {
 		oinfo, err := randr.GetOutputInfo(X.Conn(), output, 0).Reply()
 		if err != nil {
@@ -283,18 +355,18 @@ func PhysicalHeadsGet(X *xgbutil.XUtil) []*XHead {
 			Id:      uint32(output),
 			Name:    string(oinfo.Name),
 			Primary: primary != nil && output == primary.Output,
-			Rect: xrect.New(
-				int(cinfo.X),
-				int(cinfo.Y),
-				int(cinfo.Width),
-				int(cinfo.Height),
-			),
+			Geometry: common.Geometry{
+				X:      int(cinfo.X),
+				Y:      int(cinfo.Y),
+				Width:  int(cinfo.Width),
+				Height: int(cinfo.Height),
+			},
 		}
-		heads = append(heads, &head)
+		heads = append(heads, head)
 
 		// Set helper variables
 		hasPrimary = head.Primary || hasPrimary
-		if head.Width()*head.Height() > biggest.Rect.Width()*biggest.Rect.Height() {
+		if head.Geometry.Width*head.Geometry.Height > biggest.Geometry.Width*biggest.Geometry.Height {
 			biggest = head
 		}
 	}
@@ -310,7 +382,7 @@ func PhysicalHeadsGet(X *xgbutil.XUtil) []*XHead {
 
 	// Sort output heads
 	sort.Slice(heads, func(i, j int) bool {
-		return heads[i].X() < heads[j].X()
+		return heads[i].Geometry.X < heads[j].Geometry.X
 	})
 
 	return heads
@@ -326,19 +398,24 @@ func PointerGet(X *xgbutil.XUtil) *XPointer {
 	}
 
 	return &XPointer{
-		Button: p.Mask&xproto.ButtonMask1 | p.Mask&xproto.ButtonMask2 | p.Mask&xproto.ButtonMask3,
-		Position: render.Pointfix{
-			X: render.Fixed(p.RootX),
-			Y: render.Fixed(p.RootY),
+		Drag: XDrag{},
+		Button: XButton{
+			Left:   p.Mask&xproto.ButtonMask1 == xproto.ButtonMask1,
+			Middle: p.Mask&xproto.ButtonMask2 == xproto.ButtonMask2,
+			Right:  p.Mask&xproto.ButtonMask3 == xproto.ButtonMask3,
+		},
+		Position: common.Point{
+			X: int(p.RootX),
+			Y: int(p.RootY),
 		},
 	}
 }
 
-func ScreenNumGet(p render.Pointfix) uint {
+func ScreenNumGet(p common.Point) uint {
 
 	// Check if point is inside screen rectangle
-	for screenNum, rect := range Workplace.Displays.Screens {
-		if common.IsInsideRect(p, rect) {
+	for screenNum, screen := range Workplace.Displays.Screens {
+		if common.IsInsideRect(p, screen.Geometry) {
 			return uint(screenNum)
 		}
 	}
@@ -346,21 +423,20 @@ func ScreenNumGet(p render.Pointfix) uint {
 	return 0
 }
 
-func DesktopDimensions(screenNum uint) (x, y, w, h int) {
+func DesktopGeometry(screenNum uint) *common.Geometry {
 	if int(screenNum) >= len(Workplace.Displays.Desktops) {
-		return
+		return &common.Geometry{}
 	}
 	desktop := Workplace.Displays.Desktops[screenNum]
 
-	// Get desktop dimensions
-	x, y, w, h = desktop.Pieces()
+	// Get desktop geometry
+	x, y, w, h := desktop.Geometry.Pieces()
 
 	// Add desktop margin
 	margin := common.Config.EdgeMargin
 	if desktop.Primary && len(common.Config.EdgeMarginPrimary) > 0 {
 		margin = common.Config.EdgeMarginPrimary
 	}
-
 	if len(margin) == 4 {
 		x += margin[3]
 		y += margin[0]
@@ -368,24 +444,47 @@ func DesktopDimensions(screenNum uint) (x, y, w, h int) {
 		h -= margin[2] + margin[0]
 	}
 
-	return
+	return &common.Geometry{
+		X:      x,
+		Y:      y,
+		Width:  w,
+		Height: h,
+	}
 }
 
 func PointerUpdate(X *xgbutil.XUtil) *XPointer {
+	previous := XPointer{XDrag{}, XButton{}, common.Point{}}
+	if Pointer != nil {
+		previous = *Pointer
+	}
 
 	// Update current pointer
-	previousButton := uint16(0)
-	if Pointer != nil {
-		previousButton = Pointer.Button
-	}
 	Pointer = PointerGet(X)
 
 	// Update current screen
 	Workplace.CurrentScreen = ScreenNumGet(Pointer.Position)
 
+	// Update pointer left button drag
+	Pointer.Drag.LeftTime = previous.Drag.LeftTime
+	if Pointer.Button.Left {
+		Pointer.Drag.LeftTime = time.Now().UnixMilli()
+	}
+
+	// Update pointer middle button drag
+	Pointer.Drag.MiddleTime = previous.Drag.MiddleTime
+	if Pointer.Button.Middle {
+		Pointer.Drag.MiddleTime = time.Now().UnixMilli()
+	}
+
+	// Update pointer right button drag
+	Pointer.Drag.RightTime = previous.Drag.RightTime
+	if Pointer.Button.Right {
+		Pointer.Drag.RightTime = time.Now().UnixMilli()
+	}
+
 	// Pointer callbacks
-	if previousButton != Pointer.Button {
-		pointerCallbacks(Pointer.Button, Workplace.CurrentDesk, Workplace.CurrentScreen)
+	if previous.Button != Pointer.Button {
+		pointerCallbacks(*Pointer, Workplace.CurrentDesk, Workplace.CurrentScreen)
 	}
 
 	return Pointer
@@ -415,7 +514,7 @@ func StateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	stateCallbacks(aname, Workplace.CurrentDesk, Workplace.CurrentScreen)
 }
 
-func OnPointerUpdate(fun func(uint16, uint, uint)) {
+func OnPointerUpdate(fun func(XPointer, uint, uint)) {
 	pointerCallbacksFun = append(pointerCallbacksFun, fun)
 }
 
@@ -423,11 +522,11 @@ func OnStateUpdate(fun func(string, uint, uint)) {
 	stateCallbacksFun = append(stateCallbacksFun, fun)
 }
 
-func pointerCallbacks(button uint16, desk uint, screen uint) {
-	log.Info("Pointer event ", button)
+func pointerCallbacks(pointer XPointer, desk uint, screen uint) {
+	log.Info("Pointer event ", pointer.Button)
 
 	for _, fun := range pointerCallbacksFun {
-		fun(button, desk, screen)
+		fun(pointer, desk, screen)
 	}
 }
 

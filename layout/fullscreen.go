@@ -33,7 +33,7 @@ func (l *FullscreenLayout) Reset() {
 func (l *FullscreenLayout) Apply() {
 	clients := l.Clients(store.Stacked)
 
-	dx, dy, dw, dh := store.DesktopDimensions(l.Location.ScreenNum)
+	dx, dy, dw, dh := store.DesktopGeometry(l.Location.ScreenNum).Pieces()
 	gap := common.Config.WindowGapSize
 
 	csize := len(clients)
@@ -49,7 +49,7 @@ func (l *FullscreenLayout) Apply() {
 		c.LimitDimensions(minw, minh)
 
 		// Move and resize client
-		c.MoveResize(dx+gap, dy+gap, dw-2*gap, dh-2*gap)
+		c.MoveWindow(dx+gap, dy+gap, dw-2*gap, dh-2*gap)
 	}
 }
 

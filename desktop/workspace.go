@@ -19,8 +19,8 @@ type Workspace struct {
 	Name            string         // Workspace location name
 	Location        store.Location // Desktop and screen location
 	Layouts         []Layout       // List of available layouts
+	ActiveLayoutNum uint           // Index of active layout
 	TilingEnabled   bool           // Tiling is enabled or not
-	ActiveLayoutNum uint           // Active layout index
 }
 
 func CreateWorkspaces() map[store.Location]*Workspace {
@@ -35,8 +35,8 @@ func CreateWorkspaces() map[store.Location]*Workspace {
 				Name:            fmt.Sprintf("workspace-%d-%d", location.DeskNum, location.ScreenNum),
 				Location:        location,
 				Layouts:         CreateLayouts(location),
-				TilingEnabled:   common.Config.TilingEnabled,
 				ActiveLayoutNum: 0,
+				TilingEnabled:   common.Config.TilingEnabled,
 			}
 
 			// Set default layout
@@ -55,8 +55,8 @@ func CreateWorkspaces() map[store.Location]*Workspace {
 				for _, cl := range cached.Layouts {
 					if l.GetName() == cl.GetName() {
 						mg, cmg := l.GetManager(), cl.GetManager()
-						mg.Masters.MaxAllowed = int(math.Min(float64(cmg.Masters.MaxAllowed), float64(common.Config.WindowMastersMax)))
-						mg.Slaves.MaxAllowed = int(math.Min(float64(cmg.Slaves.MaxAllowed), float64(common.Config.WindowSlavesMax)))
+						mg.Masters.Maximum = int(math.Min(float64(cmg.Masters.Maximum), float64(common.Config.WindowMastersMax)))
+						mg.Slaves.Maximum = int(math.Min(float64(cmg.Slaves.Maximum), float64(common.Config.WindowSlavesMax)))
 						mg.Proportions = cmg.Proportions
 					}
 				}
@@ -96,9 +96,6 @@ func (ws *Workspace) ActiveLayout() Layout {
 }
 
 func (ws *Workspace) CycleLayout(step int) {
-	if ws.Disabled() {
-		return
-	}
 
 	// Calculate cycle direction
 	i := (int(ws.ActiveLayoutNum) + step) % len(ws.Layouts)
@@ -107,7 +104,6 @@ func (ws *Workspace) CycleLayout(step int) {
 	}
 
 	ws.SetLayout(uint(i))
-	ws.Tile()
 }
 
 func (ws *Workspace) AddClient(c *store.Client) {
@@ -197,7 +193,7 @@ func (ws *Workspace) Write() {
 		return
 	}
 
-	log.Debug("Write workspace cache data ", cache.Name, " [", ws.Name, "]")
+	log.Trace("Write workspace cache data ", cache.Name, " [", ws.Name, "]")
 }
 
 func (ws *Workspace) Read() *Workspace {
@@ -242,7 +238,7 @@ func (ws *Workspace) Cache() common.Cache[*Workspace] {
 	// Create workspace cache object
 	cache := common.Cache[*Workspace]{
 		Folder: folder,
-		Name:   common.Hash(hash) + ".json",
+		Name:   common.HashString(hash) + ".json",
 		Data:   ws,
 	}
 

@@ -36,18 +36,18 @@ func (l *HorizontalLayout) Reset() {
 	mg := store.CreateManager(*l.Location)
 
 	// Reset number of masters
-	for l.Masters.MaxAllowed < mg.Masters.MaxAllowed {
+	for l.Masters.Maximum < mg.Masters.Maximum {
 		l.IncreaseMaster()
 	}
-	for l.Masters.MaxAllowed > mg.Masters.MaxAllowed {
+	for l.Masters.Maximum > mg.Masters.Maximum {
 		l.DecreaseMaster()
 	}
 
 	// Reset number of slaves
-	for l.Slaves.MaxAllowed < mg.Slaves.MaxAllowed {
+	for l.Slaves.Maximum < mg.Slaves.Maximum {
 		l.IncreaseSlave()
 	}
-	for l.Slaves.MaxAllowed > mg.Slaves.MaxAllowed {
+	for l.Slaves.Maximum > mg.Slaves.Maximum {
 		l.DecreaseSlave()
 	}
 
@@ -58,11 +58,11 @@ func (l *HorizontalLayout) Reset() {
 func (l *HorizontalLayout) Apply() {
 	clients := l.Clients(store.Stacked)
 
-	dx, dy, dw, dh := store.DesktopDimensions(l.Location.ScreenNum)
+	dx, dy, dw, dh := store.DesktopGeometry(l.Location.ScreenNum).Pieces()
 	gap := common.Config.WindowGapSize
 
-	mmax := l.Masters.MaxAllowed
-	smax := l.Slaves.MaxAllowed
+	mmax := l.Masters.Maximum
+	smax := l.Slaves.Maximum
 
 	msize := int(math.Min(float64(len(l.Masters.Stacked)), float64(mmax)))
 	ssize := int(math.Min(float64(len(l.Slaves.Stacked)), float64(smax)))
@@ -118,7 +118,7 @@ func (l *HorizontalLayout) Apply() {
 			// Move and resize master
 			mp := l.Proportions.MasterMaster[msize][i%msize]
 			mw := int(math.Round(float64(dw-(msize+1)*gap) * mp))
-			c.MoveResize(mx, my+gap, mw, mh-2*gap)
+			c.MoveWindow(mx, my+gap, mw, mh-2*gap)
 
 			// Add x offset
 			mx += mw + gap
@@ -156,7 +156,7 @@ func (l *HorizontalLayout) Apply() {
 			// Move and resize slave
 			sp := l.Proportions.SlaveSlave[ssize][i%ssize]
 			sw := int(math.Round(float64(dw-(ssize+1)*gap) * sp))
-			c.MoveResize(sx, sy, sw, sh-gap)
+			c.MoveWindow(sx, sy, sw, sh-gap)
 
 			// Add x offset
 			sx += sw + gap
@@ -165,13 +165,13 @@ func (l *HorizontalLayout) Apply() {
 }
 
 func (l *HorizontalLayout) UpdateProportions(c *store.Client, d *store.Directions) {
-	_, _, dw, dh := store.DesktopDimensions(l.Location.ScreenNum)
+	_, _, dw, dh := store.DesktopGeometry(l.Location.ScreenNum).Pieces()
 	_, _, cw, ch := c.OuterGeometry()
 
 	gap := common.Config.WindowGapSize
 
-	mmax := l.Masters.MaxAllowed
-	smax := l.Slaves.MaxAllowed
+	mmax := l.Masters.Maximum
+	smax := l.Slaves.Maximum
 
 	msize := int(math.Min(float64(len(l.Masters.Stacked)), float64(mmax)))
 	ssize := int(math.Min(float64(len(l.Slaves.Stacked)), float64(smax)))

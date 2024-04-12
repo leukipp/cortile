@@ -39,14 +39,23 @@ func BindKeys(tr *desktop.Tracker) {
 			}
 		}
 	}
+
+	// Bind action channel
+	go action(tr.Channels.Action, tr)
 }
 
 func bind(key string, action string, mod string, tr *desktop.Tracker) {
 	err := keybind.KeyPressFun(func(X *xgbutil.XUtil, ev xevent.KeyPressEvent) {
-		Execute(action, mod, tr)
+		ExecuteActions(action, tr, mod)
 	}).Connect(store.X, store.X.RootWin(), key, true)
 
 	if err != nil {
-		log.Warn("Error on action for ", action, ": ", err)
+		log.Warn("Error on action ", action, ": ", err)
+	}
+}
+
+func action(ch chan string, tr *desktop.Tracker) {
+	for {
+		ExecuteAction(<-ch, tr, tr.ActiveWorkspace())
 	}
 }

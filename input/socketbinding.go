@@ -52,7 +52,10 @@ func NotifySocket[T any](m Message[T]) {
 	}
 
 	msg := string(data)
-	log.Info("Send socket message ", common.Truncate(msg, 100), "...")
+	log.Info("Send socket message ", common.TruncateString(msg, 100), "...")
+
+	// Warn about socket communication (deprecated)
+	log.Warn("Socket communication is deprecated and will be removed in future releases (issue #51)")
 
 	// Write outgoing data
 	_, err = dialer.Write([]byte(msg))
@@ -80,7 +83,7 @@ func listen(listener net.Listener, tr *desktop.Tracker) {
 		}
 
 		msg := strings.TrimSpace(string(data[:n]))
-		log.Info("Receive socket message ", common.Truncate(msg, 100), "...")
+		log.Info("Receive socket message ", common.TruncateString(msg, 100), "...")
 
 		// Parse incoming data
 		var kv map[string]string
@@ -90,9 +93,12 @@ func listen(listener net.Listener, tr *desktop.Tracker) {
 			return
 		}
 
+		// Warn about socket communication (deprecated)
+		log.Warn("Socket communication is deprecated and will be removed in future releases (issue #51)")
+
 		// Execute action
 		if v, ok := kv["Action"]; ok {
-			Execute(v, "current", tr)
+			ExecuteAction(v, tr, tr.ActiveWorkspace())
 		}
 
 		// Query state

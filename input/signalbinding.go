@@ -19,5 +19,5 @@ func BindSignal(tr *desktop.Tracker) {
 
 func exit(ch chan os.Signal, tr *desktop.Tracker) {
 	<-ch
-	Execute("exit", "current", tr)
+	ExecuteAction("exit", tr, tr.ActiveWorkspace())
 }

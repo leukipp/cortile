@@ -17,11 +17,9 @@ type Manager struct {
 	Slaves      *Clients     // List of slave window clients
 }
 
-type Directions struct {
-	Top    bool // Indicates proportion changes on the top
-	Right  bool // Indicates proportion changes on the right
-	Bottom bool // Indicates proportion changes on the bottom
-	Left   bool // Indicates proportion changes on the left
+type Location struct {
+	DeskNum   uint // Location desktop number
+	ScreenNum uint // Location screen number
 }
 
 type Proportions struct {
@@ -31,13 +29,21 @@ type Proportions struct {
 }
 
 type Clients struct {
-	Stacked    []*Client `json:"-"` // List of stored window clients
-	MaxAllowed int       // Currently maximum allowed clients
+	Maximum int       // Currently maximum allowed clients
+	Stacked []*Client `json:"-"` // List of stored window clients
+}
+
+type Directions struct {
+	Top    bool // Indicates proportion changes on the top
+	Right  bool // Indicates proportion changes on the right
+	Bottom bool // Indicates proportion changes on the bottom
+	Left   bool // Indicates proportion changes on the left
 }
 
 const (
-	Stacked uint8 = 1 // Flag for stacked (all) clients
-	Visible uint8 = 2 // Flag for visible (top) clients
+	Stacked uint8 = 1 // Flag for stacked (internal index order) clients
+	Ordered uint8 = 2 // Flag for ordered (bottom to top order) clients
+	Visible uint8 = 3 // Flag for visible (top only) clients
 )
 
 func CreateManager(loc Location) *Manager {
@@ -50,12 +56,12 @@ func CreateManager(loc Location) *Manager {
 			SlaveSlave:   calcProportions(common.Config.WindowSlavesMax),
 		},
 		Masters: &Clients{
-			Stacked:    make([]*Client, 0),
-			MaxAllowed: 1,
+			Maximum: 1,
+			Stacked: make([]*Client, 0),
 		},
 		Slaves: &Clients{
-			Stacked:    make([]*Client, 0),
-			MaxAllowed: common.Config.WindowSlavesMax,
+			Maximum: common.Config.WindowSlavesMax,
+			Stacked: make([]*Client, 0),
 		},
 	}
 }
@@ -68,7 +74,7 @@ func (mg *Manager) AddClient(c *Client) {
 	log.Debug("Add client for manager [", c.Latest.Class, ", ", mg.Name, "]")
 
 	// Fill up master area then slave area
-	if len(mg.Masters.Stacked) < mg.Masters.MaxAllowed {
+	if len(mg.Masters.Stacked) < mg.Masters.Maximum {
 		mg.Masters.Stacked = addClient(mg.Masters.Stacked, c)
 	} else {
 		mg.Slaves.Stacked = addClient(mg.Slaves.Stacked, c)
@@ -146,7 +152,7 @@ func (mg *Manager) NextClient() *Client {
 	// Get next window
 	next := -1
 	for i, c := range clients {
-		if c.Win.Id == Windows.Active {
+		if c.Window.Id == Windows.Active.Id {
 			next = i + 1
 			if next > last {
 				next = 0
@@ -170,7 +176,7 @@ func (mg *Manager) PreviousClient() *Client {
 	// Get previous window
 	prev := -1
 	for i, c := range clients {
-		if c.Win.Id == Windows.Active {
+		if c.Window.Id == Windows.Active.Id {
 			prev = i - 1
 			if prev < 0 {
 				prev = last
@@ -190,45 +196,45 @@ func (mg *Manager) PreviousClient() *Client {
 func (mg *Manager) IncreaseMaster() {
 
 	// Increase master area
-	if len(mg.Slaves.Stacked) > 1 && mg.Masters.MaxAllowed < common.Config.WindowMastersMax {
-		mg.Masters.MaxAllowed += 1
+	if len(mg.Slaves.Stacked) > 1 && mg.Masters.Maximum < common.Config.WindowMastersMax {
+		mg.Masters.Maximum += 1
 		mg.Masters.Stacked = append(mg.Masters.Stacked, mg.Slaves.Stacked[0])
 		mg.Slaves.Stacked = mg.Slaves.Stacked[1:]
 	}
 
-	log.Info("Increase masters to ", mg.Masters.MaxAllowed)
+	log.Info("Increase masters to ", mg.Masters.Maximum)
 }
 
 func (mg *Manager) DecreaseMaster() {
 
 	// Decrease master area
 	if len(mg.Masters.Stacked) > 0 {
-		mg.Masters.MaxAllowed -= 1
+		mg.Masters.Maximum -= 1
 		mg.Slaves.Stacked = append([]*Client{mg.Masters.Stacked[len(mg.Masters.Stacked)-1]}, mg.Slaves.Stacked...)
 		mg.Masters.Stacked = mg.Masters.Stacked[:len(mg.Masters.Stacked)-1]
 	}
 
-	log.Info("Decrease masters to ", mg.Masters.MaxAllowed)
+	log.Info("Decrease masters to ", mg.Masters.Maximum)
 }
 
 func (mg *Manager) IncreaseSlave() {
 
 	// Increase slave area
-	if mg.Slaves.MaxAllowed < common.Config.WindowSlavesMax {
-		mg.Slaves.MaxAllowed += 1
+	if mg.Slaves.Maximum < common.Config.WindowSlavesMax {
+		mg.Slaves.Maximum += 1
 	}
 
-	log.Info("Increase slaves to ", mg.Slaves.MaxAllowed)
+	log.Info("Increase slaves to ", mg.Slaves.Maximum)
 }
 
 func (mg *Manager) DecreaseSlave() {
 
 	// Decrease slave area
-	if mg.Slaves.MaxAllowed > 1 {
-		mg.Slaves.MaxAllowed -= 1
+	if mg.Slaves.Maximum > 1 {
+		mg.Slaves.Maximum -= 1
 	}
 
-	log.Info("Decrease slaves to ", mg.Slaves.MaxAllowed)
+	log.Info("Decrease slaves to ", mg.Slaves.Maximum)
 }
 
 func (mg *Manager) IncreaseProportion() {
@@ -290,7 +296,7 @@ func (mg *Manager) Index(windows *Clients, c *Client) int {
 
 	// Traverse client list
 	for i, m := range windows.Stacked {
-		if m.Win.Id == c.Win.Id {
+		if m.Window.Id == c.Window.Id {
 			return i
 		}
 	}
@@ -304,7 +310,7 @@ func (mg *Manager) Ordered(windows *Clients) []*Client {
 	// Create ordered client list
 	for _, w := range Windows.Stacked {
 		for _, c := range windows.Stacked {
-			if w == c.Win.Id {
+			if w.Id == c.Window.Id {
 				ordered = append(ordered, c)
 				break
 			}
@@ -315,11 +321,11 @@ func (mg *Manager) Ordered(windows *Clients) []*Client {
 }
 
 func (mg *Manager) Visible(windows *Clients) []*Client {
-	visible := make([]*Client, int(math.Min(float64(len(windows.Stacked)), float64(windows.MaxAllowed))))
+	visible := make([]*Client, int(math.Min(float64(len(windows.Stacked)), float64(windows.Maximum))))
 
 	// Create visible client list
 	for _, c := range mg.Ordered(windows) {
-		visible[mg.Index(windows, c)%windows.MaxAllowed] = c
+		visible[mg.Index(windows, c)%windows.Maximum] = c
 	}
 
 	return visible
@@ -329,6 +335,8 @@ func (mg *Manager) Clients(flag uint8) []*Client {
 	switch flag {
 	case Stacked:
 		return append(mg.Masters.Stacked, mg.Slaves.Stacked...)
+	case Ordered:
+		return append(mg.Ordered(mg.Masters), mg.Ordered(mg.Slaves)...)
 	case Visible:
 		return append(mg.Visible(mg.Masters), mg.Visible(mg.Slaves)...)
 	}

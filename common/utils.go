@@ -1,7 +1,6 @@
 package common
 
 import (
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -9,34 +8,85 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 
-	"github.com/jezek/xgb/render"
-
 	"github.com/jezek/xgbutil/xrect"
 )
 
-func Hash(text string) string {
+type Point struct {
+	X int // Object point x position
+	Y int // Object point y position
+}
+
+func CreatePoint(x int, y int) *Point {
+	return &Point{
+		X: x,
+		Y: y,
+	}
+}
+
+type Geometry struct {
+	X      int // Object geometry x position
+	Y      int // Object geometry y position
+	Width  int // Object geometry width dimension
+	Height int // Object geometry height dimension
+}
+
+func CreateGeometry(r xrect.Rect) *Geometry {
+	return &Geometry{
+		X:      r.X(),
+		Y:      r.Y(),
+		Width:  r.Width(),
+		Height: r.Height(),
+	}
+}
+
+func (g *Geometry) Center() Point {
+	return *CreatePoint(g.X+g.Width/2, g.Y+g.Height/2)
+}
+
+func (g *Geometry) Rect() xrect.Rect {
+	return xrect.New(g.X, g.Y, g.Width, g.Height)
+}
+
+func (g *Geometry) Pieces() (int, int, int, int) {
+	return g.X, g.Y, g.Width, g.Height
+}
+
+type Map = map[string]interface{} // Generic map type
+
+func HashString(text string) string {
 	hash := sha1.New()
 	hash.Write([]byte(text))
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
-func Truncate(s string, max int) string {
+func TruncateString(s string, max int) string {
 	if max > len(s) {
 		return s
 	}
 	return s[:max]
 }
 
-func IsType(a interface{}, b interface{}) bool {
-	return reflect.TypeOf(a) == reflect.TypeOf(b)
-}
-
-func IsZero(items []uint) bool {
+func AllZero(items []uint) bool {
 	mask := uint(0)
-	for _, s := range items {
-		mask |= s
+	for _, item := range items {
+		mask |= item
 	}
 	return mask == 0
+}
+
+func AllTrue(items []bool) bool {
+	mask := true
+	for _, item := range items {
+		mask = mask && item
+	}
+	return mask
+}
+
+func IsInsideRect(p Point, g Geometry) bool {
+	x, y, w, h := g.Pieces()
+	xInRect := int(p.X) >= x && int(p.X) <= (x+w)
+	yInRect := int(p.Y) >= y && int(p.Y) <= (y+h)
+	return xInRect && yInRect
 }
 
 func IsInList(item string, items []string) bool {
@@ -46,13 +96,6 @@ func IsInList(item string, items []string) bool {
 		}
 	}
 	return false
-}
-
-func IsInsideRect(p render.Pointfix, r xrect.Rect) bool {
-	x, y, w, h := r.Pieces()
-	xInRect := int(p.X) >= x && int(p.X) <= (x+w)
-	yInRect := int(p.Y) >= y && int(p.Y) <= (y+h)
-	return xInRect && yInRect
 }
 
 func ReverseList[T any](items []T) []T {
