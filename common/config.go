@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"encoding/json"
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
@@ -70,11 +71,21 @@ func ConfigFolderPath(name string) string {
 }
 
 func readConfig(configFilePath string) {
-	fmt.Println(fmt.Errorf("LOAD %s [%s]", configFilePath, Build.Summary))
-	log.Info("Starting [", Build.Summary, "]")
+	fmt.Printf("LOAD %s [%s]\n", configFilePath, Build.Summary)
 
 	// Decode contents into struct
 	toml.DecodeFile(configFilePath, &Config)
+
+	// Print shortcuts
+	keys, _ := json.MarshalIndent(Config.Keys, "", "  ")
+	Corners, _ := json.MarshalIndent(Config.Corners, "", "  ")
+	Systray, _ := json.MarshalIndent(Config.Systray, "", "  ")
+
+	fmt.Printf("KEYS %s\n", string(keys))
+	fmt.Printf("CORNERS %s\n", string(Corners))
+	fmt.Printf("SYSTRAY %s\n", string(Systray))
+
+	log.Info("Starting [", Build.Summary, "]")
 }
 
 func watchConfig(configFilePath string) {
