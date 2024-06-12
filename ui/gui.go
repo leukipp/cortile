@@ -51,7 +51,7 @@ func ShowLayout(ws *desktop.Workspace) {
 		}
 
 		// Calculate scaled desktop dimensions
-		dim := store.DesktopGeometry(ws.Location.ScreenNum)
+		dim := dimensions(ws)
 		_, _, width, height := scale(dim.X, dim.Y, dim.Width, dim.Height)
 
 		// Create an empty canvas image
@@ -81,9 +81,9 @@ func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
 			continue
 		}
 
-		// Obtain fullscreen client
+		// Obtain single client
 		for _, state := range c.Latest.States {
-			if state == "_NET_WM_STATE_FULLSCREEN" || layout == "fullscreen" {
+			if state == "_NET_WM_STATE_FULLSCREEN" || common.IsInList(layout, []string{"maximized", "fullscreen"}) {
 				clients = mg.Visible(&store.Clients{Stacked: mg.Clients(store.Stacked), Maximum: 1})
 				break
 			}
@@ -91,7 +91,7 @@ func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
 	}
 
 	// Draw default rectangle
-	dim := store.DesktopGeometry(ws.Location.ScreenNum)
+	dim := dimensions(ws)
 	if len(clients) == 0 || layout == "disabled" {
 
 		// Calculate scaled desktop dimensions
@@ -126,7 +126,7 @@ func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
 
 		// Obtain rectangle color
 		color := bgra("gui_client_slave")
-		if mg.IsMaster(c) || layout == "fullscreen" {
+		if mg.IsMaster(c) || common.IsInList(layout, []string{"maximized", "fullscreen"}) {
 			color = bgra("gui_client_master")
 		}
 
@@ -177,7 +177,7 @@ func showGraphics(img *xgraphics.Image, ws *desktop.Workspace, duration time.Dur
 	}
 
 	// Calculate window dimensions
-	dim := store.DesktopGeometry(ws.Location.ScreenNum)
+	dim := dimensions(ws)
 	w, h := img.Rect.Dx(), img.Rect.Dy()
 	x, y := dim.X+dim.Width/2-w/2, dim.Y+dim.Height/2-h/2
 
@@ -231,6 +231,9 @@ func showGraphics(img *xgraphics.Image, ws *desktop.Workspace, duration time.Dur
 	img.XDraw()
 	win.Map()
 
+	// Move focus to active window
+	store.ActiveWindowSet(store.X, &store.Windows.Active)
+
 	// Close previous opened window
 	if v, ok := gui[ws.Location.ScreenNum]; ok {
 		v.Destroy()
@@ -243,6 +246,17 @@ func showGraphics(img *xgraphics.Image, ws *desktop.Workspace, duration time.Dur
 	}
 
 	return win
+}
+
+func dimensions(ws *desktop.Workspace) *common.Geometry {
+	dim := store.DesktopGeometry(ws.Location.ScreenNum)
+
+	// Ignore desktop margins on fullscreen mode
+	if ws.ActiveLayout().GetName() == "fullscreen" {
+		dim = store.ScreenGeometry(ws.Location.ScreenNum)
+	}
+
+	return dim
 }
 
 func scale(x, y, w, h int) (sx, sy, sw, sh int) {

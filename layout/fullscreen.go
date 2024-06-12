@@ -3,7 +3,6 @@ package layout
 import (
 	"math"
 
-	"github.com/leukipp/cortile/v2/common"
 	"github.com/leukipp/cortile/v2/store"
 
 	log "github.com/sirupsen/logrus"
@@ -31,10 +30,9 @@ func (l *FullscreenLayout) Reset() {
 }
 
 func (l *FullscreenLayout) Apply() {
-	clients := l.Clients(store.Stacked)
+	clients := l.Ordered(&store.Clients{Stacked: l.Clients(store.Stacked)})
 
-	dx, dy, dw, dh := store.DesktopGeometry(l.Location.ScreenNum).Pieces()
-	gap := common.Config.WindowGapSize
+	_, _, dw, dh := store.ScreenGeometry(l.Location.ScreenNum).Pieces()
 
 	csize := len(clients)
 
@@ -44,12 +42,12 @@ func (l *FullscreenLayout) Apply() {
 	for _, c := range clients {
 
 		// Limit minimum dimensions
-		minw := int(math.Round(float64(dw - 2*gap)))
-		minh := int(math.Round(float64(dh - 2*gap)))
+		minw := int(math.Round(float64(dw)))
+		minh := int(math.Round(float64(dh)))
 		c.LimitDimensions(minw, minh)
 
-		// Move and resize client
-		c.MoveWindow(dx+gap, dy+gap, dw-2*gap, dh-2*gap)
+		// Make window fullscreen
+		c.Fullscreen()
 	}
 }
 

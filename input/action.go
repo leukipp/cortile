@@ -46,8 +46,6 @@ func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bo
 		success = CycleNext(tr, ws)
 	case "cycle_previous":
 		success = CyclePrevious(tr, ws)
-	case "layout_fullscreen":
-		success = FullscreenLayout(tr, ws)
 	case "layout_vertical_left":
 		success = VerticalLeftLayout(tr, ws)
 	case "layout_vertical_right":
@@ -56,6 +54,10 @@ func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bo
 		success = HorizontalTopLayout(tr, ws)
 	case "layout_horizontal_bottom":
 		success = HorizontalBottomLayout(tr, ws)
+	case "layout_maximized":
+		success = MaximizedLayout(tr, ws)
+	case "layout_fullscreen":
+		success = FullscreenLayout(tr, ws)
 	case "master_make":
 		success = MakeMaster(tr, ws)
 	case "master_make_next":
@@ -222,7 +224,11 @@ func CycleNext(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.Disabled() {
 		return false
 	}
-	ws.CycleLayout(1)
+	if int(ws.ActiveLayoutNum) == len(ws.Layouts)-2 {
+		ws.CycleLayout(2)
+	} else {
+		ws.CycleLayout(1)
+	}
 	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
@@ -235,23 +241,10 @@ func CyclePrevious(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.Disabled() {
 		return false
 	}
-	ws.CycleLayout(-1)
-	tr.Tile(ws)
-
-	ui.ShowLayout(ws)
-	ui.UpdateIcon(ws)
-
-	return true
-}
-
-func FullscreenLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
-		return false
-	}
-	for i, l := range ws.Layouts {
-		if l.GetName() == "fullscreen" {
-			ws.SetLayout(uint(i))
-		}
+	if int(ws.ActiveLayoutNum) == 0 {
+		ws.CycleLayout(-2)
+	} else {
+		ws.CycleLayout(-1)
 	}
 	tr.Tile(ws)
 
@@ -318,6 +311,40 @@ func HorizontalBottomLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	}
 	for i, l := range ws.Layouts {
 		if l.GetName() == "horizontal-bottom" {
+			ws.SetLayout(uint(i))
+		}
+	}
+	tr.Tile(ws)
+
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
+
+	return true
+}
+
+func MaximizedLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.Disabled() {
+		return false
+	}
+	for i, l := range ws.Layouts {
+		if l.GetName() == "maximized" {
+			ws.SetLayout(uint(i))
+		}
+	}
+	tr.Tile(ws)
+
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
+
+	return true
+}
+
+func FullscreenLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.Disabled() {
+		return false
+	}
+	for i, l := range ws.Layouts {
+		if l.GetName() == "fullscreen" {
 			ws.SetLayout(uint(i))
 		}
 	}

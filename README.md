@@ -73,8 +73,9 @@ The layouts are based on the master-slave concept, where one side of the screen 
 - `vertical-left:` split the screen vertically, master area on the left.
 - `horizontal-top:` split the screen horizontally, master area on the top.
 - `horizontal-bottom:` split the screen horizontally, master area on the bottom.
-- `fullscreen:` single window that fills the entire tiling area.
-  
+- `maximized:` single window that fills the entire tiling area.
+- `fullscreen:` single window that fills the entire screen.
+
 The number of windows per side and the occupied space can be changed dynamically.
 Adjustments to window sizes are considered to be proportion changes of the underlying layout.
 
@@ -99,11 +100,12 @@ If some of them are already in use by your system, update the default values in 
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>BackSpace</kbd>   | Reset layouts to default proportions     |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Next</kbd>        | Cycle through next layouts               |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Prior</kbd>       | Cycle through previous layouts           |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>       | Activate fullscreen layout               |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Left</kbd>        | Activate vertical-left layout            |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Right</kbd>       | Activate vertical-right layout           |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Up</kbd>          | Activate horizontal-top layout           |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Down</kbd>        | Activate horizontal-bottom layout        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>       | Activate maximized layout                |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Return</kbd>      | Activate fullscreen layout               |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_5</kbd>        | Make the active window master            |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_6</kbd>        | Make the next window master              |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_4</kbd>        | Make the previous window master          |

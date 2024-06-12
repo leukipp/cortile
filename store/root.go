@@ -423,6 +423,16 @@ func ScreenNumGet(p common.Point) uint {
 	return 0
 }
 
+func ScreenGeometry(screenNum uint) *common.Geometry {
+	if int(screenNum) >= len(Workplace.Displays.Screens) {
+		return &common.Geometry{}
+	}
+	screen := Workplace.Displays.Screens[screenNum]
+
+	// Get screen geometry
+	return &screen.Geometry
+}
+
 func DesktopGeometry(screenNum uint) *common.Geometry {
 	if int(screenNum) >= len(Workplace.Displays.Desktops) {
 		return &common.Geometry{}

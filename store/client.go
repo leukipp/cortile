@@ -112,10 +112,27 @@ func (c *Client) UnDecorate() {
 func (c *Client) UnMaximize() {
 
 	// Unmaximize window
-	if common.IsInList("_NET_WM_STATE_MAXIMIZED_VERT", c.Latest.States) || common.IsInList("_NET_WM_STATE_MAXIMIZED_HORZ", c.Latest.States) {
+	if IsMaximized(c.Latest) {
 		ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_MAXIMIZED_VERT")
 		ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_MAXIMIZED_HORZ")
 	}
+}
+
+func (c *Client) UnFullscreen() {
+
+	// Unfullscreen window
+	if IsFullscreen(c.Latest) {
+		ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_FULLSCREEN")
+	}
+}
+
+func (c *Client) Fullscreen() {
+
+	// Fullscreen window
+	ewmh.WmStateReq(X, c.Window.Id, ewmh.StateAdd, "_NET_WM_STATE_FULLSCREEN")
+
+	// Update stored states
+	c.Update()
 }
 
 func (c *Client) MoveDesktop(deskNum uint32) {
@@ -140,6 +157,7 @@ func (c *Client) MoveWindow(x, y, w, h int) {
 	// Remove unwanted properties
 	c.UnDecorate()
 	c.UnMaximize()
+	c.UnFullscreen()
 
 	// Calculate dimension offsets
 	ext := c.Latest.Dimensions.Extents
@@ -281,6 +299,10 @@ func (c *Client) Restore(flag uint8) {
 	// Restore window decorations
 	motif.WmHintsSet(X, c.Window.Id, &c.Cached.Dimensions.Hints.Motif)
 
+	// Restore window sizes
+	c.UnMaximize()
+	c.UnFullscreen()
+
 	// Disable adjustments on restore
 	if c.Latest.Dimensions.AdjRestore {
 		c.Latest.Dimensions.AdjPos = false
@@ -414,8 +436,12 @@ func IsIgnored(info *Info) bool {
 	return false
 }
 
+func IsFullscreen(info *Info) bool {
+	return common.IsInList("_NET_WM_STATE_FULLSCREEN", info.States)
+}
+
 func IsMaximized(info *Info) bool {
-	return common.IsInList("_NET_WM_STATE_MAXIMIZED_VERT", info.States) && common.IsInList("_NET_WM_STATE_MAXIMIZED_HORZ", info.States)
+	return common.IsInList("_NET_WM_STATE_MAXIMIZED_VERT", info.States) || common.IsInList("_NET_WM_STATE_MAXIMIZED_HORZ", info.States)
 }
 
 func IsMinimized(info *Info) bool {

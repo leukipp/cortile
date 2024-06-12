@@ -238,6 +238,27 @@ func (tr *Tracker) untrackWindow(w xproto.Window) bool {
 	return true
 }
 
+func (tr *Tracker) handleFullscreenClient(c *store.Client) {
+	if !tr.isTracked(c.Window.Id) {
+		return
+	}
+
+	// Client fullscreen
+	if store.IsFullscreen(store.GetInfo(c.Window.Id)) {
+		ws := tr.ClientWorkspace(c)
+		if ws.Disabled() {
+			return
+		}
+		log.Debug("Client fullscreen handler fired [", c.Latest.Class, "]")
+
+		// Check window lifetime
+		if !c.IsNew() && ws.ActiveLayout().GetName() != "fullscreen" {
+			tr.Channels.Action <- "layout_fullscreen"
+			store.ActiveWindowSet(store.X, c.Window)
+		}
+	}
+}
+
 func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 	if !tr.isTracked(c.Window.Id) {
 		return
@@ -258,10 +279,10 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 		c.UnMaximize()
 
 		// Check window lifetime
-		if !c.IsNew() {
-			tr.Channels.Action <- "layout_fullscreen"
+		if !c.IsNew() && ws.ActiveLayout().GetName() != "maximized" {
+			tr.Channels.Action <- "layout_maximized"
+			store.ActiveWindowSet(store.X, c.Window)
 		}
-		store.ActiveWindowSet(store.X, c.Window)
 	}
 }
 
@@ -495,7 +516,7 @@ func (tr *Tracker) onStateUpdate(state string, desk uint, screen uint) {
 		tr.Update()
 	}
 
-	if clientsChanged {
+	if focusChanged {
 
 		// Write client and workspace cache
 		tr.Write()
@@ -564,6 +585,7 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 
 		// Handle property events
 		if aname == "_NET_WM_STATE" {
+			tr.handleFullscreenClient(c)
 			tr.handleMaximizedClient(c)
 			tr.handleMinimizedClient(c)
 		} else if aname == "_NET_WM_DESKTOP" {

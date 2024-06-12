@@ -9,7 +9,7 @@
 # Tiling will be enabled on application start if set to true (true | false).
 tiling_enabled = true
 
-# Initial tiling layout ("fullscreen" | "vertical-left" | "vertical-right" | "horizontal-top" | "horizontal-bottom").
+# Initial tiling layout ("vertical-left" | "vertical-right" | "horizontal-top" | "horizontal-bottom" | "maximized" | "fullscreen").
 tiling_layout = "vertical-right"
 
 # An overlay window is displayed for this time period [ms] when the layout was changed (0 = disabled).
@@ -131,9 +131,6 @@ cycle_next = "Control-Shift-Next"
 # Cycles through previous layouts (Prior = Page_Up).
 cycle_previous = "Control-Shift-Prior"
 
-# Activates the fullscreen layout (Space = Blank).
-layout_fullscreen = "Control-Shift-Space"
-
 # Activates the vertical-left layout (Left = Arrow_Left).
 layout_vertical_left = "Control-Shift-Left"
 
@@ -145,6 +142,12 @@ layout_horizontal_top = "Control-Shift-Up"
 
 # Activates the horizontal-bottom layout (Down = Arrow_Down).
 layout_horizontal_bottom = "Control-Shift-Down"
+
+# Activates the maximized layout (Space = Blank).
+layout_maximized = "Control-Shift-Space"
+
+# Activates the fullscreen layout (Return = Enter).
+layout_fullscreen = "Control-Shift-Return"
 
 # Make the active window a master (KP_5 = Num_5).
 master_make = "Control-Shift-KP_5"

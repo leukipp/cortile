@@ -45,8 +45,6 @@ func UpdateIcon(ws *desktop.Workspace) {
 
 	// Draw layout rectangles
 	switch name {
-	case "fullscreen":
-		draw.Draw(icon, image.Rect(x0, y0, x1, y1), &col, image.Point{}, draw.Src)
 	case "vertical-left":
 		draw.Draw(icon, image.Rect(x0, y0, x0+(x1-x0)/2-layoutMargin, y1), &col, image.Point{}, draw.Src)
 		draw.Draw(icon, image.Rect(x0+(x1-x0)/2+layoutMargin, y0, x1, y0+(y1-y0)/2-layoutMargin), &col, image.Point{}, draw.Src)
@@ -63,6 +61,11 @@ func UpdateIcon(ws *desktop.Workspace) {
 		draw.Draw(icon, image.Rect(x0, y0, x0+(x1-x0)/2-layoutMargin, y0+(y1-y0)/2-layoutMargin), &col, image.Point{}, draw.Src)
 		draw.Draw(icon, image.Rect(x0+(x1-x0)/2+layoutMargin, y0, x1, y0+(y1-y0)/2-layoutMargin), &col, image.Point{}, draw.Src)
 		draw.Draw(icon, image.Rect(x0, y0+(y1-y0)/2+layoutMargin, x1, y1), &col, image.Point{}, draw.Src)
+	case "maximized":
+		draw.Draw(icon, image.Rect(x0, y0, x1, y0+(y1-y0)/5-layoutMargin/2), &col, image.Point{}, draw.Src)
+		draw.Draw(icon, image.Rect(x0, y0+(y1-y0)/5+layoutMargin/2, x1, y1), &col, image.Point{}, draw.Src)
+	case "fullscreen":
+		draw.Draw(icon, image.Rect(x0, y0, x1, y1), &col, image.Point{}, draw.Src)
 	case "disabled":
 		draw.Draw(icon, image.Rect(x0, y0, x0+2*layoutMargin, y1-2*layoutMargin), &col, image.Point{}, draw.Src)
 		draw.Draw(icon, image.Rect(x0, y0, x1-2*layoutMargin, y0+2*layoutMargin), &col, image.Point{}, draw.Src)

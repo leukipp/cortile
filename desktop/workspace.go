@@ -73,11 +73,12 @@ func CreateWorkspaces() map[store.Location]*Workspace {
 
 func CreateLayouts(loc store.Location) []Layout {
 	return []Layout{
-		layout.CreateFullscreenLayout(loc),
 		layout.CreateVerticalLeftLayout(loc),
 		layout.CreateVerticalRightLayout(loc),
 		layout.CreateHorizontalTopLayout(loc),
 		layout.CreateHorizontalBottomLayout(loc),
+		layout.CreateMaximizedLayout(loc),
+		layout.CreateFullscreenLayout(loc),
 	}
 }
 
@@ -100,7 +101,7 @@ func (ws *Workspace) CycleLayout(step int) {
 	// Calculate cycle direction
 	i := (int(ws.ActiveLayoutNum) + step) % len(ws.Layouts)
 	if i < 0 {
-		i = len(ws.Layouts) - 1
+		i = len(ws.Layouts) + step
 	}
 
 	ws.SetLayout(uint(i))
