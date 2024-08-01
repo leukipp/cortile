@@ -66,6 +66,13 @@ func TruncateString(s string, max int) string {
 	return s[:max]
 }
 
+func RemoveChars(s string, chars []string) string {
+	for _, c := range chars {
+		s = strings.Replace(s, c, "", -1)
+	}
+	return s
+}
+
 func AllZero(items []uint) bool {
 	mask := uint(0)
 	for _, item := range items {

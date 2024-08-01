@@ -71,20 +71,26 @@ func ConfigFolderPath(name string) string {
 }
 
 func readConfig(configFilePath string) {
-	fmt.Printf("LOAD %s [%s]\n", configFilePath, Build.Summary)
 
-	// Decode contents into struct
+	// Print build infos
+	fmt.Printf("BUILD: \n  name: %s\n  version: v%s-%s\n  date: %s\n\n", Build.Name, Build.Version, Build.Commit, Build.Date)
+
+	// Print file infos
+	fmt.Printf("FILES: \n  log: %s\n  lock: %s\n  cache: %s\n  config: %s\n\n", Args.Log, Args.Lock, Args.Cache, configFilePath)
+
+	// Decode config file into struct
 	toml.DecodeFile(configFilePath, &Config)
 
-	// Print shortcuts
+	// Print shortcut infos
 	keys, _ := json.MarshalIndent(Config.Keys, "", "  ")
-	Corners, _ := json.MarshalIndent(Config.Corners, "", "  ")
-	Systray, _ := json.MarshalIndent(Config.Systray, "", "  ")
+	corners, _ := json.MarshalIndent(Config.Corners, "", "  ")
+	systray, _ := json.MarshalIndent(Config.Systray, "", "  ")
 
-	fmt.Printf("KEYS %s\n", string(keys))
-	fmt.Printf("CORNERS %s\n", string(Corners))
-	fmt.Printf("SYSTRAY %s\n", string(Systray))
+	fmt.Printf("KEYS: %s\n", RemoveChars(string(keys), []string{"{", "}", "\"", ","}))
+	fmt.Printf("CORNERS: %s\n", RemoveChars(string(corners), []string{"{", "}", "\"", ","}))
+	fmt.Printf("SYSTRAY: %s\n", RemoveChars(string(systray), []string{"{", "}", "\"", ","}))
 
+	// Log startup infos
 	log.Info("Starting [", Build.Summary, "]")
 }
 
