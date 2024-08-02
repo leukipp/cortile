@@ -545,7 +545,7 @@ func GetInfo(w xproto.Window) *Info {
 			Top:    int(ext[2]),
 			Bottom: int(ext[3]),
 		},
-		AdjPos:     !common.AllZero(extNet) && (mhints.Decoration > 1 || nhints.WinGravity > 1) || !common.AllZero(extGtk),
+		AdjPos:     (nhints.WinGravity > 1 && !common.AllZero(extNet)) || !common.AllZero(extGtk),
 		AdjSize:    !common.AllZero(extNet) || !common.AllZero(extGtk),
 		AdjRestore: !common.AllZero(extGtk),
 	}
