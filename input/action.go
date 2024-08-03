@@ -192,7 +192,7 @@ func Disable(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 	ws.Disable()
-	ws.Restore(store.Latest)
+	tr.Restore(ws, store.Latest)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -205,7 +205,7 @@ func Restore(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 		return false
 	}
 	ws.Disable()
-	ws.Restore(store.Original)
+	tr.Restore(ws, store.Original)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -522,7 +522,7 @@ func Exit(tr *desktop.Tracker) bool {
 			continue
 		}
 		ws.Disable()
-		ws.Restore(store.Latest)
+		tr.Restore(ws, store.Latest)
 	}
 
 	log.Info("Exit")

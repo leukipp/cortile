@@ -146,6 +146,18 @@ func (tr *Tracker) Tile(ws *Workspace) {
 	tr.Channels.Event <- "workspaces_change"
 }
 
+func (tr *Tracker) Restore(ws *Workspace, flag uint8) {
+
+	// Restore workspace
+	ws.Restore(flag)
+
+	// Communicate clients change
+	tr.Channels.Event <- "clients_change"
+
+	// Communicate workspaces change
+	tr.Channels.Event <- "workspaces_change"
+}
+
 func (tr *Tracker) ActiveWorkspace() *Workspace {
 	return tr.WorkspaceAt(store.Workplace.CurrentDesk, store.Workplace.CurrentScreen)
 }
