@@ -6,8 +6,6 @@ import (
 
 	"os/exec"
 
-	"golang.org/x/exp/maps"
-
 	"github.com/jezek/xgbutil/xevent"
 
 	"github.com/leukipp/cortile/v2/common"
@@ -95,13 +93,6 @@ func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bo
 		return false
 	}
 
-	// Notify socket (deprecated)
-	NotifySocket(Message[store.Location]{
-		Type: "Action",
-		Name: action,
-		Data: ws.Location,
-	})
-
 	// Execute callbacks
 	executeCallbacks(action, ws.Location.DeskNum, ws.Location.ScreenNum)
 
@@ -130,52 +121,6 @@ func ExecuteActions(action string, tr *desktop.Tracker, mod string) bool {
 	}
 
 	return common.AllTrue(results)
-}
-
-func Query(state string, tr *desktop.Tracker) bool {
-	success := false
-	if len(strings.TrimSpace(state)) == 0 {
-		return false
-	}
-
-	log.Info("Query state [", state, "]")
-
-	ws := tr.ActiveWorkspace()
-
-	// Choose state query
-	switch state {
-	case "workspaces":
-		type Workspaces struct {
-			DeskNum    uint
-			ScreenNum  uint
-			Workspaces []*desktop.Workspace
-		}
-		// Notify socket (deprecated)
-		NotifySocket(Message[Workspaces]{
-			Type: "State",
-			Name: state,
-			Data: Workspaces{DeskNum: ws.Location.DeskNum, ScreenNum: ws.Location.ScreenNum, Workspaces: maps.Values(tr.Workspaces)},
-		})
-		success = true
-	case "arguments":
-		// Notify socket (deprecated)
-		NotifySocket(Message[common.Arguments]{
-			Type: "State",
-			Name: state,
-			Data: common.Args,
-		})
-		success = true
-	case "configs":
-		// Notify socket (deprecated)
-		NotifySocket(Message[common.Configuration]{
-			Type: "State",
-			Name: state,
-			Data: common.Config,
-		})
-		success = true
-	}
-
-	return success
 }
 
 func EnableTiling(tr *desktop.Tracker, ws *desktop.Workspace) bool {
@@ -568,9 +513,6 @@ func Exit(tr *desktop.Tracker) bool {
 	}
 
 	log.Info("Exit")
-
-	os.Remove(common.Args.Sock + ".in")
-	os.Remove(common.Args.Sock + ".out")
 
 	os.Exit(1)
 

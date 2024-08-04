@@ -16,7 +16,6 @@ type Arguments struct {
 	Cache  string // Argument for cache folder path
 	Config string // Argument for config file path
 	Lock   string // Argument for lock file path
-	Sock   string // Argument for sock file path
 	Log    string // Argument for log file path
 	VVV    bool   // Argument for very very verbose mode
 	VV     bool   // Argument for very verbose mode
@@ -35,7 +34,6 @@ func InitArgs(introspect map[string][]string) {
 	flag.StringVar(&Args.Cache, "cache", filepath.Join(CacheFolderPath(Build.Name), Build.Version), "cache folder path")
 	flag.StringVar(&Args.Config, "config", filepath.Join(ConfigFolderPath(Build.Name), "config.toml"), "config file path")
 	flag.StringVar(&Args.Lock, "lock", filepath.Join(os.TempDir(), fmt.Sprintf("%s.lock", Build.Name)), "lock file path")
-	flag.StringVar(&Args.Sock, "sock", filepath.Join(os.TempDir(), fmt.Sprintf("%s.sock", Build.Name)), "sock file path (deprecated)")
 	flag.StringVar(&Args.Log, "log", filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", Build.Name)), "log file path")
 	flag.BoolVar(&Args.VVV, "vvv", false, "very very verbose mode")
 	flag.BoolVar(&Args.VV, "vv", false, "very verbose mode")

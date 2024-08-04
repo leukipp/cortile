@@ -118,7 +118,6 @@ func runMain() {
 
 	// Bind input events
 	input.BindSignal(tracker)
-	input.BindSocket(tracker)
 	input.BindMouse(tracker)
 	input.BindKeys(tracker)
 	input.BindTray(tracker)
