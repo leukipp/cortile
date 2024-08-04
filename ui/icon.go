@@ -31,7 +31,7 @@ func UpdateIcon(ws *desktop.Workspace) {
 
 	// Obtain layout name
 	name := ws.ActiveLayout().GetName()
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		name = "disabled"
 	}
 

@@ -15,6 +15,7 @@ type Manager struct {
 	Proportions *Proportions // Manager proportions of window clients
 	Masters     *Clients     // List of master window clients
 	Slaves      *Clients     // List of slave window clients
+	Decoration  bool         // Window decoration is enabled
 }
 
 type Location struct {
@@ -63,7 +64,24 @@ func CreateManager(loc Location) *Manager {
 			Maximum: common.Config.WindowSlavesMax,
 			Stacked: make([]*Client, 0),
 		},
+		Decoration: common.Config.WindowDecoration,
 	}
+}
+
+func (mg *Manager) EnableDecoration() {
+	mg.Decoration = true
+}
+
+func (mg *Manager) DisableDecoration() {
+	mg.Decoration = false
+}
+
+func (mg *Manager) DecorationEnabled() bool {
+	return mg.Decoration
+}
+
+func (mg *Manager) DecorationDisabled() bool {
+	return !mg.Decoration
 }
 
 func (mg *Manager) AddClient(c *Client) {

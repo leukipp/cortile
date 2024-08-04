@@ -20,7 +20,7 @@ type Workspace struct {
 	Location        store.Location // Desktop and screen location
 	Layouts         []Layout       // List of available layouts
 	ActiveLayoutNum uint           // Index of active layout
-	TilingEnabled   bool           // Tiling is enabled or not
+	Tiling          bool           // Tiling is enabled
 }
 
 func CreateWorkspaces() map[store.Location]*Workspace {
@@ -36,7 +36,7 @@ func CreateWorkspaces() map[store.Location]*Workspace {
 				Location:        location,
 				Layouts:         CreateLayouts(location),
 				ActiveLayoutNum: 0,
-				TilingEnabled:   common.Config.TilingEnabled,
+				Tiling:          common.Config.TilingEnabled,
 			}
 
 			// Set default layout
@@ -49,7 +49,7 @@ func CreateWorkspaces() map[store.Location]*Workspace {
 			// Read workspace from cache
 			cached := ws.Read()
 
-			// Overwrite default layout, proportions and tiling state
+			// Overwrite default layout, proportions, decoration and tiling state
 			ws.SetLayout(cached.ActiveLayoutNum)
 			for _, l := range ws.Layouts {
 				for _, cl := range cached.Layouts {
@@ -58,10 +58,11 @@ func CreateWorkspaces() map[store.Location]*Workspace {
 						mg.Masters.Maximum = int(math.Min(float64(cmg.Masters.Maximum), float64(common.Config.WindowMastersMax)))
 						mg.Slaves.Maximum = int(math.Min(float64(cmg.Slaves.Maximum), float64(common.Config.WindowSlavesMax)))
 						mg.Proportions = cmg.Proportions
+						mg.Decoration = cmg.Decoration
 					}
 				}
 			}
-			ws.TilingEnabled = cached.TilingEnabled
+			ws.Tiling = cached.Tiling
 
 			// Map location to workspace
 			workspaces[location] = ws
@@ -82,18 +83,47 @@ func CreateLayouts(loc store.Location) []Layout {
 	}
 }
 
-func (ws *Workspace) ResetLayouts() {
-	for _, l := range ws.Layouts {
-		l.Reset()
+func (ws *Workspace) EnableTiling() {
+	ws.Tiling = true
+}
+
+func (ws *Workspace) DisableTiling() {
+	ws.Tiling = false
+}
+
+func (ws *Workspace) TilingEnabled() bool {
+	if ws == nil {
+		return false
 	}
+	return ws.Tiling
+}
+
+func (ws *Workspace) TilingDisabled() bool {
+	if ws == nil {
+		return true
+	}
+	return !ws.Tiling
+}
+
+func (ws *Workspace) ActiveLayout() Layout {
+	return ws.Layouts[ws.ActiveLayoutNum]
 }
 
 func (ws *Workspace) SetLayout(layoutNum uint) {
 	ws.ActiveLayoutNum = layoutNum
 }
 
-func (ws *Workspace) ActiveLayout() Layout {
-	return ws.Layouts[ws.ActiveLayoutNum]
+func (ws *Workspace) ResetLayouts() {
+
+	// Reset layouts
+	for _, l := range ws.Layouts {
+
+		// Reset client decorations
+		l.GetManager().Decoration = common.Config.WindowDecoration
+
+		// Reset layout proportions
+		l.Reset()
+	}
 }
 
 func (ws *Workspace) CycleLayout(step int) {
@@ -126,8 +156,23 @@ func (ws *Workspace) RemoveClient(c *store.Client) {
 }
 
 func (ws *Workspace) Tile() {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return
+	}
+	mg := ws.ActiveLayout().GetManager()
+	clients := mg.Clients(store.Stacked)
+
+	// Set client decorations
+	for _, c := range clients {
+		if c == nil {
+			continue
+		}
+		if mg.DecorationEnabled() {
+			c.Decorate()
+		} else {
+			c.UnDecorate()
+		}
+		c.Update()
 	}
 
 	// Apply active layout
@@ -147,28 +192,6 @@ func (ws *Workspace) Restore(flag uint8) {
 		}
 		c.Restore(flag)
 	}
-}
-
-func (ws *Workspace) Enable() {
-	ws.TilingEnabled = true
-}
-
-func (ws *Workspace) Disable() {
-	ws.TilingEnabled = false
-}
-
-func (ws *Workspace) Enabled() bool {
-	if ws == nil {
-		return false
-	}
-	return ws.TilingEnabled
-}
-
-func (ws *Workspace) Disabled() bool {
-	if ws == nil {
-		return true
-	}
-	return !ws.TilingEnabled
 }
 
 func (ws *Workspace) Write() {

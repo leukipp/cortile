@@ -182,7 +182,7 @@ func onExecute(tr *desktop.Tracker, action string) {
 func onActivate(tr *desktop.Tracker) {
 	ws := tr.ActiveWorkspace()
 
-	if ws.Enabled() {
+	if ws.TilingEnabled() {
 
 		// Check toggle item
 		if menu.Toggle != nil {

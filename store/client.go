@@ -97,8 +97,26 @@ func (c *Client) UnLock() {
 	c.Locked = false
 }
 
+func (c *Client) Decorate() {
+	if _, exists := common.Config.Keys["decoration"]; !exists {
+		return
+	}
+	if motif.Decor(&c.Latest.Dimensions.Hints.Motif) || !motif.Decor(&c.Original.Dimensions.Hints.Motif) {
+		return
+	}
+
+	// Add window decorations
+	mhints := c.Cached.Dimensions.Hints.Motif
+	mhints.Flags |= motif.HintDecorations
+	mhints.Decoration = motif.DecorationAll
+	motif.WmHintsSet(X, c.Window.Id, &mhints)
+}
+
 func (c *Client) UnDecorate() {
-	if common.Config.WindowDecoration || !motif.Decor(&c.Latest.Dimensions.Hints.Motif) {
+	if _, exists := common.Config.Keys["decoration"]; !exists {
+		return
+	}
+	if !motif.Decor(&c.Latest.Dimensions.Hints.Motif) && motif.Decor(&c.Original.Dimensions.Hints.Motif) {
 		return
 	}
 
@@ -155,7 +173,6 @@ func (c *Client) MoveWindow(x, y, w, h int) {
 	}
 
 	// Remove unwanted properties
-	c.UnDecorate()
 	c.UnMaximize()
 	c.UnFullscreen()
 
@@ -296,12 +313,19 @@ func (c *Client) Restore(flag uint8) {
 	// Restore window size limits
 	icccm.WmNormalHintsSet(X, c.Window.Id, &c.Cached.Dimensions.Hints.Normal)
 
-	// Restore window decorations
-	motif.WmHintsSet(X, c.Window.Id, &c.Cached.Dimensions.Hints.Motif)
-
 	// Restore window sizes
 	c.UnMaximize()
 	c.UnFullscreen()
+
+	// Restore window decorations
+	if flag == Original {
+		if common.Config.WindowDecoration {
+			c.Decorate()
+		} else {
+			c.UnDecorate()
+		}
+		c.Update()
+	}
 
 	// Disable adjustments on restore
 	if c.Latest.Dimensions.AdjRestore {

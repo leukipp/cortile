@@ -35,13 +35,15 @@ func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bo
 	case "":
 		success = false
 	case "enable":
-		success = Enable(tr, ws)
+		success = EnableTiling(tr, ws)
 	case "disable":
-		success = Disable(tr, ws)
+		success = DisableTiling(tr, ws)
+	case "toggle":
+		success = ToggleTiling(tr, ws)
+	case "decoration":
+		success = ToggleDecoration(tr, ws)
 	case "restore":
 		success = Restore(tr, ws)
-	case "toggle":
-		success = Toggle(tr, ws)
 	case "cycle_next":
 		success = CycleNext(tr, ws)
 	case "cycle_previous":
@@ -176,8 +178,8 @@ func Query(state string, tr *desktop.Tracker) bool {
 	return success
 }
 
-func Enable(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	ws.Enable()
+func EnableTiling(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	ws.EnableTiling()
 	tr.Update()
 	tr.Tile(ws)
 
@@ -187,11 +189,11 @@ func Enable(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	return true
 }
 
-func Disable(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+func DisableTiling(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
 		return false
 	}
-	ws.Disable()
+	ws.DisableTiling()
 	tr.Restore(ws, store.Latest)
 
 	ui.ShowLayout(ws)
@@ -200,11 +202,58 @@ func Disable(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	return true
 }
 
-func Restore(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+func ToggleTiling(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
+		return EnableTiling(tr, ws)
+	}
+	return DisableTiling(tr, ws)
+}
+
+func EnableDecoration(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
 		return false
 	}
-	ws.Disable()
+	mg := ws.ActiveLayout().GetManager()
+
+	mg.EnableDecoration()
+	tr.Update()
+	tr.Tile(ws)
+
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
+
+	return true
+}
+
+func DisableDecoration(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
+		return false
+	}
+	mg := ws.ActiveLayout().GetManager()
+
+	mg.DisableDecoration()
+	tr.Update()
+	tr.Tile(ws)
+
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
+
+	return true
+}
+
+func ToggleDecoration(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	mg := ws.ActiveLayout().GetManager()
+	if mg.DecorationDisabled() {
+		return EnableDecoration(tr, ws)
+	}
+	return DisableDecoration(tr, ws)
+}
+
+func Restore(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
+		return false
+	}
+	ws.DisableTiling()
 	tr.Restore(ws, store.Original)
 
 	ui.ShowLayout(ws)
@@ -213,15 +262,8 @@ func Restore(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	return true
 }
 
-func Toggle(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
-		return Enable(tr, ws)
-	}
-	return Disable(tr, ws)
-}
-
 func CycleNext(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	if int(ws.ActiveLayoutNum) == len(ws.Layouts)-2 {
@@ -238,7 +280,7 @@ func CycleNext(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func CyclePrevious(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	if int(ws.ActiveLayoutNum) == 0 {
@@ -255,7 +297,7 @@ func CyclePrevious(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func VerticalLeftLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	for i, l := range ws.Layouts {
@@ -272,7 +314,7 @@ func VerticalLeftLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func VerticalRightLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	for i, l := range ws.Layouts {
@@ -289,7 +331,7 @@ func VerticalRightLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func HorizontalTopLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	for i, l := range ws.Layouts {
@@ -306,7 +348,7 @@ func HorizontalTopLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func HorizontalBottomLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	for i, l := range ws.Layouts {
@@ -323,7 +365,7 @@ func HorizontalBottomLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func MaximizedLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	for i, l := range ws.Layouts {
@@ -340,7 +382,7 @@ func MaximizedLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func FullscreenLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	for i, l := range ws.Layouts {
@@ -357,7 +399,7 @@ func FullscreenLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func MakeMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	if c, ok := tr.Clients[store.Windows.Active.Id]; ok {
@@ -370,7 +412,7 @@ func MakeMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func MakeMasterNext(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	c := ws.ActiveLayout().NextClient()
@@ -385,7 +427,7 @@ func MakeMasterNext(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func MakeMasterPrevious(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	c := ws.ActiveLayout().PreviousClient()
@@ -400,7 +442,7 @@ func MakeMasterPrevious(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func IncreaseMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	ws.ActiveLayout().IncreaseMaster()
@@ -413,7 +455,7 @@ func IncreaseMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func DecreaseMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	ws.ActiveLayout().DecreaseMaster()
@@ -426,7 +468,7 @@ func DecreaseMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func IncreaseSlave(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	ws.ActiveLayout().IncreaseSlave()
@@ -439,7 +481,7 @@ func IncreaseSlave(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func DecreaseSlave(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	ws.ActiveLayout().DecreaseSlave()
@@ -452,7 +494,7 @@ func DecreaseSlave(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func IncreaseProportion(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	ws.ActiveLayout().IncreaseProportion()
@@ -462,7 +504,7 @@ func IncreaseProportion(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func DecreaseProportion(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	ws.ActiveLayout().DecreaseProportion()
@@ -472,7 +514,7 @@ func DecreaseProportion(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func NextWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	c := ws.ActiveLayout().NextClient()
@@ -486,7 +528,7 @@ func NextWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func PreviousWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	c := ws.ActiveLayout().PreviousClient()
@@ -500,7 +542,7 @@ func PreviousWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func Reset(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return false
 	}
 	ws.ResetLayouts()
@@ -518,10 +560,10 @@ func Exit(tr *desktop.Tracker) bool {
 	xevent.Detach(store.X, store.X.RootWin())
 
 	for _, ws := range tr.Workspaces {
-		if ws.Disabled() {
+		if ws.TilingDisabled() {
 			continue
 		}
-		ws.Disable()
+		ws.DisableTiling()
 		tr.Restore(ws, store.Latest)
 	}
 

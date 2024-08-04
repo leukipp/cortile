@@ -112,7 +112,7 @@ func runMain() {
 	// Create tracker
 	tracker := desktop.CreateTracker()
 	ws := tracker.ActiveWorkspace()
-	if ws.Enabled() {
+	if ws.TilingEnabled() {
 		ui.ShowLayout(ws)
 	}
 

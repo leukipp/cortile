@@ -36,8 +36,7 @@ var (
 )
 
 func ShowLayout(ws *desktop.Workspace) {
-	location := store.Location{DeskNum: store.Workplace.CurrentDesk, ScreenNum: store.Workplace.CurrentScreen}
-	if ws == nil || ws.Location.DeskNum != location.DeskNum || common.Config.TilingGui <= 0 {
+	if ws == nil || ws.Location.DeskNum != store.Workplace.CurrentDesk || common.Config.TilingGui <= 0 {
 		return
 	}
 
@@ -46,7 +45,7 @@ func ShowLayout(ws *desktop.Workspace) {
 
 		// Obtain layout name
 		name := ws.ActiveLayout().GetName()
-		if ws.Disabled() {
+		if ws.TilingDisabled() {
 			name = "disabled"
 		}
 

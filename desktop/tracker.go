@@ -74,7 +74,7 @@ func CreateTracker() *Tracker {
 
 func (tr *Tracker) Update() {
 	ws := tr.ActiveWorkspace()
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return
 	}
 	log.Debug("Update trackable clients [", len(tr.Clients), "/", len(store.Windows.Stacked), "]")
@@ -132,7 +132,7 @@ func (tr *Tracker) Write() {
 }
 
 func (tr *Tracker) Tile(ws *Workspace) {
-	if ws.Disabled() {
+	if ws.TilingDisabled() {
 		return
 	}
 
@@ -258,7 +258,7 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 	// Client maximized
 	if store.IsMaximized(store.GetInfo(c.Window.Id)) {
 		ws := tr.ClientWorkspace(c)
-		if ws.Disabled() {
+		if ws.TilingDisabled() {
 			return
 		}
 		log.Debug("Client maximized handler fired [", c.Latest.Class, "]")
@@ -285,7 +285,7 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 	// Client minimized
 	if store.IsMinimized(store.GetInfo(c.Window.Id)) {
 		ws := tr.ClientWorkspace(c)
-		if ws.Disabled() {
+		if ws.TilingDisabled() {
 			return
 		}
 		log.Debug("Client minimized handler fired [", c.Latest.Class, "]")
@@ -297,7 +297,7 @@ func (tr *Tracker) handleMinimizedClient(c *store.Client) {
 
 func (tr *Tracker) handleResizeClient(c *store.Client) {
 	ws := tr.ClientWorkspace(c)
-	if ws.Disabled() || !tr.isTracked(c.Window.Id) || store.IsMaximized(store.GetInfo(c.Window.Id)) {
+	if ws.TilingDisabled() || !tr.isTracked(c.Window.Id) || store.IsMaximized(store.GetInfo(c.Window.Id)) {
 		return
 	}
 
@@ -436,7 +436,7 @@ func (tr *Tracker) handleWorkspaceChange(h *Handler) {
 	ws.RemoveClient(c)
 
 	// Tile current workspace
-	if ws.Enabled() {
+	if ws.TilingEnabled() {
 		tr.Tile(ws)
 	}
 
@@ -448,7 +448,7 @@ func (tr *Tracker) handleWorkspaceChange(h *Handler) {
 
 	// Add client to new workspace
 	ws = tr.ClientWorkspace(c)
-	if tr.Handlers.SwapScreen.Active() && target.Enabled() {
+	if tr.Handlers.SwapScreen.Active() && target.TilingEnabled() {
 		ws = target
 	}
 	mg = ws.ActiveLayout().GetManager()
@@ -458,7 +458,7 @@ func (tr *Tracker) handleWorkspaceChange(h *Handler) {
 	}
 
 	// Tile new workspace
-	if ws.Enabled() {
+	if ws.TilingEnabled() {
 		tr.Tile(ws)
 	} else {
 		c.Restore(store.Latest)
