@@ -119,7 +119,8 @@ func (ws *Workspace) ResetLayouts() {
 	for _, l := range ws.Layouts {
 
 		// Reset client decorations
-		l.GetManager().Decoration = common.Config.WindowDecoration
+		mg := l.GetManager()
+		mg.Decoration = common.Config.WindowDecoration
 
 		// Reset layout proportions
 		l.Reset()
@@ -168,11 +169,14 @@ func (ws *Workspace) Tile() {
 			continue
 		}
 		if mg.DecorationEnabled() {
-			c.Decorate()
+			if c.Decorate() {
+				c.Update()
+			}
 		} else {
-			c.UnDecorate()
+			if c.UnDecorate() {
+				c.Update()
+			}
 		}
-		c.Update()
 	}
 
 	// Apply active layout

@@ -97,12 +97,12 @@ func (c *Client) UnLock() {
 	c.Locked = false
 }
 
-func (c *Client) Decorate() {
+func (c *Client) Decorate() bool {
 	if _, exists := common.Config.Keys["decoration"]; !exists {
-		return
+		return false
 	}
 	if motif.Decor(&c.Latest.Dimensions.Hints.Motif) || !motif.Decor(&c.Original.Dimensions.Hints.Motif) {
-		return
+		return false
 	}
 
 	// Add window decorations
@@ -110,14 +110,16 @@ func (c *Client) Decorate() {
 	mhints.Flags |= motif.HintDecorations
 	mhints.Decoration = motif.DecorationAll
 	motif.WmHintsSet(X, c.Window.Id, &mhints)
+
+	return true
 }
 
-func (c *Client) UnDecorate() {
+func (c *Client) UnDecorate() bool {
 	if _, exists := common.Config.Keys["decoration"]; !exists {
-		return
+		return false
 	}
 	if !motif.Decor(&c.Latest.Dimensions.Hints.Motif) && motif.Decor(&c.Original.Dimensions.Hints.Motif) {
-		return
+		return false
 	}
 
 	// Remove window decorations
@@ -125,32 +127,42 @@ func (c *Client) UnDecorate() {
 	mhints.Flags |= motif.HintDecorations
 	mhints.Decoration = motif.DecorationNone
 	motif.WmHintsSet(X, c.Window.Id, &mhints)
+
+	return true
 }
 
-func (c *Client) UnMaximize() {
+func (c *Client) UnMaximize() bool {
+	if !IsMaximized(c.Latest) {
+		return false
+	}
 
 	// Unmaximize window
-	if IsMaximized(c.Latest) {
-		ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_MAXIMIZED_VERT")
-		ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_MAXIMIZED_HORZ")
-	}
+	ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_MAXIMIZED_VERT")
+	ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_MAXIMIZED_HORZ")
+
+	return true
 }
 
-func (c *Client) UnFullscreen() {
+func (c *Client) UnFullscreen() bool {
+	if !IsFullscreen(c.Latest) {
+		return false
+	}
 
 	// Unfullscreen window
-	if IsFullscreen(c.Latest) {
-		ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_FULLSCREEN")
-	}
+	ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_FULLSCREEN")
+
+	return true
 }
 
-func (c *Client) Fullscreen() {
+func (c *Client) Fullscreen() bool {
+	if IsFullscreen(c.Latest) {
+		return false
+	}
 
 	// Fullscreen window
 	ewmh.WmStateReq(X, c.Window.Id, ewmh.StateAdd, "_NET_WM_STATE_FULLSCREEN")
 
-	// Update stored states
-	c.Update()
+	return true
 }
 
 func (c *Client) MoveDesktop(deskNum uint32) {

@@ -48,6 +48,7 @@ func (l *FullscreenLayout) Apply() {
 
 		// Make window fullscreen
 		c.Fullscreen()
+		c.Update()
 	}
 }
 
