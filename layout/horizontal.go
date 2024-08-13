@@ -58,7 +58,7 @@ func (l *HorizontalLayout) Reset() {
 func (l *HorizontalLayout) Apply() {
 	clients := l.Clients(store.Stacked)
 
-	dx, dy, dw, dh := store.DesktopGeometry(l.Location.ScreenNum).Pieces()
+	dx, dy, dw, dh := store.DesktopGeometry(l.Location.Screen).Pieces()
 	gap := common.Config.WindowGapSize
 
 	mmax := l.Masters.Maximum
@@ -73,7 +73,7 @@ func (l *HorizontalLayout) Apply() {
 	sy := my + mh
 	sh := dh - mh
 
-	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.Location.DeskNum, "-", l.Location.ScreenNum, "]")
+	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.Location.Desktop, "-", l.Location.Screen, "]")
 
 	// Swap values if master is on bottom
 	if l.Name == "horizontal-bottom" && csize > mmax {
@@ -165,7 +165,7 @@ func (l *HorizontalLayout) Apply() {
 }
 
 func (l *HorizontalLayout) UpdateProportions(c *store.Client, d *store.Directions) {
-	_, _, dw, dh := store.DesktopGeometry(l.Location.ScreenNum).Pieces()
+	_, _, dw, dh := store.DesktopGeometry(l.Location.Screen).Pieces()
 	_, _, cw, ch := c.OuterGeometry()
 
 	gap := common.Config.WindowGapSize

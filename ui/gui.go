@@ -36,7 +36,8 @@ var (
 )
 
 func ShowLayout(ws *desktop.Workspace) {
-	if ws == nil || ws.Location.DeskNum != store.Workplace.CurrentDesk || common.Config.TilingGui <= 0 {
+	location := store.Location{Desktop: store.Workplace.CurrentDesktop}
+	if ws == nil || ws.Location.Desktop != location.Desktop || common.Config.TilingGui <= 0 {
 		return
 	}
 
@@ -234,10 +235,10 @@ func showGraphics(img *xgraphics.Image, ws *desktop.Workspace, duration time.Dur
 	store.ActiveWindowSet(store.X, &store.Windows.Active)
 
 	// Close previous opened window
-	if v, ok := gui[ws.Location.ScreenNum]; ok {
+	if v, ok := gui[ws.Location.Screen]; ok {
 		v.Destroy()
 	}
-	gui[ws.Location.ScreenNum] = win
+	gui[ws.Location.Screen] = win
 
 	// Close window after given duration
 	if duration > 0 {
@@ -248,11 +249,11 @@ func showGraphics(img *xgraphics.Image, ws *desktop.Workspace, duration time.Dur
 }
 
 func dimensions(ws *desktop.Workspace) *common.Geometry {
-	dim := store.DesktopGeometry(ws.Location.ScreenNum)
+	dim := store.DesktopGeometry(ws.Location.Screen)
 
 	// Ignore desktop margins on fullscreen mode
 	if ws.ActiveLayout().GetName() == "fullscreen" {
-		dim = store.ScreenGeometry(ws.Location.ScreenNum)
+		dim = store.ScreenGeometry(ws.Location.Screen)
 	}
 
 	return dim

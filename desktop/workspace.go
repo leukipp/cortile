@@ -16,27 +16,27 @@ import (
 )
 
 type Workspace struct {
-	Name            string         // Workspace location name
-	Location        store.Location // Desktop and screen location
-	Layouts         []Layout       // List of available layouts
-	ActiveLayoutNum uint           // Index of active layout
-	Tiling          bool           // Tiling is enabled
+	Name     string         // Workspace location name
+	Location store.Location // Desktop and screen location
+	Layouts  []Layout       // List of available layouts
+	Layout   uint           // Active layout index
+	Tiling   bool           // Tiling is enabled
 }
 
 func CreateWorkspaces() map[store.Location]*Workspace {
 	workspaces := make(map[store.Location]*Workspace)
 
-	for deskNum := uint(0); deskNum < store.Workplace.DeskCount; deskNum++ {
-		for screenNum := uint(0); screenNum < store.Workplace.ScreenCount; screenNum++ {
-			location := store.Location{DeskNum: deskNum, ScreenNum: screenNum}
+	for desktop := uint(0); desktop < store.Workplace.DesktopCount; desktop++ {
+		for screen := uint(0); screen < store.Workplace.ScreenCount; screen++ {
+			location := store.Location{Desktop: desktop, Screen: screen}
 
 			// Create layouts for each desktop and screen
 			ws := &Workspace{
-				Name:            fmt.Sprintf("workspace-%d-%d", location.DeskNum, location.ScreenNum),
-				Location:        location,
-				Layouts:         CreateLayouts(location),
-				ActiveLayoutNum: 0,
-				Tiling:          common.Config.TilingEnabled,
+				Name:     fmt.Sprintf("workspace-%d-%d", location.Desktop, location.Screen),
+				Location: location,
+				Layouts:  CreateLayouts(location),
+				Layout:   0,
+				Tiling:   common.Config.TilingEnabled,
 			}
 
 			// Set default layout
@@ -50,7 +50,7 @@ func CreateWorkspaces() map[store.Location]*Workspace {
 			cached := ws.Read()
 
 			// Overwrite default layout, proportions, decoration and tiling state
-			ws.SetLayout(cached.ActiveLayoutNum)
+			ws.SetLayout(cached.Layout)
 			for _, l := range ws.Layouts {
 				for _, cl := range cached.Layouts {
 					if l.GetName() == cl.GetName() {
@@ -106,11 +106,11 @@ func (ws *Workspace) TilingDisabled() bool {
 }
 
 func (ws *Workspace) ActiveLayout() Layout {
-	return ws.Layouts[ws.ActiveLayoutNum]
+	return ws.Layouts[ws.Layout]
 }
 
-func (ws *Workspace) SetLayout(layoutNum uint) {
-	ws.ActiveLayoutNum = layoutNum
+func (ws *Workspace) SetLayout(layout uint) {
+	ws.Layout = layout
 }
 
 func (ws *Workspace) ResetLayouts() {
@@ -130,7 +130,7 @@ func (ws *Workspace) ResetLayouts() {
 func (ws *Workspace) CycleLayout(step int) {
 
 	// Calculate cycle direction
-	i := (int(ws.ActiveLayoutNum) + step) % len(ws.Layouts)
+	i := (int(ws.Layout) + step) % len(ws.Layouts)
 	if i < 0 {
 		i = len(ws.Layouts) + step
 	}
@@ -254,8 +254,8 @@ func (ws *Workspace) Read() *Workspace {
 }
 
 func (ws *Workspace) Cache() common.Cache[*Workspace] {
-	name := fmt.Sprintf("workspace-%d", ws.Location.DeskNum)
-	hash := fmt.Sprintf("%s-%d", name, ws.Location.ScreenNum)
+	name := fmt.Sprintf("workspace-%d", ws.Location.Desktop)
+	hash := fmt.Sprintf("%s-%d", name, ws.Location.Screen)
 
 	// Create workspace cache folder
 	folder := filepath.Join(common.Args.Cache, "workplaces", store.Workplace.Displays.Name, "workspaces", name)

@@ -39,11 +39,11 @@ type Methods struct {
 	Tracker *desktop.Tracker    // Workspace tracker instance
 }
 
-func (m Methods) ActionExecute(name string, desk int32, screen int32) (string, *dbus.Error) {
+func (m Methods) ActionExecute(name string, desktop int32, screen int32) (string, *dbus.Error) {
 	success := false
 
 	// Execute action
-	ws := m.Tracker.WorkspaceAt(uint(desk), uint(screen))
+	ws := m.Tracker.WorkspaceAt(uint(desktop), uint(screen))
 	if ws != nil {
 		success = ExecuteAction(name, m.Tracker, ws)
 	}
@@ -86,13 +86,13 @@ func (m Methods) WindowToPosition(id int32, x int32, y int32) (string, *dbus.Err
 	return dataMap("Result", "WindowToPosition", result), nil
 }
 
-func (m Methods) WindowToDesktop(id int32, desk int32) (string, *dbus.Error) {
+func (m Methods) WindowToDesktop(id int32, desktop int32) (string, *dbus.Error) {
 	success := false
 
 	// Move window to desktop
-	valid := desk >= 0 && uint(desk) < store.Workplace.DeskCount
+	valid := desktop >= 0 && uint(desktop) < store.Workplace.DesktopCount
 	if c, ok := m.Tracker.Clients[xproto.Window(id)]; ok && valid {
-		c.MoveDesktop(uint32(desk))
+		c.MoveDesktop(uint32(desktop))
 		success = true
 	}
 
@@ -120,13 +120,13 @@ func (m Methods) WindowToScreen(id int32, screen int32) (string, *dbus.Error) {
 	return dataMap("Result", "WindowToScreen", result), nil
 }
 
-func (m Methods) DesktopSwitch(desk int32) (string, *dbus.Error) {
+func (m Methods) DesktopSwitch(desktop int32) (string, *dbus.Error) {
 	success := false
 
 	// Switch current desktop
-	valid := desk >= 0 && uint(desk) < store.Workplace.DeskCount
+	valid := desktop >= 0 && uint(desktop) < store.Workplace.DesktopCount
 	if valid {
-		store.CurrentDesktopSet(store.X, uint(desk))
+		store.CurrentDesktopSet(store.X, uint(desktop))
 		success = true
 	}
 
@@ -187,24 +187,24 @@ func BindDbus(tr *desktop.Tracker) {
 	go event(tr.Channels.Event, tr)
 
 	// Attach execute events
-	OnExecute(func(action string, desk uint, screen uint) {
+	OnExecute(func(action string, desktop uint, screen uint) {
 		SetProperty("Action", struct {
 			Name     string
 			Location store.Location
 		}{
 			Name:     action,
-			Location: store.Location{DeskNum: desk, ScreenNum: screen},
+			Location: store.Location{Desktop: desktop, Screen: screen},
 		})
 	})
 
 	// Attach pointer events
-	store.OnPointerUpdate(func(pointer store.XPointer, desk uint, screen uint) {
+	store.OnPointerUpdate(func(pointer store.XPointer, desktop uint, screen uint) {
 		SetProperty("Pointer", struct {
 			Device   store.XPointer
 			Location store.Location
 		}{
 			Device:   pointer,
-			Location: store.Location{DeskNum: desk, ScreenNum: screen},
+			Location: store.Location{Desktop: desktop, Screen: screen},
 		})
 	})
 }
@@ -296,12 +296,12 @@ func export(tr *desktop.Tracker) {
 	// Export dbus methods
 	methods = &Methods{
 		Naming: map[string][]string{
-			"ActionExecute":    {"name", "desk", "screen"},
+			"ActionExecute":    {"name", "desktop", "screen"},
 			"WindowActivate":   {"id"},
 			"WindowToPosition": {"id", "x", "y"},
-			"WindowToDesktop":  {"id", "desk"},
+			"WindowToDesktop":  {"id", "desktop"},
 			"WindowToScreen":   {"id", "screen"},
-			"DesktopSwitch":    {"desk"},
+			"DesktopSwitch":    {"desktop"},
 		},
 		Tracker: tr,
 	}

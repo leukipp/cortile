@@ -77,14 +77,14 @@ func CreateClient(w xproto.Window) *Client {
 	// Overwrite states, geometry and location
 	c.Cached.States = cached.Latest.States
 	c.Cached.Dimensions.Geometry = cached.Latest.Dimensions.Geometry
-	c.Cached.Location.ScreenNum = ScreenNumGet(cached.Latest.Dimensions.Geometry.Center())
+	c.Cached.Location.Screen = ScreenGet(cached.Latest.Dimensions.Geometry.Center())
 
 	// Restore window position
 	c.Restore(Cached)
 
 	c.Latest.States = c.Cached.States
 	c.Latest.Dimensions.Geometry = c.Cached.Dimensions.Geometry
-	c.Latest.Location.ScreenNum = c.Cached.Location.ScreenNum
+	c.Latest.Location.Screen = c.Cached.Location.Screen
 
 	return c
 }
@@ -179,14 +179,14 @@ func (c *Client) LimitDimensions(w, h int) {
 	icccm.WmNormalHintsSet(X, c.Window.Id, &nhints)
 }
 
-func (c *Client) MoveDesktop(deskNum uint32) {
-	if deskNum == ^uint32(0) {
+func (c *Client) MoveDesktop(desktop uint32) {
+	if desktop == ^uint32(0) {
 		ewmh.WmStateReq(X, c.Window.Id, ewmh.StateAdd, "_NET_WM_STATE_STICKY")
 	}
 
 	// Set client desktop
-	ewmh.WmDesktopSet(X, c.Window.Id, uint(deskNum))
-	ewmh.ClientEvent(X, c.Window.Id, "_NET_WM_DESKTOP", int(deskNum), int(2))
+	ewmh.WmDesktopSet(X, c.Window.Id, uint(desktop))
+	ewmh.ClientEvent(X, c.Window.Id, "_NET_WM_DESKTOP", int(desktop), int(2))
 }
 
 func (c *Client) MoveWindow(x, y, w, h int) {
@@ -368,7 +368,7 @@ func (c *Client) Read() *Client {
 
 func (c *Client) Cache() common.Cache[*Client] {
 	name := c.Latest.Class
-	hash := fmt.Sprintf("%s-%d", c.Latest.Class, c.Latest.Location.DeskNum)
+	hash := fmt.Sprintf("%s-%d", c.Latest.Class, c.Latest.Location.Desktop)
 
 	// Create client cache folder
 	folder := filepath.Join(common.Args.Cache, "workplaces", Workplace.Displays.Name, "clients", name)
@@ -519,14 +519,14 @@ func GetInfo(w xproto.Window) *Info {
 	}
 
 	// Window desktop and screen (window workspace location)
-	deskNum, err := ewmh.WmDesktopGet(X, w)
-	sticky := deskNum > Workplace.DeskCount
+	desktop, err := ewmh.WmDesktopGet(X, w)
+	sticky := desktop > Workplace.DesktopCount
 	if err != nil || sticky {
-		deskNum = CurrentDesktopGet(X)
+		desktop = CurrentDesktopGet(X)
 	}
 	location = Location{
-		DeskNum:   deskNum,
-		ScreenNum: ScreenNumGet(common.CreateGeometry(geom).Center()),
+		Desktop: desktop,
+		Screen:  ScreenGet(common.CreateGeometry(geom).Center()),
 	}
 
 	// Window types (types of the window)

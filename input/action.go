@@ -94,7 +94,7 @@ func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bo
 	}
 
 	// Execute callbacks
-	executeCallbacks(action, ws.Location.DeskNum, ws.Location.ScreenNum)
+	executeCallbacks(action, ws.Location.Desktop, ws.Location.Screen)
 
 	return true
 }
@@ -111,7 +111,7 @@ func ExecuteActions(action string, tr *desktop.Tracker, mod string) bool {
 		}
 
 		// Execute only on active workspace
-		if mod == "screens" && (ws.Location.DeskNum != active.Location.DeskNum) {
+		if mod == "screens" && (ws.Location.Desktop != active.Location.Desktop) {
 			continue
 		}
 
@@ -211,7 +211,7 @@ func CycleNext(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.TilingDisabled() {
 		return false
 	}
-	if int(ws.ActiveLayoutNum) == len(ws.Layouts)-2 {
+	if int(ws.Layout) == len(ws.Layouts)-2 {
 		ws.CycleLayout(2)
 	} else {
 		ws.CycleLayout(1)
@@ -228,7 +228,7 @@ func CyclePrevious(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.TilingDisabled() {
 		return false
 	}
-	if int(ws.ActiveLayoutNum) == 0 {
+	if int(ws.Layout) == 0 {
 		ws.CycleLayout(-2)
 	} else {
 		ws.CycleLayout(-1)
@@ -543,10 +543,10 @@ func OnExecute(fun func(string, uint, uint)) {
 	executeCallbacksFun = append(executeCallbacksFun, fun)
 }
 
-func executeCallbacks(action string, desk uint, screen uint) {
+func executeCallbacks(action string, desktop uint, screen uint) {
 	log.Info("Execute event ", action)
 
 	for _, fun := range executeCallbacksFun {
-		fun(action, desk, screen)
+		fun(action, desktop, screen)
 	}
 }

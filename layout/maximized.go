@@ -33,12 +33,12 @@ func (l *MaximizedLayout) Reset() {
 func (l *MaximizedLayout) Apply() {
 	clients := l.Clients(store.Stacked)
 
-	dx, dy, dw, dh := store.DesktopGeometry(l.Location.ScreenNum).Pieces()
+	dx, dy, dw, dh := store.DesktopGeometry(l.Location.Screen).Pieces()
 	gap := common.Config.WindowGapSize
 
 	csize := len(clients)
 
-	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.Location.DeskNum, "-", l.Location.ScreenNum, "]")
+	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.Location.Desktop, "-", l.Location.Screen, "]")
 
 	// Main area layout
 	for _, c := range clients {

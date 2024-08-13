@@ -7,17 +7,17 @@ import (
 )
 
 type Corner struct {
-	Name      string          // Corner name used in config
-	Active    bool            // Mouse pointer is in this corner
-	ScreenNum uint            // Screen number the corner is located
-	Geometry  common.Geometry // Geometry of the corner section
+	Name     string          // Corner name used in config
+	Active   bool            // Mouse pointer is in this corner
+	Screen   uint            // Screen index the corner is located
+	Geometry common.Geometry // Geometry of the corner section
 }
 
-func CreateCorner(name string, screenNum uint, x int, y int, w int, h int) *Corner {
+func CreateCorner(name string, screen uint, x int, y int, w int, h int) *Corner {
 	return &Corner{
-		Name:      name,
-		Active:    false,
-		ScreenNum: screenNum,
+		Name:   name,
+		Active: false,
+		Screen: screen,
 		Geometry: common.Geometry{
 			X:      x,
 			Y:      y,
@@ -31,7 +31,6 @@ func CreateCorners(screens []XHead) []*Corner {
 	corners := []*Corner{}
 
 	for i, screen := range screens {
-		screenNum := uint(i)
 		x, y, w, h := screen.Geometry.Pieces()
 
 		// Corner dimensions
@@ -39,14 +38,14 @@ func CreateCorners(screens []XHead) []*Corner {
 		wl, hl := common.Config.EdgeCenterSize, common.Config.EdgeCenterSize
 
 		// Define corners and positions
-		tl := CreateCorner("top_left", screenNum, x, y, ws, hs)
-		tc := CreateCorner("top_center", screenNum, x+w/2-wl/2, y, wl, hs)
-		tr := CreateCorner("top_right", screenNum, x+w-ws, y, ws, hs)
-		cr := CreateCorner("center_right", screenNum, x+w-ws, y+h/2-hl/2, ws, hl)
-		br := CreateCorner("bottom_right", screenNum, x+w-ws, y+h-hs, ws, hs)
-		bc := CreateCorner("bottom_center", screenNum, x+w/2-wl/2, y+h-hs, wl, hl)
-		bl := CreateCorner("bottom_left", screenNum, x, y+h-hs, ws, hs)
-		cl := CreateCorner("center_left", screenNum, x, y+h/2-hl/2, ws, hl)
+		tl := CreateCorner("top_left", uint(i), x, y, ws, hs)
+		tc := CreateCorner("top_center", uint(i), x+w/2-wl/2, y, wl, hs)
+		tr := CreateCorner("top_right", uint(i), x+w-ws, y, ws, hs)
+		cr := CreateCorner("center_right", uint(i), x+w-ws, y+h/2-hl/2, ws, hl)
+		br := CreateCorner("bottom_right", uint(i), x+w-ws, y+h-hs, ws, hs)
+		bc := CreateCorner("bottom_center", uint(i), x+w/2-wl/2, y+h-hs, wl, hl)
+		bl := CreateCorner("bottom_left", uint(i), x, y+h-hs, ws, hs)
+		cl := CreateCorner("center_left", uint(i), x, y+h/2-hl/2, ws, hl)
 
 		corners = append(corners, []*Corner{tl, tc, tr, cr, br, bc, bl, cl}...)
 	}

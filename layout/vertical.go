@@ -58,7 +58,7 @@ func (l *VerticalLayout) Reset() {
 func (l *VerticalLayout) Apply() {
 	clients := l.Clients(store.Stacked)
 
-	dx, dy, dw, dh := store.DesktopGeometry(l.Location.ScreenNum).Pieces()
+	dx, dy, dw, dh := store.DesktopGeometry(l.Location.Screen).Pieces()
 	gap := common.Config.WindowGapSize
 
 	mmax := l.Masters.Maximum
@@ -73,7 +73,7 @@ func (l *VerticalLayout) Apply() {
 	sx := mx + mw
 	sw := dw - mw
 
-	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.Location.DeskNum, "-", l.Location.ScreenNum, "]")
+	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.Location.Desktop, "-", l.Location.Screen, "]")
 
 	// Swap values if master is on right
 	if l.Name == "vertical-right" && csize > mmax {
@@ -165,7 +165,7 @@ func (l *VerticalLayout) Apply() {
 }
 
 func (l *VerticalLayout) UpdateProportions(c *store.Client, d *store.Directions) {
-	_, _, dw, dh := store.DesktopGeometry(l.Location.ScreenNum).Pieces()
+	_, _, dw, dh := store.DesktopGeometry(l.Location.Screen).Pieces()
 	_, _, cw, ch := c.OuterGeometry()
 
 	gap := common.Config.WindowGapSize

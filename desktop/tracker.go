@@ -159,20 +159,20 @@ func (tr *Tracker) Restore(ws *Workspace, flag uint8) {
 }
 
 func (tr *Tracker) ActiveWorkspace() *Workspace {
-	return tr.WorkspaceAt(store.Workplace.CurrentDesk, store.Workplace.CurrentScreen)
+	return tr.WorkspaceAt(store.Workplace.CurrentDesktop, store.Workplace.CurrentScreen)
 }
 
 func (tr *Tracker) ClientWorkspace(c *store.Client) *Workspace {
-	return tr.WorkspaceAt(c.Latest.Location.DeskNum, c.Latest.Location.ScreenNum)
+	return tr.WorkspaceAt(c.Latest.Location.Desktop, c.Latest.Location.Screen)
 }
 
-func (tr *Tracker) WorkspaceAt(deskNum uint, screenNum uint) *Workspace {
-	location := store.Location{DeskNum: deskNum, ScreenNum: screenNum}
+func (tr *Tracker) WorkspaceAt(desktop uint, screen uint) *Workspace {
+	location := store.Location{Desktop: desktop, Screen: screen}
 
 	// Validate workspace
 	ws := tr.Workspaces[location]
 	if ws == nil {
-		log.Warn("Invalid workspace [workspace-", location.DeskNum, "-", location.ScreenNum, "]")
+		log.Warn("Invalid workspace [workspace-", location.Desktop, "-", location.Screen, "]")
 	}
 
 	return ws
@@ -384,8 +384,8 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 		if tr.Handlers.MoveClient.Dragging {
 			targetPoint = pt.Position
 		}
-		targetDesk := store.Workplace.CurrentDesk
-		targetScreen := store.ScreenNumGet(targetPoint)
+		targetDesktop := store.Workplace.CurrentDesktop
+		targetScreen := store.ScreenGet(targetPoint)
 
 		// Check if target point hovers another client
 		tr.Handlers.SwapClient.Reset()
@@ -396,8 +396,8 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 		// Check if target point moves to another screen
 		tr.Handlers.SwapScreen.Reset()
-		if c.Latest.Location.ScreenNum != targetScreen {
-			tr.Handlers.SwapScreen = &Handler{Source: c, Target: tr.WorkspaceAt(targetDesk, targetScreen)}
+		if c.Latest.Location.Screen != targetScreen {
+			tr.Handlers.SwapScreen = &Handler{Source: c, Target: tr.WorkspaceAt(targetDesktop, targetScreen)}
 			log.Debug("Screen swap handler active [", c.Latest.Class, "]")
 		}
 	}
@@ -468,8 +468,8 @@ func (tr *Tracker) handleWorkspaceChange(h *Handler) {
 	h.Reset()
 }
 
-func (tr *Tracker) onStateUpdate(state string, desk uint, screen uint) {
-	workplaceChanged := store.Workplace.DeskCount*store.Workplace.ScreenCount != uint(len(tr.Workspaces))
+func (tr *Tracker) onStateUpdate(state string, desktop uint, screen uint) {
+	workplaceChanged := store.Workplace.DesktopCount*store.Workplace.ScreenCount != uint(len(tr.Workspaces))
 	workspaceChanged := common.IsInList(state, []string{"_NET_CURRENT_DESKTOP"})
 
 	viewportChanged := common.IsInList(state, []string{"_NET_NUMBER_OF_DESKTOPS", "_NET_DESKTOP_LAYOUT", "_NET_DESKTOP_GEOMETRY", "_NET_DESKTOP_VIEWPORT", "_NET_WORKAREA"})
@@ -486,7 +486,7 @@ func (tr *Tracker) onStateUpdate(state string, desk uint, screen uint) {
 
 		// Update sticky windows
 		for _, c := range tr.Clients {
-			if store.IsSticky(c.Latest) && c.Latest.Location.DeskNum != store.Workplace.CurrentDesk {
+			if store.IsSticky(c.Latest) && c.Latest.Location.Desktop != store.Workplace.CurrentDesktop {
 				c.MoveDesktop(^uint32(0))
 			}
 		}
@@ -514,7 +514,7 @@ func (tr *Tracker) onStateUpdate(state string, desk uint, screen uint) {
 	}
 }
 
-func (tr *Tracker) onPointerUpdate(pointer store.XPointer, desk uint, screen uint) {
+func (tr *Tracker) onPointerUpdate(pointer store.XPointer, desktop uint, screen uint) {
 	buttonReleased := !pointer.Pressed()
 
 	// Reset timer

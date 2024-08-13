@@ -29,11 +29,11 @@ var (
 )
 
 type XWorkplace struct {
-	DeskCount     uint      // Number of desktops
-	ScreenCount   uint      // Number of screens
-	CurrentDesk   uint      // Current desktop number
-	CurrentScreen uint      // Current screen number
-	Displays      XDisplays // Physical connected displays
+	DesktopCount   uint      // Number of desktops
+	ScreenCount    uint      // Number of screens
+	CurrentDesktop uint      // Current desktop index
+	CurrentScreen  uint      // Current screen index
+	Displays       XDisplays // Physical connected displays
 }
 
 type XDisplays struct {
@@ -135,10 +135,10 @@ func InitRoot() {
 	// Init workplace
 	Workplace = &XWorkplace{}
 	Workplace.Displays = DisplaysGet(X)
-	Workplace.DeskCount = NumberOfDesktopsGet(X)
+	Workplace.DesktopCount = NumberOfDesktopsGet(X)
 	Workplace.ScreenCount = uint(len(Workplace.Displays.Screens))
-	Workplace.CurrentDesk = CurrentDesktopGet(X)
-	Workplace.CurrentScreen = ScreenNumGet(Pointer.Position)
+	Workplace.CurrentDesktop = CurrentDesktopGet(X)
+	Workplace.CurrentScreen = ScreenGet(Pointer.Position)
 
 	// Attach root events
 	root := CreateXWindow(X.RootWin())
@@ -194,7 +194,7 @@ func NumberOfDesktopsGet(X *xgbutil.XUtil) uint {
 	// Validate number of desktops
 	if err != nil {
 		log.Error("Error retrieving number of desktops: ", err)
-		return Workplace.DeskCount
+		return Workplace.DesktopCount
 	}
 
 	return deskCount
@@ -206,16 +206,16 @@ func CurrentDesktopGet(X *xgbutil.XUtil) uint {
 	// Validate current desktop
 	if err != nil {
 		log.Error("Error retrieving current desktop: ", err)
-		return Workplace.CurrentDesk
+		return Workplace.CurrentDesktop
 	}
 
 	return currentDesk
 }
 
-func CurrentDesktopSet(X *xgbutil.XUtil, deskNum uint) {
-	ewmh.CurrentDesktopSet(X, deskNum)
-	ewmh.ClientEvent(X, X.RootWin(), "_NET_CURRENT_DESKTOP", int(deskNum), int(0))
-	Workplace.CurrentDesk = deskNum
+func CurrentDesktopSet(X *xgbutil.XUtil, desktop uint) {
+	ewmh.CurrentDesktopSet(X, desktop)
+	ewmh.ClientEvent(X, X.RootWin(), "_NET_CURRENT_DESKTOP", int(desktop), int(0))
+	Workplace.CurrentDesktop = desktop
 }
 
 func ActiveWindowGet(X *xgbutil.XUtil) XWindow {
@@ -412,33 +412,33 @@ func PointerGet(X *xgbutil.XUtil) *XPointer {
 	}
 }
 
-func ScreenNumGet(p common.Point) uint {
+func ScreenGet(p common.Point) uint {
 
 	// Check if point is inside screen rectangle
-	for screenNum, screen := range Workplace.Displays.Screens {
+	for i, screen := range Workplace.Displays.Screens {
 		if common.IsInsideRect(p, screen.Geometry) {
-			return uint(screenNum)
+			return uint(i)
 		}
 	}
 
 	return 0
 }
 
-func ScreenGeometry(screenNum uint) *common.Geometry {
-	if int(screenNum) >= len(Workplace.Displays.Screens) {
+func ScreenGeometry(i uint) *common.Geometry {
+	if int(i) >= len(Workplace.Displays.Screens) {
 		return &common.Geometry{}
 	}
-	screen := Workplace.Displays.Screens[screenNum]
+	screen := Workplace.Displays.Screens[i]
 
 	// Get screen geometry
 	return &screen.Geometry
 }
 
-func DesktopGeometry(screenNum uint) *common.Geometry {
-	if int(screenNum) >= len(Workplace.Displays.Desktops) {
+func DesktopGeometry(i uint) *common.Geometry {
+	if int(i) >= len(Workplace.Displays.Desktops) {
 		return &common.Geometry{}
 	}
-	desktop := Workplace.Displays.Desktops[screenNum]
+	desktop := Workplace.Displays.Desktops[i]
 
 	// Get desktop geometry
 	x, y, w, h := desktop.Geometry.Pieces()
@@ -473,7 +473,7 @@ func PointerUpdate(X *xgbutil.XUtil) *XPointer {
 	Pointer = PointerGet(X)
 
 	// Update current screen
-	Workplace.CurrentScreen = ScreenNumGet(Pointer.Position)
+	Workplace.CurrentScreen = ScreenGet(Pointer.Position)
 
 	// Update pointer left button drag
 	Pointer.Drag.LeftTime = previous.Drag.LeftTime
@@ -495,7 +495,7 @@ func PointerUpdate(X *xgbutil.XUtil) *XPointer {
 
 	// Pointer callbacks
 	if previous.Button != Pointer.Button {
-		pointerCallbacks(*Pointer, Workplace.CurrentDesk, Workplace.CurrentScreen)
+		pointerCallbacks(*Pointer, Workplace.CurrentDesktop, Workplace.CurrentScreen)
 	}
 
 	return Pointer
@@ -512,9 +512,9 @@ func StateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 
 	// Update common state variables
 	if common.IsInList(aname, []string{"_NET_NUMBER_OF_DESKTOPS"}) {
-		Workplace.DeskCount = NumberOfDesktopsGet(X)
+		Workplace.DesktopCount = NumberOfDesktopsGet(X)
 	} else if common.IsInList(aname, []string{"_NET_CURRENT_DESKTOP"}) {
-		Workplace.CurrentDesk = CurrentDesktopGet(X)
+		Workplace.CurrentDesktop = CurrentDesktopGet(X)
 	} else if common.IsInList(aname, []string{"_NET_DESKTOP_LAYOUT", "_NET_DESKTOP_GEOMETRY", "_NET_DESKTOP_VIEWPORT", "_NET_WORKAREA"}) {
 		Workplace.Displays = DisplaysGet(X)
 	} else if common.IsInList(aname, []string{"_NET_CLIENT_LIST_STACKING"}) {
@@ -522,7 +522,7 @@ func StateUpdate(X *xgbutil.XUtil, e xevent.PropertyNotifyEvent) {
 	} else if common.IsInList(aname, []string{"_NET_ACTIVE_WINDOW"}) {
 		Windows.Active = ActiveWindowGet(X)
 	}
-	stateCallbacks(aname, Workplace.CurrentDesk, Workplace.CurrentScreen)
+	stateCallbacks(aname, Workplace.CurrentDesktop, Workplace.CurrentScreen)
 }
 
 func OnPointerUpdate(fun func(XPointer, uint, uint)) {
@@ -533,18 +533,18 @@ func OnStateUpdate(fun func(string, uint, uint)) {
 	stateCallbacksFun = append(stateCallbacksFun, fun)
 }
 
-func pointerCallbacks(pointer XPointer, desk uint, screen uint) {
+func pointerCallbacks(pointer XPointer, desktop uint, screen uint) {
 	log.Info("Pointer event ", pointer.Button)
 
 	for _, fun := range pointerCallbacksFun {
-		fun(pointer, desk, screen)
+		fun(pointer, desktop, screen)
 	}
 }
 
-func stateCallbacks(state string, desk uint, screen uint) {
+func stateCallbacks(state string, desktop uint, screen uint) {
 	log.Info("State event ", state)
 
 	for _, fun := range stateCallbacksFun {
-		fun(state, desk, screen)
+		fun(state, desktop, screen)
 	}
 }

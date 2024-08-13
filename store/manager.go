@@ -19,8 +19,8 @@ type Manager struct {
 }
 
 type Location struct {
-	DeskNum   uint // Location desktop number
-	ScreenNum uint // Location screen number
+	Desktop uint // Location desktop index
+	Screen  uint // Location screen index
 }
 
 type Proportions struct {
@@ -49,7 +49,7 @@ const (
 
 func CreateManager(loc Location) *Manager {
 	return &Manager{
-		Name:     fmt.Sprintf("manager-%d-%d", loc.DeskNum, loc.ScreenNum),
+		Name:     fmt.Sprintf("manager-%d-%d", loc.Desktop, loc.Screen),
 		Location: &loc,
 		Proportions: &Proportions{
 			MasterSlave:  calcProportions(2),

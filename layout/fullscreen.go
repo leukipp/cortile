@@ -32,11 +32,11 @@ func (l *FullscreenLayout) Reset() {
 func (l *FullscreenLayout) Apply() {
 	clients := l.Ordered(&store.Clients{Stacked: l.Clients(store.Stacked)})
 
-	_, _, dw, dh := store.ScreenGeometry(l.Location.ScreenNum).Pieces()
+	_, _, dw, dh := store.ScreenGeometry(l.Location.Screen).Pieces()
 
 	csize := len(clients)
 
-	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.Location.DeskNum, "-", l.Location.ScreenNum, "]")
+	log.Info("Tile ", csize, " windows with ", l.Name, " layout [workspace-", l.Location.Desktop, "-", l.Location.Screen, "]")
 
 	// Main area layout
 	for _, c := range clients {
