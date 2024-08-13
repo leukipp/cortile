@@ -92,7 +92,7 @@ func InitArgs(introspect map[string][]string) {
 			// Check subcommand line arguments
 			if !Args.Dbus.Listen && len(Args.Dbus.Method) == 0 && len(Args.Dbus.Property) == 0 {
 				dbus.Usage()
-				os.Exit(1)
+				os.Exit(2)
 			}
 		}
 	}
