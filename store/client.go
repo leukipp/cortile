@@ -165,6 +165,20 @@ func (c *Client) Fullscreen() bool {
 	return true
 }
 
+func (c *Client) LimitDimensions(w, h int) {
+
+	// Decoration extents
+	ext := c.Latest.Dimensions.Extents
+	dw, dh := ext.Left+ext.Right, ext.Top+ext.Bottom
+
+	// Set window size limits
+	nhints := c.Cached.Dimensions.Hints.Normal
+	nhints.Flags |= icccm.SizeHintPMinSize
+	nhints.MinWidth = uint(w - dw)
+	nhints.MinHeight = uint(h - dh)
+	icccm.WmNormalHintsSet(X, c.Window.Id, &nhints)
+}
+
 func (c *Client) MoveDesktop(deskNum uint32) {
 	if deskNum == ^uint32(0) {
 		ewmh.WmStateReq(X, c.Window.Id, ewmh.StateAdd, "_NET_WM_STATE_STICKY")
@@ -210,104 +224,34 @@ func (c *Client) MoveWindow(x, y, w, h int) {
 	c.Update()
 }
 
-func (c *Client) LimitDimensions(w, h int) {
+func (c *Client) OuterGeometry() (x, y, w, h int) {
 
-	// Decoration extents
+	// Outer window dimensions (x/y relative to workspace)
+	oGeom, err := c.Window.Instance.DecorGeometry()
+	if err != nil {
+		return
+	}
+
+	// Inner window dimensions (x/y relative to outer window)
+	iGeom, err := xwindow.RawGeometry(X, xproto.Drawable(c.Window.Id))
+	if err != nil {
+		return
+	}
+
+	// Reset inner window positions (some wm won't return x/y relative to outer window)
+	if reflect.DeepEqual(oGeom, iGeom) {
+		iGeom.XSet(0)
+		iGeom.YSet(0)
+	}
+
+	// Decoration extents (l/r/t/b relative to outer window dimensions)
 	ext := c.Latest.Dimensions.Extents
-	dw, dh := ext.Left+ext.Right, ext.Top+ext.Bottom
+	dx, dy, dw, dh := ext.Left, ext.Top, ext.Left+ext.Right, ext.Top+ext.Bottom
 
-	// Set window size limits
-	nhints := c.Cached.Dimensions.Hints.Normal
-	nhints.Flags |= icccm.SizeHintPMinSize
-	nhints.MinWidth = uint(w - dw)
-	nhints.MinHeight = uint(h - dh)
-	icccm.WmNormalHintsSet(X, c.Window.Id, &nhints)
-}
+	// Calculate outer geometry (including server and client decorations)
+	x, y, w, h = oGeom.X()+iGeom.X()-dx, oGeom.Y()+iGeom.Y()-dy, iGeom.Width()+dw, iGeom.Height()+dh
 
-func (c *Client) Update() {
-	info := GetInfo(c.Window.Id)
-	if len(info.Class) == 0 {
-		return
-	}
-	log.Debug("Update client info [", info.Class, "]")
-
-	// Update client info
-	c.Latest = info
-}
-
-func (c *Client) Write() {
-	if !common.CacheEnabled() {
-		return
-	}
-
-	// Obtain cache object
-	cache := c.Cache()
-
-	// Parse client cache
-	data, err := json.MarshalIndent(cache.Data, "", "  ")
-	if err != nil {
-		log.Warn("Error parsing client cache [", c.Latest.Class, "]")
-		return
-	}
-
-	// Write client cache
-	path := filepath.Join(cache.Folder, cache.Name)
-	err = os.WriteFile(path, data, 0644)
-	if err != nil {
-		log.Warn("Error writing client cache [", c.Latest.Class, "]")
-		return
-	}
-
-	log.Trace("Write client cache data ", cache.Name, " [", c.Latest.Class, "]")
-}
-
-func (c *Client) Read() *Client {
-	if !common.CacheEnabled() {
-		return c
-	}
-
-	// Obtain cache object
-	cache := c.Cache()
-
-	// Read client cache
-	path := filepath.Join(cache.Folder, cache.Name)
-	data, err := os.ReadFile(path)
-	if os.IsNotExist(err) {
-		log.Info("No client cache found [", c.Latest.Class, "]")
-		return c
-	}
-
-	// Parse client cache
-	cached := &Client{}
-	err = json.Unmarshal([]byte(data), &cached)
-	if err != nil {
-		log.Warn("Error reading client cache [", c.Latest.Class, "]")
-		return c
-	}
-
-	log.Debug("Read client cache data ", cache.Name, " [", c.Latest.Class, "]")
-
-	return cached
-}
-
-func (c *Client) Cache() common.Cache[*Client] {
-	name := c.Latest.Class
-	hash := fmt.Sprintf("%s-%d", c.Latest.Class, c.Latest.Location.DeskNum)
-
-	// Create client cache folder
-	folder := filepath.Join(common.Args.Cache, Workplace.Displays.Name, "clients", name)
-	if _, err := os.Stat(folder); os.IsNotExist(err) {
-		os.MkdirAll(folder, 0755)
-	}
-
-	// Create client cache object
-	cache := common.Cache[*Client]{
-		Folder: folder,
-		Name:   common.HashString(hash) + ".json",
-		Data:   c,
-	}
-
-	return cache
+	return
 }
 
 func (c *Client) Restore(flag uint8) {
@@ -356,34 +300,90 @@ func (c *Client) Restore(flag uint8) {
 	c.MoveWindow(geom.X, geom.Y, geom.Width, geom.Height)
 }
 
-func (c *Client) OuterGeometry() (x, y, w, h int) {
+func (c *Client) Update() {
+	info := GetInfo(c.Window.Id)
+	if len(info.Class) == 0 {
+		return
+	}
+	log.Debug("Update client info [", info.Class, "]")
 
-	// Outer window dimensions (x/y relative to workspace)
-	oGeom, err := c.Window.Instance.DecorGeometry()
-	if err != nil {
+	// Update client info
+	c.Latest = info
+}
+
+func (c *Client) Write() {
+	if common.CacheDisabled() {
 		return
 	}
 
-	// Inner window dimensions (x/y relative to outer window)
-	iGeom, err := xwindow.RawGeometry(X, xproto.Drawable(c.Window.Id))
+	// Obtain cache object
+	cache := c.Cache()
+
+	// Parse client cache
+	data, err := json.MarshalIndent(cache.Data, "", "  ")
 	if err != nil {
+		log.Warn("Error parsing client cache [", c.Latest.Class, "]")
 		return
 	}
 
-	// Reset inner window positions (some wm won't return x/y relative to outer window)
-	if reflect.DeepEqual(oGeom, iGeom) {
-		iGeom.XSet(0)
-		iGeom.YSet(0)
+	// Write client cache
+	path := filepath.Join(cache.Folder, cache.Name)
+	err = os.WriteFile(path, data, 0644)
+	if err != nil {
+		log.Warn("Error writing client cache [", c.Latest.Class, "]")
+		return
 	}
 
-	// Decoration extents (l/r/t/b relative to outer window dimensions)
-	ext := c.Latest.Dimensions.Extents
-	dx, dy, dw, dh := ext.Left, ext.Top, ext.Left+ext.Right, ext.Top+ext.Bottom
+	log.Trace("Write client cache data ", cache.Name, " [", c.Latest.Class, "]")
+}
 
-	// Calculate outer geometry (including server and client decorations)
-	x, y, w, h = oGeom.X()+iGeom.X()-dx, oGeom.Y()+iGeom.Y()-dy, iGeom.Width()+dw, iGeom.Height()+dh
+func (c *Client) Read() *Client {
+	if common.CacheDisabled() {
+		return c
+	}
 
-	return
+	// Obtain cache object
+	cache := c.Cache()
+
+	// Read client cache
+	path := filepath.Join(cache.Folder, cache.Name)
+	data, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		log.Info("No client cache found [", c.Latest.Class, "]")
+		return c
+	}
+
+	// Parse client cache
+	cached := &Client{}
+	err = json.Unmarshal([]byte(data), &cached)
+	if err != nil {
+		log.Warn("Error reading client cache [", c.Latest.Class, "]")
+		return c
+	}
+
+	log.Debug("Read client cache data ", cache.Name, " [", c.Latest.Class, "]")
+
+	return cached
+}
+
+func (c *Client) Cache() common.Cache[*Client] {
+	name := c.Latest.Class
+	hash := fmt.Sprintf("%s-%d", c.Latest.Class, c.Latest.Location.DeskNum)
+
+	// Create client cache folder
+	folder := filepath.Join(common.Args.Cache, "workplaces", Workplace.Displays.Name, "clients", name)
+	if _, err := os.Stat(folder); os.IsNotExist(err) {
+		os.MkdirAll(folder, 0755)
+	}
+
+	// Create client cache object
+	cache := common.Cache[*Client]{
+		Folder: folder,
+		Name:   common.HashString(hash) + ".json",
+		Data:   c,
+	}
+
+	return cache
 }
 
 func (c *Client) IsNew() bool {

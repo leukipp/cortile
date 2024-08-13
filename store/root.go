@@ -117,6 +117,7 @@ var (
 )
 
 func InitRoot() {
+	log.Info("Starting [", common.Build.Summary, "]")
 
 	// Connect to X server
 	if !Connected() {

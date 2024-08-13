@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"encoding/json"
-	"net/url"
 
 	"golang.org/x/exp/maps"
 
@@ -180,7 +179,9 @@ func (m Methods) Introspection() []introspect.Method {
 func BindDbus(tr *desktop.Tracker) {
 
 	// Export interfaces
-	go export(tr)
+	if !common.HasFlag("disable-dbus-interface") {
+		go export(tr)
+	}
 
 	// Bind event channel
 	go event(tr.Channels.Event, tr)
@@ -237,13 +238,11 @@ func event(ch chan string, tr *desktop.Tracker) {
 }
 
 func connect() (*dbus.Conn, error) {
-	source, _ := url.Parse(common.Build.Source)
-	hostname := strings.TrimPrefix(source.Hostname(), "www.")
-	reverse := strings.Join(common.ReverseList(strings.Split(hostname, ".")), ".")
-	project := strings.Replace(strings.Trim(source.Path, "/"), "/", ".", -1)
+	hostname := strings.Join(common.ReverseList(strings.Split(common.Source.Hostname, ".")), ".")
+	repository := strings.Replace(common.Source.Repository, "/", ".", -1)
 
 	// Init interface and path
-	iface = fmt.Sprintf("%s.%s", reverse, project)
+	iface = fmt.Sprintf("%s.%s", hostname, repository)
 	opath = dbus.ObjectPath(fmt.Sprintf("/%s", strings.Replace(iface, ".", "/", -1)))
 
 	// Init session bus
@@ -267,8 +266,9 @@ func export(tr *desktop.Tracker) {
 
 	// Export dbus properties
 	mapping := map[string]interface{}{
-		"Build":         structToMap(common.Build),
 		"Process":       structToMap(common.Process),
+		"Build":         structToMap(common.Build),
+		"Source":        structToMap(common.Source),
 		"Arguments":     structToMap(common.Args),
 		"Configuration": structToMap(common.Config),
 		"Workspaces":    common.Map{},

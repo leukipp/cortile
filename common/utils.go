@@ -1,8 +1,6 @@
 package common
 
 import (
-	"regexp"
-	"strconv"
 	"strings"
 
 	"crypto/sha1"
@@ -52,6 +50,7 @@ func (g *Geometry) Pieces() (int, int, int, int) {
 }
 
 type Map = map[string]interface{} // Generic map type
+type List = []Map                 // Generic list type
 
 func HashString(text string) string {
 	hash := sha1.New()
@@ -105,6 +104,15 @@ func IsInList(item string, items []string) bool {
 	return false
 }
 
+func IsInMap(m Map, keys []string) bool {
+	exists := true
+	for _, key := range keys {
+		_, exist := m[key]
+		exists = exists && exist
+	}
+	return exists
+}
+
 func ReverseList[T any](items []T) []T {
 	for i, j := 0, len(items)-1; i < j; {
 		items[i], items[j] = items[j], items[i]
@@ -112,19 +120,4 @@ func ReverseList[T any](items []T) []T {
 		j--
 	}
 	return items
-}
-
-func VersionToInt(version string) int {
-
-	// Remove non-numeric characters
-	reg := regexp.MustCompile("[^0-9]+")
-	numeric := reg.ReplaceAllString(strings.Split(version, "-")[0], "")
-
-	// Convert version string to integer
-	integer, err := strconv.Atoi(numeric)
-	if err != nil {
-		return -1
-	}
-
-	return integer
 }

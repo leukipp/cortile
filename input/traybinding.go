@@ -14,6 +14,7 @@ import (
 	"github.com/leukipp/cortile/v2/common"
 	"github.com/leukipp/cortile/v2/desktop"
 	"github.com/leukipp/cortile/v2/store"
+	"github.com/leukipp/cortile/v2/ui"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -26,8 +27,10 @@ var (
 )
 
 type Menu struct {
-	Toggle *systray.MenuItem   // Toggle checkbox item
-	Items  []*systray.MenuItem // Menu items for actions
+	Exit       *systray.MenuItem   // Exit application
+	Toggle     *systray.MenuItem   // Toggle checkbox item
+	Decoration *systray.MenuItem   // Decoration checkbox item
+	Actions    []*systray.MenuItem // Actions for commands
 }
 
 func BindTray(tr *desktop.Tracker) {
@@ -56,35 +59,85 @@ func items(tr *desktop.Tracker) {
 	systray.SetTooltip(fmt.Sprintf("%s - tiling manager", common.Build.Name))
 	systray.SetTitle(common.Build.Name)
 
-	// Version checker
-	latest := common.VersionToInt(common.Build.Latest)
-	current := common.VersionToInt(common.Build.Version)
+	// Version text
 	title := fmt.Sprintf("%s v%s", common.Build.Name, common.Build.Version)
-	if latest > current {
-		title = fmt.Sprintf("%s (v%s available)", title, common.Build.Latest)
-	}
 	version := systray.AddMenuItem(title, title)
-	version.SetIcon(common.File.Icon)
 
-	// Menu item hyperlink
-	if latest > current {
-		go func() {
-			for {
-				<-version.ClickedCh
-				exec.Command("xdg-open", common.Build.Source+"/releases/tag/v"+common.Build.Latest).Start()
-			}
-		}()
-	} else {
+	// Version icon
+	version.SetIcon(common.File.Logo)
+	if !common.HasReleaseInfos() && !common.HasIssueInfos() {
 		version.Disable()
+	}
+
+	// Release submenu
+	if common.HasReleaseInfos() {
+		version.AddSubMenuItem("Releases", "Releases").Disable()
+		for _, release := range common.Source.Releases {
+			title := fmt.Sprintf("Release %s v%s is available", common.Build.Name, release.Name)
+			subitem := version.AddSubMenuItem(title, title)
+
+			// Release hint icon
+			icon := ui.HintIcon(release.Unseen())
+			subitem.SetIcon(icon)
+
+			// Release item click
+			go func(info common.Info) {
+				for {
+					<-subitem.ClickedCh
+
+					// Open browser link
+					exec.Command("xdg-open", info.Url).Start()
+
+					// Update cache and ui icons
+					if info.Seen() {
+						subitem.SetIcon(ui.HintIcon(false))
+						ui.UpdateIcon(tr.ActiveWorkspace())
+					}
+				}
+			}(release)
+		}
+	}
+
+	// Separator submenu
+	if common.HasReleaseInfos() && common.HasIssueInfos() {
+		version.AddSeparator()
+	}
+
+	// Issue submenu
+	if common.HasIssueInfos() {
+		version.AddSubMenuItem("Issues", "Issues").Disable()
+		for _, issue := range common.Source.Issues {
+			title := fmt.Sprintf("%s #%d", issue.Name, issue.Id)
+			subitem := version.AddSubMenuItem(title, title)
+
+			// Issue hint icon
+			subitem.SetIcon(ui.HintIcon(issue.Unseen()))
+
+			// Issue item click
+			go func(info common.Info) {
+				for {
+					<-subitem.ClickedCh
+
+					// Open browser link
+					exec.Command("xdg-open", info.Url).Start()
+
+					// Update cache and ui icons
+					if info.Seen() {
+						subitem.SetIcon(ui.HintIcon(false))
+						ui.UpdateIcon(tr.ActiveWorkspace())
+					}
+				}
+			}(issue)
+		}
 	}
 
 	// Menu items
 	menu = &Menu{}
 	systray.AddSeparator()
-	for _, m := range common.Config.TilingIcon {
-		action, text := m[0], m[1]
+	for _, entry := range common.Config.TilingIcon {
+		action, text := entry[0], entry[1]
 
-		// Separator item
+		// Separator
 		if len(action) == 0 {
 			systray.AddSeparator()
 			continue
@@ -95,25 +148,25 @@ func items(tr *desktop.Tracker) {
 		switch action {
 		case "toggle":
 			item = systray.AddMenuItemCheckbox(text, text, common.Config.TilingEnabled)
+			menu.Toggle = item
+		case "decoration":
+			item = systray.AddMenuItemCheckbox(text, text, common.Config.WindowDecoration)
+			menu.Decoration = item
 		case "exit":
 			item = systray.AddMenuItem(text, text)
+			menu.Exit = item
 		default:
 			item = systray.AddMenuItem(text, text)
-			menu.Items = append(menu.Items, item)
-		}
-
-		// Checkbox item
-		if action == "toggle" {
-			menu.Toggle = item
+			menu.Actions = append(menu.Actions, item)
 		}
 
 		// Menu item action
-		go func() {
+		go func(action string) {
 			for {
 				<-item.ClickedCh
 				ExecuteAction(action, tr, tr.ActiveWorkspace())
 			}
-		}()
+		}(action)
 	}
 }
 
@@ -173,7 +226,7 @@ func messages(tr *desktop.Tracker) {
 }
 
 func onExecute(tr *desktop.Tracker, action string) {
-	if !common.IsInList(action, []string{"enable", "disable", "restore", "toggle"}) {
+	if !common.IsInList(action, []string{"enable", "disable", "toggle", "decoration", "restore", "reset"}) {
 		return
 	}
 	onActivate(tr)
@@ -181,6 +234,8 @@ func onExecute(tr *desktop.Tracker, action string) {
 
 func onActivate(tr *desktop.Tracker) {
 	ws := tr.ActiveWorkspace()
+	al := ws.ActiveLayout()
+	mg := al.GetManager()
 
 	if ws.TilingEnabled() {
 
@@ -190,7 +245,10 @@ func onActivate(tr *desktop.Tracker) {
 		}
 
 		// Enable action items
-		for _, item := range menu.Items {
+		if menu.Decoration != nil {
+			menu.Decoration.Enable()
+		}
+		for _, item := range menu.Actions {
 			item.Enable()
 		}
 	} else {
@@ -201,8 +259,25 @@ func onActivate(tr *desktop.Tracker) {
 		}
 
 		// Disable action items
-		for _, item := range menu.Items {
+		if menu.Decoration != nil {
+			menu.Decoration.Disable()
+		}
+		for _, item := range menu.Actions {
 			item.Disable()
+		}
+	}
+
+	if mg.DecorationEnabled() {
+
+		// Check decoration item
+		if menu.Decoration != nil {
+			menu.Decoration.Check()
+		}
+	} else {
+
+		// Uncheck decoration item
+		if menu.Decoration != nil {
+			menu.Decoration.Uncheck()
 		}
 	}
 }

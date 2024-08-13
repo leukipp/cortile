@@ -6,14 +6,14 @@ var (
 
 type FileData struct {
 	Toml []byte // Default config file
-	Icon []byte // Application icon
+	Logo []byte // Application logo icon
 }
 
-func InitFiles(toml, icon []byte) {
+func InitFiles(toml, logo []byte) {
 
 	// Init embedded files
 	File = FileData{
 		Toml: toml,
-		Icon: icon,
+		Logo: logo,
 	}
 }

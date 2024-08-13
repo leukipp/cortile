@@ -199,7 +199,7 @@ func (ws *Workspace) Restore(flag uint8) {
 }
 
 func (ws *Workspace) Write() {
-	if !common.CacheEnabled() {
+	if common.CacheDisabled() {
 		return
 	}
 
@@ -225,7 +225,7 @@ func (ws *Workspace) Write() {
 }
 
 func (ws *Workspace) Read() *Workspace {
-	if !common.CacheEnabled() {
+	if common.CacheDisabled() {
 		return ws
 	}
 
@@ -258,7 +258,7 @@ func (ws *Workspace) Cache() common.Cache[*Workspace] {
 	hash := fmt.Sprintf("%s-%d", name, ws.Location.ScreenNum)
 
 	// Create workspace cache folder
-	folder := filepath.Join(common.Args.Cache, store.Workplace.Displays.Name, "workspaces", name)
+	folder := filepath.Join(common.Args.Cache, "workplaces", store.Workplace.Displays.Name, "workspaces", name)
 	if _, err := os.Stat(folder); os.IsNotExist(err) {
 		os.MkdirAll(folder, 0755)
 	}

@@ -55,7 +55,7 @@ func InitConfig() {
 	// Read config file into memory
 	readConfig(Args.Config)
 
-	// Config file watcher
+	// Config file system watcher
 	watchConfig(Args.Config)
 }
 
@@ -73,7 +73,11 @@ func ConfigFolderPath(name string) string {
 func readConfig(configFilePath string) {
 
 	// Print build infos
-	fmt.Printf("BUILD: \n  name: %s\n  version: v%s-%s\n  date: %s\n\n", Build.Name, Build.Version, Build.Commit, Build.Date)
+	fmt.Print("BUILD")
+	if HasReleaseInfos() {
+		fmt.Printf(" [>>> %s v%s is available <<<]", Build.Name, Source.Releases[0].Name)
+	}
+	fmt.Printf(": \n  name: %s\n  version: v%s-%s\n  date: %s\n\n", Build.Name, Build.Version, Build.Commit, Build.Date)
 
 	// Print file infos
 	fmt.Printf("FILES: \n  log: %s\n  lock: %s\n  cache: %s\n  config: %s\n\n", Args.Log, Args.Lock, Args.Cache, configFilePath)
@@ -89,9 +93,6 @@ func readConfig(configFilePath string) {
 	fmt.Printf("KEYS: %s\n", RemoveChars(string(keys), []string{"{", "}", "\"", ","}))
 	fmt.Printf("CORNERS: %s\n", RemoveChars(string(corners), []string{"{", "}", "\"", ","}))
 	fmt.Printf("SYSTRAY: %s\n", RemoveChars(string(systray), []string{"{", "}", "\"", ","}))
-
-	// Log startup infos
-	log.Info("Starting [", Build.Summary, "]")
 }
 
 func watchConfig(configFilePath string) {

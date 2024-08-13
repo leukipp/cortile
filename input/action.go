@@ -514,7 +514,7 @@ func Exit(tr *desktop.Tracker) bool {
 
 	log.Info("Exit")
 
-	os.Exit(1)
+	os.Exit(0)
 
 	return true
 }
@@ -522,7 +522,7 @@ func Exit(tr *desktop.Tracker) bool {
 func External(command string) bool {
 	params := strings.Split(command, " ")
 
-	if !common.Feature("enable-external-commands") {
+	if !common.HasFlag("enable-external-commands") {
 		log.Warn("Executing external command \"", params[0], "\" disabled")
 		return false
 	}

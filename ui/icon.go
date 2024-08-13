@@ -72,10 +72,8 @@ func UpdateIcon(ws *desktop.Workspace) {
 		draw.Draw(icon, image.Rect(x0+2*layoutMargin+20, y0+2*layoutMargin+20, x1, y1), &col, image.Point{}, draw.Src)
 	}
 
-	// Draw version checker
-	latest := common.VersionToInt(common.Build.Latest)
-	current := common.VersionToInt(common.Build.Version)
-	if latest > current {
+	// Draw hint rectangle
+	if common.HasUnseenInfos() {
 		col := image.Uniform{color.RGBA{
 			R: uint8(250),
 			G: uint8(80),
@@ -92,6 +90,40 @@ func UpdateIcon(ws *desktop.Workspace) {
 
 	// Update systray icon
 	systray.SetIcon(data.Bytes())
+}
+
+func HintIcon(active bool) []byte {
+	if !active {
+		return EmptyIcon()
+	}
+	icon := image.NewRGBA(image.Rect(0, 0, iconSize, iconSize))
+
+	// Draw hint rectangle
+	col := image.Uniform{color.RGBA{
+		R: uint8(250),
+		G: uint8(80),
+		B: uint8(30),
+		A: uint8(255),
+	}}
+	x1, y1 := iconSize/2, iconSize/2
+	dx, dy := iconSize/10, iconSize/10
+	draw.Draw(icon, image.Rect(x1-dx, y1-dy, x1+dx, y1+dy), &col, image.Point{}, draw.Src)
+
+	// Encode image bytes
+	data := new(bytes.Buffer)
+	png.Encode(data, icon)
+
+	return data.Bytes()
+}
+
+func EmptyIcon() []byte {
+	icon := image.NewRGBA(image.Rect(0, 0, iconSize, iconSize))
+
+	// Encode image bytes
+	data := new(bytes.Buffer)
+	png.Encode(data, icon)
+
+	return data.Bytes()
 }
 
 func rgba(name string) color.RGBA {

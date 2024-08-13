@@ -35,7 +35,7 @@ var (
 	date = "unknown"
 
 	// Build source
-	source = "https://github.com/leukipp/cortile"
+	source = "github.com/leukipp/cortile"
 )
 
 var (
@@ -43,19 +43,19 @@ var (
 	toml []byte
 
 	//go:embed assets/images/logo.png
-	icon []byte
+	logo []byte
 )
 
 func main() {
 
-	// Init process and build informations
+	// Init process, build and source information
 	common.InitInfo(name, version, commit, date, source)
 
 	// Init command line arguments
 	common.InitArgs(input.Introspect())
 
 	// Init embedded files
-	common.InitFiles(toml, icon)
+	common.InitFiles(toml, logo)
 
 	// Run dbus instance
 	runDbus()
@@ -76,18 +76,18 @@ func runDbus() {
 
 	// Execute dbus method
 	if method {
-		input.Method(common.Args.Dbus.Method, common.Args.Dbus.Args)
+		input.Method(common.Args.Dbus.Method, common.Args.Dbus.P)
 	}
 
 	// Listen to dbus events
 	if listen {
-		go input.Listen(common.Args.Dbus.Args)
+		go input.Listen(common.Args.Dbus.P)
 		select {}
 	}
 
 	// Prevent main instance start
 	if property || method || listen {
-		os.Exit(1)
+		os.Exit(0)
 	}
 }
 
