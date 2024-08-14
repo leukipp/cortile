@@ -122,6 +122,7 @@ func runMain() {
 	input.BindKeys(tracker)
 	input.BindTray(tracker)
 	input.BindDbus(tracker)
+	input.BindAddons(tracker)
 
 	// Run X event loop
 	xevent.Main(store.X)

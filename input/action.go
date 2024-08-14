@@ -514,6 +514,8 @@ func Exit(tr *desktop.Tracker) bool {
 
 	log.Info("Exit")
 
+	// Communicate application exit
+	Disconnect()
 	os.Exit(0)
 
 	return true

@@ -13,7 +13,7 @@ func BindSignal(tr *desktop.Tracker) {
 	ch := make(chan os.Signal, 1)
 
 	// Bind signal channel
-	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(ch, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go exit(ch, tr)
 }
 

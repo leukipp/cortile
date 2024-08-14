@@ -278,6 +278,7 @@ func export(tr *desktop.Tracker) {
 		"Pointer":       common.Map{},
 		"Action":        common.Map{},
 		"Corner":        common.Map{},
+		"Disconnect":    common.Map{},
 	}
 	properties := map[string]*prop.Prop{}
 	for name, value := range mapping {
@@ -481,6 +482,14 @@ func Listen(args []string) {
 	}
 }
 
+func Disconnect() {
+	SetProperty("Disconnect", struct {
+		Event string
+	}{
+		Event: "exit",
+	})
+}
+
 func GetProperty(name string) common.Map {
 	if props == nil {
 		return common.Map{}
@@ -536,5 +545,7 @@ func print(typ string, name string, data common.Map) {
 
 func fatal(msg string, err error) {
 	print("Error", "Fatal", common.Map{"Message": fmt.Sprintf("%s: %s", msg, err)})
-	os.Exit(1)
+
+	// exit with success error code
+	os.Exit(0)
 }
