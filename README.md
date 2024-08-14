@@ -17,11 +17,12 @@ Once enabled, the tiling manager will handle _resizing_ and _positioning_ of _ex
 ## Features [![features](https://img.shields.io/github/stars/leukipp/cortile?style=flat-square)](#features-)
 - [x] Workspace based tiling.
 - [x] Auto detection of panels.
+- [x] Toggle window decorations.
 - [x] User interface for tiling mode.
 - [x] Systray icon indicator and menu.
+- [x] Custom addons via python bindings.
 - [x] Keyboard, hot corner and systray bindings.
-- [x] Vertical, horizontal and fullscreen mode.
-- [x] Socket communication commands.
+- [x] Vertical, horizontal, maximized and fullscreen mode.
 - [x] Remember layout proportions.
 - [x] Floating and sticky windows.
 - [x] Drag & drop window swap.
@@ -95,8 +96,9 @@ If some of them are already in use by your system, update the default values in 
 | ------------------------------------------------------- | ---------------------------------------- |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Home</kbd>        | Enable tiling on the current screen      |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>End</kbd>         | Disable tiling on the current screen     |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>           | Disable tiling and restore windows       |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>           | Toggle between enable and disable        |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd>           | Toggle window decoration on and off      |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>           | Disable tiling and restore windows       |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>BackSpace</kbd>   | Reset layouts to default proportions     |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Next</kbd>        | Cycle through next layouts               |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Prior</kbd>       | Cycle through previous layouts           |
@@ -140,52 +142,24 @@ Common pointer shortcuts used in some environments:
 - Resize window: <kbd>Alt</kbd>+<kbd>Right-Click</kbd>.
 - Maximize window: <kbd>Alt</kbd>+<kbd>Double-Click</kbd>.
 
-## Communication [![communication](https://img.shields.io/badge/api-%20unix%20domain%20sockets%20-darksalmon?style=flat-square)](#communication-)
-External processes may communicate directly with cortile using [unix domain sockets](https://en.wikipedia.org/wiki/Unix_domain_socket).
-The sock parameter (`-sock /tmp/cortile.sock`) defines a path for a socket file that can be used to exchange data between processes.
-Internally however, two socket files are used.
-One is for incoming (`/tmp/cortile.sock.in`) and one for outgoing (`/tmp/cortile.sock.out`) communication.
+## Addons [![addons](https://img.shields.io/badge/api-%20dbus%20|%20python%20-red?style=flat-square)](#addons-)
+External processes may communicate with cortile by using [dbus](https://en.wikipedia.org/wiki/D-Bus) directly or via the [cortile-addons](https://github.com/leukipp/cortile-addons) python bindings.
 
-<details><summary>Outgoing - Events</summary><div>
+### D-Bus
+Running `cortile` starts a dbus server instance that makes internal properties and method calls available.
+Since using dbus communication directly with an external process, bash script, etc. is possible, the development requires some knowledge of dbus and is quite messy.
 
-### Outgoing events and states
-User triggered events (e.g. tile workspace) are broadcasted to the outgoing socket as json string.
-One can listen to them by using [netcat](https://en.wikipedia.org/wiki/Netcat) or similar [alternatives](https://en.wikipedia.org/wiki/Netcat#Ports_and_reimplementations):
-```bash
-# Netcat
-nc -Ulk /tmp/cortile.sock.out
+Therefore, there is a built-in dbus client incorporated in the same cortile binary that can be started via `cortile dbus -...` as a secondary process.
+This client instance communicates with the running server instance and allows to listen for events and to execute remote procedure calls.
 
-# Socat
-socat UNIX-LISTEN:/tmp/cortile.sock.out,reuseaddr,fork STDOUT
-```
+The documentation of available properties and method calls can be found via `cortile dbus -help`.
 
-For debugging purposes, you can also dump the json messages into a file:
-```bash
-# Netcat
-nc -Ulk /tmp/cortile.sock.out 2>&1 | tee /tmp/cortile.json
+### Python
+Additional python bindings are available to further simplify communication with cortile and to build a community-based library of useful snippets and examples.
 
-# Socat
-socat -v UNIX-LISTEN:/tmp/cortile.sock.out,reuseaddr,fork OPEN:/tmp/cortile.json,create,truncate
-```
+For simplicity, the python bindings just spawn another cortile instance via `cortile dbus -...` running in the background and wrapping all available interfaces in easy-to-use python methods.
 
-</div></details>
-
-<details><summary>Incoming - Commands</summary><div>
-
-### Incoming commands and requests
-Similarly, requests about the internal state of cortile can be sent to the incoming socket:
-```bash
-# Netcat
-echo '{"State":"workspaces"}' | nc -U /tmp/cortile.sock.in
-
-# Socat
-echo '{"State":"workspaces"}' | socat STDIN UNIX-CONNECT:/tmp/cortile.sock.in
-```
-Since the communication is asynchronous, it is necessary to listen to the outgoing socket at the same time in order to receive the response.
-
-</div></details>
-
-Example files for sending commands and receiving states can be found in the [scripts](https://github.com/leukipp/cortile/tree/main/assets/scripts) folder.
+Example scripts and detailed information's on how to get started can be found in the [cortile-addons](https://github.com/leukipp/cortile-addons) repository.
 
 ## Development [![development](https://img.shields.io/github/go-mod/go-version/leukipp/cortile?label=go&style=flat-square)](#development-)
 You need [go >= 1.20](https://go.dev/dl/) to compile cortile.
@@ -278,10 +252,11 @@ Cortile works best with Xfwm and Openbox window systems.
 However, it`s still possible that you may encounter problems during usage.
 
 Windows:
-- It's recommended to disable all build-in window snapping features (snap to other windows, snap to screen borders).
+- It's recommended to disable all build-in window snapping features (snap to other windows, snap to screen borders, etc.).
 - Automatic panel detection may not work under some window managers, use the `edge_margin` property to adjust for additional margins.
 - Particularly in GNOME based desktop environments, window displacements or resizing issues may occur.
 - Sticky windows may cause unwanted layout modifications during workspace changes.
+- Toggling window decoration may cause unwanted layout modifications.
 
 Systray:
 - Adjust the bindings in the `[systray]` section, as some pointer events may not fire across different desktop environments.
@@ -293,7 +268,7 @@ Debugging:
 
 ## Credits [![credits](https://img.shields.io/github/contributors/leukipp/cortile?style=flat-square)](#credits-)
 Based on [zentile](https://github.com/blrsn/zentile) ([Berin Larson](https://github.com/blrsn)) and [pytyle3](https://github.com/BurntSushi/pytyle3) ([Andrew Gallant](https://github.com/BurntSushi)).  
-The main libraries used in this project are [xgbutil](https://github.com/BurntSushi/xgbutil), [toml](https://github.com/BurntSushi/toml), [systray](https://github.com/fyne-io/systray), [dbus](https://github.com/godbus/dbus), [fsnotify](https://github.com/fsnotify/fsnotify) and [logrus](https://github.com/sirupsen/logrus).
+The main libraries used in this project are [xgbutil](https://github.com/jezek/xgbutil), [toml](https://github.com/BurntSushi/toml), [systray](https://github.com/fyne-io/systray), [dbus](https://github.com/godbus/dbus), [fsnotify](https://github.com/fsnotify/fsnotify) and [logrus](https://github.com/sirupsen/logrus).
 
 ## License [![license](https://img.shields.io/github/license/leukipp/cortile?style=flat-square)](#license-)
 [MIT](https://github.com/leukipp/cortile/blob/main/LICENSE)
