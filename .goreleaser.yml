@@ -11,7 +11,12 @@ builds:
     env:
       - CGO_ENABLED=0
     ldflags:
-      - -s -w -X main.name=cortile -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+      - -s -w -X main.name={{.ProjectName}} -X main.target={{.Os}}-{{.Arch}} -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+    binary: "{{.ProjectName}}"
+
+archives:
+  - name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}_{{.Arch}}"
+    format: tar.gz
 
 changelog:
   sort: asc
