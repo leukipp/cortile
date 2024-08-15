@@ -69,6 +69,39 @@ func items(tr *desktop.Tracker) {
 		version.Disable()
 	}
 
+	// Issue submenu
+	if common.HasIssueInfos() {
+		version.AddSubMenuItem("Issues", "Issues").Disable()
+		for _, issue := range common.Source.Issues {
+			title := fmt.Sprintf("%s #%d", issue.Name, issue.Id)
+			subitem := version.AddSubMenuItem(title, title)
+
+			// Issue hint icon
+			subitem.SetIcon(ui.HintIcon(issue.Unseen()))
+
+			// Issue item click
+			go func(info common.Info) {
+				for {
+					<-subitem.ClickedCh
+
+					// Open browser link
+					exec.Command("xdg-open", info.Url).Start()
+
+					// Update cache and ui icons
+					if info.Seen() {
+						subitem.SetIcon(ui.HintIcon(false))
+						ui.UpdateIcon(tr.ActiveWorkspace())
+					}
+				}
+			}(issue)
+		}
+	}
+
+	// Separator submenu
+	if common.HasReleaseInfos() && common.HasIssueInfos() {
+		version.AddSeparator()
+	}
+
 	// Release submenu
 	if common.HasReleaseInfos() {
 		version.AddSubMenuItem("Releases", "Releases").Disable()
@@ -98,36 +131,40 @@ func items(tr *desktop.Tracker) {
 		}
 	}
 
-	// Separator submenu
-	if common.HasReleaseInfos() && common.HasIssueInfos() {
-		version.AddSeparator()
-	}
-
-	// Issue submenu
-	if common.HasIssueInfos() {
-		version.AddSubMenuItem("Issues", "Issues").Disable()
-		for _, issue := range common.Source.Issues {
-			title := fmt.Sprintf("%s #%d", issue.Name, issue.Id)
+	// Update submenu
+	if common.HasReleaseInfos() {
+		version.AddSubMenuItem("Updates", "Updates").Disable()
+		for _, release := range common.Source.Releases {
+			major, minor, patch := common.SemverUpdateInfos()
+			title := fmt.Sprintf("Update %s v%s to v%s", common.Build.Name, common.Build.Version, release.Name)
+			if major {
+				title = fmt.Sprintf("%s (Major)", title)
+			} else if minor {
+				title = fmt.Sprintf("%s (Minor)", title)
+			} else if patch {
+				title = fmt.Sprintf("%s (Patch)", title)
+			}
 			subitem := version.AddSubMenuItem(title, title)
 
-			// Issue hint icon
-			subitem.SetIcon(ui.HintIcon(issue.Unseen()))
+			// Update hint icon
+			icon := ui.HintIcon(!major && !minor)
+			subitem.SetIcon(icon)
+			if major || minor {
+				subitem.Disable()
+			}
 
-			// Issue item click
+			// Update item click
 			go func(info common.Info) {
 				for {
 					<-subitem.ClickedCh
 
-					// Open browser link
-					exec.Command("xdg-open", info.Url).Start()
-
-					// Update cache and ui icons
-					if info.Seen() {
-						subitem.SetIcon(ui.HintIcon(false))
-						ui.UpdateIcon(tr.ActiveWorkspace())
-					}
+					// Update running binary
+					ws := tr.ActiveWorkspace()
+					ui.UpdateBinary(ws, info, func() {
+						Restart(tr)
+					})
 				}
-			}(issue)
+			}(*release.Extra)
 		}
 	}
 

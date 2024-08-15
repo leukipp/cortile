@@ -5,13 +5,15 @@ import (
 	"io"
 	"os"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 
 	"encoding/json"
 	"net/http"
+	"os/user"
 	"path/filepath"
+
+	"github.com/shirou/gopsutil/host"
 )
 
 var (
@@ -21,14 +23,15 @@ var (
 )
 
 type ProcessInfo struct {
-	Id     int    // Process id
-	Path   string // Process path
-	Host   string // Process host
-	System string // Process system
+	Id   int            // Process id
+	Path string         // Process path
+	User *user.User     // Process user
+	Host *host.InfoStat // Process host
 }
 
 type BuildInfo struct {
 	Name    string // Build name
+	Target  string // Build target
 	Version string // Build version
 	Commit  string // Build commit
 	Date    string // Build date
@@ -48,26 +51,28 @@ type Info struct {
 	Name    string // Source item name
 	Created string // Source item date
 	Type    string // Source item type
+	Extra   *Info  // Source extra info
 }
 
-func InitInfo(name, version, commit, date, source string) {
+func InitInfo(name, target, version, commit, date, source string) {
 
 	// Process information
 	Process = ProcessInfo{
-		Id:     os.Getpid(),
-		System: fmt.Sprintf("%s-%s", runtime.GOOS, runtime.GOARCH),
+		Id: os.Getpid(),
 	}
-	Process.Host, _ = os.Hostname()
 	Process.Path, _ = os.Executable()
+	Process.User, _ = user.Current()
+	Process.Host, _ = host.Info()
 
 	// Build information
 	Build = BuildInfo{
 		Name:    name,
+		Target:  target,
 		Version: version,
 		Commit:  TruncateString(commit, 7),
 		Date:    date,
 	}
-	Build.Summary = fmt.Sprintf("%s v%s-%s, built on %s", Build.Name, Build.Version, Build.Commit, Build.Date)
+	Build.Summary = fmt.Sprintf("%s v%s-%s, built on %s (%s)", Build.Name, Build.Version, Build.Commit, Build.Date, Build.Target)
 
 	// Source information
 	hostname, repository, _ := strings.Cut(source, "/")
@@ -113,15 +118,61 @@ func FetchReleases(hostname, repository string) []Info {
 	if !IsInMap(data, []string{"id", "html_url", "tag_name", "created_at"}) {
 		return releases
 	}
-	releases = append(releases, Info{
+	latest := Info{
 		Id:      int(data["id"].(float64)),
 		Url:     data["html_url"].(string),
 		Name:    data["tag_name"].(string)[1:],
 		Created: data["created_at"].(string),
 		Type:    "releases",
-	})
+	}
 
-	return releases
+	// Add asset information
+	assetName := fmt.Sprintf(
+		"%s_%s_%s.tar.gz",
+		Build.Name,
+		latest.Name,
+		strings.Replace(Build.Target, "-", "_", -1),
+	)
+	assetUrl := fmt.Sprintf(
+		"https://%s/%s/releases/download/v%s/%s",
+		hostname,
+		repository,
+		latest.Name,
+		assetName,
+	)
+	asset := &Info{
+		Id:      latest.Id,
+		Url:     assetUrl,
+		Name:    assetName,
+		Created: latest.Created,
+		Type:    "assets",
+	}
+	latest.Extra = asset
+
+	// Add checksum information
+	checksumName := fmt.Sprintf(
+		"%s_%s_checksums.txt",
+		Build.Name,
+		latest.Name,
+	)
+	checksumUrl := fmt.Sprintf(
+		"https://%s/%s/releases/download/v%s/%s",
+		hostname,
+		repository,
+		latest.Name,
+		checksumName,
+	)
+	checksum := &Info{
+		Id:      asset.Id,
+		Url:     checksumUrl,
+		Name:    checksumName,
+		Created: asset.Created,
+		Type:    "checksums",
+	}
+	asset.Extra = checksum
+
+	return append(releases, latest)
+
 }
 
 func FetchIssues(hostname, repository, labels string) []Info {
@@ -217,6 +268,21 @@ func HasUnseenInfos() bool {
 	return unseen
 }
 
+func SemverUpdateInfos() (bool, bool, bool) {
+	if !HasReleaseInfos() {
+		return false, false, false
+	}
+
+	// Split version into major, minor and patch slice
+	update := StringsToInts(strings.Split(Source.Releases[0].Name, "."))
+	current := StringsToInts(strings.Split(Build.Version, "."))
+	if len(current) != 3 || len(update) != 3 {
+		return false, false, false
+	}
+
+	return update[0] > current[0], update[1] > current[1], update[2] > current[2]
+}
+
 func (i *Info) Unseen() bool {
 	if CacheDisabled() {
 		return false
@@ -251,10 +317,11 @@ func (i *Info) Seen() bool {
 }
 
 func (i *Info) Cache() Cache[*Info] {
-	hash := fmt.Sprintf("%s-%s-%d", i.Type, i.Name, i.Id)
+	subfolder := strings.ToLower(i.Type)
+	filename := fmt.Sprintf("%s-%s-%d", subfolder, i.Name, i.Id)
 
 	// Create info cache folder
-	folder := filepath.Join(Args.Cache, "infos", strings.ToLower(i.Type))
+	folder := filepath.Join(Args.Cache, "infos", subfolder)
 	if _, err := os.Stat(folder); os.IsNotExist(err) {
 		os.MkdirAll(folder, 0755)
 	}
@@ -262,7 +329,7 @@ func (i *Info) Cache() Cache[*Info] {
 	// Create info cache object
 	cache := Cache[*Info]{
 		Folder: folder,
-		Name:   HashString(hash) + ".json",
+		Name:   HashString(filename, 20) + ".json",
 		Data:   i,
 	}
 

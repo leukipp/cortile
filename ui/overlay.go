@@ -32,7 +32,7 @@ var (
 )
 
 var (
-	gui map[uint]*xwindow.Window = make(map[uint]*xwindow.Window) // Layout overlay window
+	gui map[uint]*xwindow.Window = make(map[uint]*xwindow.Window) // Overlay window
 )
 
 func ShowLayout(ws *desktop.Workspace) {
@@ -52,11 +52,11 @@ func ShowLayout(ws *desktop.Workspace) {
 
 		// Calculate scaled desktop dimensions
 		dim := dimensions(ws)
-		_, _, width, height := scale(dim.X, dim.Y, dim.Width, dim.Height)
+		_, _, w, h := scale(dim.X, dim.Y, dim.Width, dim.Height)
 
 		// Create an empty canvas image
 		bg := bgra("gui_background")
-		cv := xgraphics.New(store.X, image.Rect(0, 0, width+rectMargin, height+fontSize+2*fontMargin+2*rectMargin))
+		cv := xgraphics.New(store.X, image.Rect(0, 0, w+rectMargin, h+fontSize+2*fontMargin+2*rectMargin))
 		cv.For(func(x int, y int) xgraphics.BGRA { return bg })
 
 		// Draw client rectangles
@@ -95,11 +95,11 @@ func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
 	if len(clients) == 0 || layout == "disabled" {
 
 		// Calculate scaled desktop dimensions
-		x, y, width, height := scale(0, 0, dim.Width, dim.Height)
+		x, y, w, h := scale(0, 0, dim.Width, dim.Height)
 
 		// Draw client rectangle onto canvas
 		color := bgra("gui_client_slave")
-		drawImage(cv, &image.Uniform{color}, color, x+rectMargin, y+rectMargin, x+width, y+height)
+		drawImage(cv, &image.Uniform{color}, color, x+rectMargin, y+rectMargin, x+w, y+h)
 
 		return
 	}
@@ -112,15 +112,15 @@ func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
 
 		// Calculate scaled client dimensions
 		cx, cy, cw, ch := c.OuterGeometry()
-		x, y, width, height := scale(cx-dim.X, cy-dim.Y, cw, ch)
+		x, y, w, h := scale(cx-dim.X, cy-dim.Y, cw, ch)
 
 		// Calculate icon size
 		iconSize := math.MaxInt
-		if width < iconSize {
-			iconSize = width
+		if w < iconSize {
+			iconSize = w
 		}
-		if height < iconSize {
-			iconSize = height
+		if h < iconSize {
+			iconSize = h
 		}
 		iconSize /= 2
 
@@ -131,13 +131,12 @@ func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
 		}
 
 		// Draw client rectangle onto canvas
-		rect := &image.Uniform{color}
-		drawImage(cv, rect, color, x+rectMargin, y+rectMargin, x+width, y+height)
+		drawImage(cv, &image.Uniform{color}, color, x+rectMargin, y+rectMargin, x+w, y+h)
 
 		// Draw client icon onto canvas
 		ico, err := xgraphics.FindIcon(store.X, c.Window.Id, iconSize, iconSize)
 		if err == nil {
-			drawImage(cv, ico, color, x+rectMargin/2+width/2-iconSize/2, y+rectMargin/2+height/2-iconSize/2, x+width, y+height)
+			drawImage(cv, ico, color, x+rectMargin/2+w/2-iconSize/2, y+rectMargin/2+h/2-iconSize/2, x+w, y+h)
 		}
 	}
 }
@@ -154,7 +153,7 @@ func drawImage(cv *xgraphics.Image, img image.Image, color xgraphics.BGRA, x0 in
 func drawText(cv *xgraphics.Image, txt string, color xgraphics.BGRA, x int, y int, size int) {
 	font, err := truetype.Parse(goregular.TTF)
 	if err != nil {
-		log.Error(err)
+		log.Error("Parsing font failed: ", err)
 		return
 	}
 
@@ -172,7 +171,7 @@ func drawText(cv *xgraphics.Image, txt string, color xgraphics.BGRA, x int, y in
 func showGraphics(img *xgraphics.Image, ws *desktop.Workspace, duration time.Duration) *xwindow.Window {
 	win, err := xwindow.Generate(img.X)
 	if err != nil {
-		log.Error(err)
+		log.Error("Graphics generation failed: ", err)
 		return nil
 	}
 
@@ -227,8 +226,8 @@ func showGraphics(img *xgraphics.Image, ws *desktop.Workspace, duration time.Dur
 
 	// Paint the image and map the window
 	img.XSurfaceSet(win.Id)
-	img.XPaint(win.Id)
 	img.XDraw()
+	img.XPaint(win.Id)
 	win.Map()
 
 	// Move focus to active window
@@ -266,21 +265,4 @@ func scale(x, y, w, h int) (sx, sy, sw, sh int) {
 	sx, sy, sw, sh = x/s, y/s, w/s, h/s
 
 	return
-}
-
-func bgra(name string) xgraphics.BGRA {
-	rgba := common.Config.Colors[name]
-
-	// Validate length
-	if len(rgba) != 4 {
-		log.Warn("Error obtaining color for ", name)
-		return xgraphics.BGRA{}
-	}
-
-	return xgraphics.BGRA{
-		R: uint8(rgba[0]),
-		G: uint8(rgba[1]),
-		B: uint8(rgba[2]),
-		A: uint8(rgba[3]),
-	}
 }

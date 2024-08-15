@@ -254,11 +254,11 @@ func (ws *Workspace) Read() *Workspace {
 }
 
 func (ws *Workspace) Cache() common.Cache[*Workspace] {
-	name := fmt.Sprintf("workspace-%d", ws.Location.Desktop)
-	hash := fmt.Sprintf("%s-%d", name, ws.Location.Screen)
+	subfolder := fmt.Sprintf("workspace-%d", ws.Location.Desktop)
+	filename := fmt.Sprintf("%s-%d", subfolder, ws.Location.Screen)
 
 	// Create workspace cache folder
-	folder := filepath.Join(common.Args.Cache, "workplaces", store.Workplace.Displays.Name, "workspaces", name)
+	folder := filepath.Join(common.Args.Cache, "workplaces", store.Workplace.Displays.Name, "workspaces", subfolder)
 	if _, err := os.Stat(folder); os.IsNotExist(err) {
 		os.MkdirAll(folder, 0755)
 	}
@@ -266,7 +266,7 @@ func (ws *Workspace) Cache() common.Cache[*Workspace] {
 	// Create workspace cache object
 	cache := common.Cache[*Workspace]{
 		Folder: folder,
-		Name:   common.HashString(hash) + ".json",
+		Name:   common.HashString(filename, 20) + ".json",
 		Data:   ws,
 	}
 

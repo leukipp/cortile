@@ -1,6 +1,7 @@
 package common
 
 import (
+	"strconv"
 	"strings"
 
 	"crypto/sha1"
@@ -52,10 +53,11 @@ func (g *Geometry) Pieces() (int, int, int, int) {
 type Map = map[string]interface{} // Generic map type
 type List = []Map                 // Generic list type
 
-func HashString(text string) string {
+func HashString(text string, max int) string {
 	hash := sha1.New()
 	hash.Write([]byte(text))
-	return hex.EncodeToString(hash.Sum(nil))
+	str := hex.EncodeToString(hash.Sum(nil))
+	return TruncateString(str, max)
 }
 
 func TruncateString(s string, max int) string {
@@ -120,4 +122,16 @@ func ReverseList[T any](items []T) []T {
 		j--
 	}
 	return items
+}
+
+func StringsToInts(items []string) []int {
+	result := make([]int, len(items))
+	for i, item := range items {
+		integer, err := strconv.Atoi(item)
+		if err != nil {
+			integer = -1
+		}
+		result[i] = integer
+	}
+	return result
 }

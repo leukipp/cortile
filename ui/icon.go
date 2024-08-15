@@ -10,6 +10,8 @@ import (
 
 	"fyne.io/systray"
 
+	"github.com/jezek/xgbutil/xgraphics"
+
 	"github.com/leukipp/cortile/v2/common"
 	"github.com/leukipp/cortile/v2/desktop"
 	"github.com/leukipp/cortile/v2/store"
@@ -127,15 +129,28 @@ func EmptyIcon() []byte {
 }
 
 func rgba(name string) color.RGBA {
+	r, g, b, a := bgra(name).RGBA()
+
+	// Return rgba instance
+	return color.RGBA{
+		R: uint8(r),
+		G: uint8(g),
+		B: uint8(b),
+		A: uint8(a),
+	}
+}
+
+func bgra(name string) xgraphics.BGRA {
 	rgba := common.Config.Colors[name]
 
 	// Validate length
 	if len(rgba) != 4 {
 		log.Warn("Error obtaining color for ", name)
-		return color.RGBA{}
+		return xgraphics.BGRA{}
 	}
 
-	return color.RGBA{
+	// Return bgra instance
+	return xgraphics.BGRA{
 		R: uint8(rgba[0]),
 		G: uint8(rgba[1]),
 		B: uint8(rgba[2]),

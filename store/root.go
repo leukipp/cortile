@@ -180,7 +180,7 @@ func Connected() bool {
 		}
 
 		// Connection to X established
-		log.Info("Connected to X server on ", common.Process.Host, " [", common.Process.System, ", ", wm, "]")
+		log.Info("Connected to X server on ", common.Process.Host.Hostname, " [", common.Process.Host.Platform, ", ", wm, "]")
 		randr.Init(X.Conn())
 		connected = true
 	}

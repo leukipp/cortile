@@ -3,6 +3,7 @@ package input
 import (
 	"os"
 	"strings"
+	"syscall"
 
 	"os/exec"
 
@@ -20,9 +21,18 @@ var (
 	executeCallbacksFun []func(string, uint, uint) // Execute events callback functions
 )
 
+func Bind(tr *desktop.Tracker) {
+	BindSignal(tr)
+	BindMouse(tr)
+	BindKeys(tr)
+	BindTray(tr)
+	BindDbus(tr)
+	BindAddons(tr)
+}
+
 func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	success := false
-	if tr == nil || ws == nil {
+	if len(action) == 0 || tr == nil || ws == nil {
 		return false
 	}
 
@@ -30,8 +40,6 @@ func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bo
 
 	// Choose action command
 	switch action {
-	case "":
-		success = false
 	case "enable":
 		success = EnableTiling(tr, ws)
 	case "disable":
@@ -82,6 +90,8 @@ func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bo
 		success = PreviousWindow(tr, ws)
 	case "reset":
 		success = Reset(tr, ws)
+	case "restart":
+		success = Restart(tr)
 	case "exit":
 		success = Exit(tr)
 	default:
@@ -499,6 +509,30 @@ func Reset(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	return true
 }
 
+func Restart(tr *desktop.Tracker) bool {
+	tr.Write()
+
+	xevent.Detach(store.X, store.X.RootWin())
+
+	for _, ws := range tr.Workspaces {
+		if ws.TilingDisabled() {
+			continue
+		}
+		ws.DisableTiling()
+		tr.Restore(ws, store.Latest)
+	}
+
+	log.Info("Restart")
+
+	// Communicate application exit
+	Disconnect()
+
+	// Restart application
+	syscall.Exec(common.Process.Path, os.Args, os.Environ())
+
+	return true
+}
+
 func Exit(tr *desktop.Tracker) bool {
 	tr.Write()
 
@@ -516,6 +550,8 @@ func Exit(tr *desktop.Tracker) bool {
 
 	// Communicate application exit
 	Disconnect()
+
+	// Exit application
 	os.Exit(0)
 
 	return true
@@ -534,7 +570,7 @@ func External(command string) bool {
 	// Execute external command
 	cmd := exec.Command(params[0], params[1:]...)
 	if err := cmd.Run(); err != nil {
-		log.Error(err)
+		log.Error("External command failed: ", err)
 		return false
 	}
 

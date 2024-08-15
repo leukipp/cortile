@@ -25,6 +25,9 @@ var (
 	// Build name
 	name = "cortile"
 
+	// Build target
+	target = "unknown"
+
 	// Build version
 	version = "0.0.0"
 
@@ -49,7 +52,7 @@ var (
 func main() {
 
 	// Init process, build and source information
-	common.InitInfo(name, version, commit, date, source)
+	common.InitInfo(name, target, version, commit, date, source)
 
 	// Init command line arguments
 	common.InitArgs(input.Introspect())
@@ -109,20 +112,16 @@ func runMain() {
 	// Init root properties
 	store.InitRoot()
 
-	// Create tracker
-	tracker := desktop.CreateTracker()
-	ws := tracker.ActiveWorkspace()
+	// Create tracker instance
+	tr := desktop.CreateTracker()
+	input.Bind(tr)
+	tr.Update()
+
+	// Show layout overlay
+	ws := tr.ActiveWorkspace()
 	if ws.TilingEnabled() {
 		ui.ShowLayout(ws)
 	}
-
-	// Bind input events
-	input.BindSignal(tracker)
-	input.BindMouse(tracker)
-	input.BindKeys(tracker)
-	input.BindTray(tracker)
-	input.BindDbus(tracker)
-	input.BindAddons(tracker)
 
 	// Run X event loop
 	xevent.Main(store.X)

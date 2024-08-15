@@ -367,11 +367,11 @@ func (c *Client) Read() *Client {
 }
 
 func (c *Client) Cache() common.Cache[*Client] {
-	name := c.Latest.Class
-	hash := fmt.Sprintf("%s-%d", c.Latest.Class, c.Latest.Location.Desktop)
+	subfolder := c.Latest.Class
+	filename := fmt.Sprintf("%s-%d", subfolder, c.Latest.Location.Desktop)
 
 	// Create client cache folder
-	folder := filepath.Join(common.Args.Cache, "workplaces", Workplace.Displays.Name, "clients", name)
+	folder := filepath.Join(common.Args.Cache, "workplaces", Workplace.Displays.Name, "clients", subfolder)
 	if _, err := os.Stat(folder); os.IsNotExist(err) {
 		os.MkdirAll(folder, 0755)
 	}
@@ -379,7 +379,7 @@ func (c *Client) Cache() common.Cache[*Client] {
 	// Create client cache object
 	cache := common.Cache[*Client]{
 		Folder: folder,
-		Name:   common.HashString(hash) + ".json",
+		Name:   common.HashString(filename, 20) + ".json",
 		Data:   c,
 	}
 
