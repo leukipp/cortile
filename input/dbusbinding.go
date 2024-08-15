@@ -217,9 +217,9 @@ func event(ch chan string, tr *desktop.Tracker) {
 		case "workspaces_change":
 			SetProperty("Workspaces", common.Map{"Values": maps.Values(tr.Workspaces)})
 		case "workplace_change":
-			SetProperty("Workplace", store.Workplace)
+			SetProperty("Workplace", &store.Workplace)
 		case "windows_change":
-			SetProperty("Windows", store.Windows)
+			SetProperty("Windows", &store.Windows)
 		case "corner_change":
 			for _, hc := range store.Workplace.Displays.Corners {
 				if !hc.Active {
