@@ -88,16 +88,16 @@ edge_center_size = 100
 [colors]                             # RGBA color values used for ui elements. #
 ################################################################################
 
-# Layout window text color.
+# Window text color.
 gui_text = [255, 255, 255, 255]
 
-# Layout window background color.
+# Window background color.
 gui_background = [30, 30, 40, 255]
 
-# Layout slave client rectangle color.
+# Slave client layout color.
 gui_client_slave = [58, 58, 78, 255]
 
-# Layout master client rectangle color.
+# Master client layout color.
 gui_client_master = [98, 98, 128, 255]
 
 # Systray icon background color.
@@ -192,7 +192,7 @@ mod_screens = "Mod1"
 mod_workspaces = "Mod4"
 
 ################################################################################
-[corners]                   # Action strings from [keys] or external commands. #
+[corners]                                # Action strings from [keys] section. #
 ################################################################################
 
 # Corner at top left.
@@ -220,7 +220,7 @@ bottom_left = "proportion_decrease"
 center_left = ""
 
 ################################################################################
-[systray]                   # Action strings from [keys] or external commands. #
+[systray]                                # Action strings from [keys] section. #
 ################################################################################
 
 # Icon left click with pointer.
