@@ -266,10 +266,10 @@ func (tr *Tracker) handleMaximizedClient(c *store.Client) {
 		// Update client states
 		c.Update()
 
-		// Reset maximization
+		// Unmaximize window
 		c.UnMaximize()
 
-		// Check window lifetime
+		// Activate maximized layout
 		if !c.IsNew() && ws.ActiveLayout().GetName() != "maximized" {
 			tr.Channels.Action <- "layout_maximized"
 			store.ActiveWindowSet(store.X, c.Window)
@@ -320,13 +320,12 @@ func (tr *Tracker) handleResizeClient(c *store.Client) {
 		pt := store.PointerUpdate(store.X)
 
 		// Set client resize event
-		if !tr.Handlers.ResizeClient.Active() {
+		if !c.IsNew() && !tr.Handlers.ResizeClient.Active() {
 			tr.Handlers.ResizeClient = &Handler{Dragging: pt.Dragging(500), Source: c}
 		}
 		log.Debug("Client resize handler fired [", c.Latest.Class, "]")
 
-		// Check window lifetime
-		if tr.Handlers.ResizeClient.Dragging && !c.IsNew() {
+		if tr.Handlers.ResizeClient.Dragging {
 
 			// Set client resize lock
 			if tr.Handlers.ResizeClient.Active() {
@@ -374,7 +373,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 		pt := store.PointerUpdate(store.X)
 
 		// Set client move event
-		if !tr.Handlers.MoveClient.Active() {
+		if !c.IsNew() && !tr.Handlers.MoveClient.Active() {
 			tr.Handlers.MoveClient = &Handler{Dragging: pt.Dragging(500), Source: c}
 		}
 		log.Debug("Client move handler fired [", c.Latest.Class, "]")
@@ -389,7 +388,7 @@ func (tr *Tracker) handleMoveClient(c *store.Client) {
 
 		// Check if target point hovers another client
 		tr.Handlers.SwapClient.Reset()
-		if co := tr.ClientAt(ws, targetPoint); co != nil {
+		if co := tr.ClientAt(ws, targetPoint); co != nil && co != c {
 			tr.Handlers.SwapClient = &Handler{Source: c, Target: co}
 			log.Debug("Client swap handler active [", c.Latest.Class, "-", co.Latest.Class, "]")
 		}
@@ -567,6 +566,9 @@ func (tr *Tracker) attachHandlers(c *store.Client) {
 		// Handle structure events
 		tr.handleResizeClient(c)
 		tr.handleMoveClient(c)
+		if !tr.Handlers.MoveClient.Active() {
+			c.Update()
+		}
 	}).Connect(store.X, c.Window.Id)
 
 	// Attach property events

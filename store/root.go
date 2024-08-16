@@ -194,6 +194,18 @@ func Connected() bool {
 	return connected
 }
 
+func Compatible(feature string) bool {
+	wm := strings.ToLower(WindowManager.Name)
+
+	// Check feature compatibility
+	switch feature {
+	case "icccm.SizeHintPMinSize":
+		return !strings.Contains(wm, "mutter") && !strings.Contains(wm, "muffin")
+	}
+
+	return true
+}
+
 func NumberOfDesktopsGet(X *xgbutil.XUtil) uint {
 	deskCount, err := ewmh.NumberOfDesktopsGet(X)
 

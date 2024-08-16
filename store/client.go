@@ -98,6 +98,9 @@ func (c *Client) UnLock() {
 }
 
 func (c *Client) Limit(w, h int) bool {
+	if !Compatible("icccm.SizeHintPMinSize") {
+		return false
+	}
 
 	// Decoration extents
 	ext := c.Latest.Dimensions.Extents
@@ -114,6 +117,9 @@ func (c *Client) Limit(w, h int) bool {
 }
 
 func (c *Client) UnLimit() bool {
+	if !Compatible("icccm.SizeHintPMinSize") {
+		return false
+	}
 
 	// Restore window size limits
 	icccm.WmNormalHintsSet(X, c.Window.Id, &c.Cached.Dimensions.Hints.Normal)
