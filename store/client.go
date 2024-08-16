@@ -97,6 +97,30 @@ func (c *Client) UnLock() {
 	c.Locked = false
 }
 
+func (c *Client) Limit(w, h int) bool {
+
+	// Decoration extents
+	ext := c.Latest.Dimensions.Extents
+	dw, dh := ext.Left+ext.Right, ext.Top+ext.Bottom
+
+	// Set window size limits
+	nhints := c.Cached.Dimensions.Hints.Normal
+	nhints.Flags |= icccm.SizeHintPMinSize
+	nhints.MinWidth = uint(w - dw)
+	nhints.MinHeight = uint(h - dh)
+	icccm.WmNormalHintsSet(X, c.Window.Id, &nhints)
+
+	return true
+}
+
+func (c *Client) UnLimit() bool {
+
+	// Restore window size limits
+	icccm.WmNormalHintsSet(X, c.Window.Id, &c.Cached.Dimensions.Hints.Normal)
+
+	return true
+}
+
 func (c *Client) Decorate() bool {
 	if _, exists := common.Config.Keys["decoration"]; !exists {
 		return false
@@ -131,14 +155,13 @@ func (c *Client) UnDecorate() bool {
 	return true
 }
 
-func (c *Client) UnMaximize() bool {
-	if !IsMaximized(c.Latest) {
+func (c *Client) Fullscreen() bool {
+	if IsFullscreen(c.Latest) {
 		return false
 	}
 
-	// Unmaximize window
-	ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_MAXIMIZED_VERT")
-	ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_MAXIMIZED_HORZ")
+	// Fullscreen window
+	ewmh.WmStateReq(X, c.Window.Id, ewmh.StateAdd, "_NET_WM_STATE_FULLSCREEN")
 
 	return true
 }
@@ -154,29 +177,16 @@ func (c *Client) UnFullscreen() bool {
 	return true
 }
 
-func (c *Client) Fullscreen() bool {
-	if IsFullscreen(c.Latest) {
+func (c *Client) UnMaximize() bool {
+	if !IsMaximized(c.Latest) {
 		return false
 	}
 
-	// Fullscreen window
-	ewmh.WmStateReq(X, c.Window.Id, ewmh.StateAdd, "_NET_WM_STATE_FULLSCREEN")
+	// Unmaximize window
+	ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_MAXIMIZED_VERT")
+	ewmh.WmStateReq(X, c.Window.Id, ewmh.StateRemove, "_NET_WM_STATE_MAXIMIZED_HORZ")
 
 	return true
-}
-
-func (c *Client) LimitDimensions(w, h int) {
-
-	// Decoration extents
-	ext := c.Latest.Dimensions.Extents
-	dw, dh := ext.Left+ext.Right, ext.Top+ext.Bottom
-
-	// Set window size limits
-	nhints := c.Cached.Dimensions.Hints.Normal
-	nhints.Flags |= icccm.SizeHintPMinSize
-	nhints.MinWidth = uint(w - dw)
-	nhints.MinHeight = uint(h - dh)
-	icccm.WmNormalHintsSet(X, c.Window.Id, &nhints)
 }
 
 func (c *Client) MoveDesktop(desktop uint32) {
@@ -266,10 +276,8 @@ func (c *Client) Restore(flag uint8) {
 		}
 	}
 
-	// Restore window size limits
-	icccm.WmNormalHintsSet(X, c.Window.Id, &c.Cached.Dimensions.Hints.Normal)
-
 	// Restore window sizes
+	c.UnLimit()
 	c.UnMaximize()
 	c.UnFullscreen()
 

@@ -113,7 +113,7 @@ func (l *VerticalLayout) Apply() {
 			// Limit minimum dimensions
 			minw := int(math.Round(float64(dw-2*gap) * minpw))
 			minh := int(math.Round(float64(dh-(msize+1)*gap) * minph))
-			c.LimitDimensions(minw, minh)
+			c.Limit(minw, minh)
 
 			// Move and resize master
 			mp := l.Proportions.MasterMaster[msize][i%msize]
@@ -151,7 +151,7 @@ func (l *VerticalLayout) Apply() {
 			// Limit minimum dimensions
 			minw := int(math.Round(float64(dw-2*gap) * minpw))
 			minh := int(math.Round(float64(dh-(ssize+1)*gap) * minph))
-			c.LimitDimensions(minw, minh)
+			c.Limit(minw, minh)
 
 			// Move and resize slave
 			sp := l.Proportions.SlaveSlave[ssize][i%ssize]

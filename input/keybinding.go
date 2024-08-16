@@ -22,6 +22,9 @@ func BindKeys(tr *desktop.Tracker) {
 
 	// Map actions and modifiers
 	for c, ck := range common.Config.Keys {
+		if len(ck) == 0 {
+			continue
+		}
 		if !strings.HasPrefix(c, "mod_") {
 			actions[c] = ck
 		} else {

@@ -16,6 +16,9 @@ type Cache[T any] struct {
 }
 
 func InitCache() {
+	if HasFlag("disable-cache-folder") {
+		Args.Cache = "disabled"
+	}
 	if CacheDisabled() {
 		return
 	}
@@ -40,5 +43,5 @@ func CacheFolderPath(name string) string {
 
 func CacheDisabled() bool {
 	arg := strings.ToLower(strings.TrimSpace(Args.Cache))
-	return HasFlag("disable-cache-folder") || IsInList(arg, []string{"", "0", "off", "false", "disabled"})
+	return IsInList(arg, []string{"", "0", "off", "false", "disabled"})
 }

@@ -46,7 +46,7 @@ func (l *MaximizedLayout) Apply() {
 		// Limit minimum dimensions
 		minw := int(math.Round(float64(dw - 2*gap)))
 		minh := int(math.Round(float64(dh - 2*gap)))
-		c.LimitDimensions(minw, minh)
+		c.Limit(minw, minh)
 
 		// Move and resize client
 		c.MoveWindow(dx+gap, dy+gap, dw-2*gap, dh-2*gap)

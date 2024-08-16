@@ -22,11 +22,16 @@ import (
 )
 
 var (
-	X         *xgbutil.XUtil // X connection
-	Workplace *XWorkplace    // X workplace
-	Pointer   *XPointer      // X pointer
-	Windows   *XWindows      // X windows
+	X             *xgbutil.XUtil  // X connection
+	WindowManager *XWindowManager // X window manager
+	Workplace     *XWorkplace     // X workplace
+	Pointer       *XPointer       // X pointer
+	Windows       *XWindows       // X windows
 )
+
+type XWindowManager struct {
+	Name string // Window manager name
+}
 
 type XWorkplace struct {
 	DesktopCount   uint      // Number of desktops
@@ -166,11 +171,12 @@ func Connected() bool {
 		}
 
 		// Check EWMH compliance
-		wm, err := ewmh.GetEwmhWM(X)
+		name, err := ewmh.GetEwmhWM(X)
 		if err != nil {
 			log.Error("Window manager is not EWMH compliant: ", err)
 			continue
 		}
+		WindowManager = &XWindowManager{Name: name}
 
 		// Validate ROOT properties
 		_, err = ewmh.ClientListStackingGet(X)
@@ -180,7 +186,7 @@ func Connected() bool {
 		}
 
 		// Connection to X established
-		log.Info("Connected to X server on ", common.Process.Host.Hostname, " [", common.Process.Host.Platform, ", ", wm, "]")
+		log.Info("Connected to X server on ", common.Process.Host.Hostname, " [", common.Process.Host.Platform, ", ", WindowManager.Name, "]")
 		randr.Init(X.Conn())
 		connected = true
 	}

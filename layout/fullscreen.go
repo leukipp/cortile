@@ -44,7 +44,7 @@ func (l *FullscreenLayout) Apply() {
 		// Limit minimum dimensions
 		minw := int(math.Round(float64(dw)))
 		minh := int(math.Round(float64(dh)))
-		c.LimitDimensions(minw, minh)
+		c.Limit(minw, minh)
 
 		// Make window fullscreen
 		c.Fullscreen()
