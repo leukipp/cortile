@@ -209,7 +209,7 @@ go env | grep "GOPATH\|GOVERSION"
 ### Option 1: Install cortile via remote source
 Install directly from develop branch:
 ```bash
-go install github.com/leukipp/cortile@develop
+go install github.com/leukipp/cortile/v2@develop
 ```
 
 ### Option 2: Install cortile via local source
@@ -232,20 +232,27 @@ $GOPATH/bin/cortile -v
 ```
 
 ## Additional [![additional](https://img.shields.io/github/issues-pr-closed/leukipp/cortile?style=flat-square)](#additional-)
-Special settings:
-- Use the `edge_margin` property to account for additional spaces.
-  - e.g. for deskbar panels or conky infographics.
+Special use cases:
 - Use the `window_slaves_max` property to limit the number of windows.
   - e.g. with one active master and `window_slaves_max = 2`, all windows following the third window are stacked behind the two slaves.
+- Use the `edge_margin` property to account for additional spaces.
+  - e.g. for deskbar panels or conky infographics.
+- Use `tiling_enabled = false` if you prefer to enable tiling only when needed.
+  - e.g. or to mainly utilize the hot corner functionalities.
+- Use [cortile-addons](https://github.com/leukipp/cortile-addons) if you need any other specific logic.
+  This repository offers a range of extensions and enhancements specifically designed for cortile.
 
-Hot corners:
-- Use `tiling_enabled = false` if you prefer to utilize only the hot corner functionalities.
-- Use the hot `[corners]` properties to execute any external command available on your system.
-  - e.g. use `bottom_center = "firefox"` to open a web browser window.
-
-Systray:
-- Use the `tiling_icon` property to add any external command to the systray menu.
-  - e.g. use `tiling_icon = [...,['firefox', 'Open Browser'],...]` to add a web browser entry.
+Security concerns:
+- Since the [dbus api](https://github.com/leukipp/cortile/tree/develop?tab=readme-ov-file#addons-) exposes internal cortile properties to the outside, malicious code running on the same host could easily access them.
+  However, the information cortile holds (e.g. about open windows) can also be accessed using other tools interfacing with the X11 window system.
+  Therefore the decision was made that direct access to cortile provides greater flexibility for running custom logic without compromising security.
+  - If you want to disable this feature run cortile with `cortile disable-dbus-interface`.
+- Any scripts placed in the `~/.config/cortile/addons/` folder will be executed when the application starts.
+  This provides the possibility to run custom [cortile python](https://github.com/leukipp/cortile/tree/develop?tab=readme-ov-file#addons-) scripts without worrying much about startup behavior and dependency issues.
+  However, it also creates a potential security risk as malicious code could place files in this folder to be executed by cortile.
+  - If you want to disable this feature run cortile with `cortile disable-addons-folder`.
+- Cortile runs perfectly fine with user permissions.
+  - Do not run cortile as root!
 
 ## Issues [![issues](https://img.shields.io/github/issues-closed/leukipp/cortile?style=flat-square)](#issues-)
 Cortile works best with Xfwm and Openbox window systems.
@@ -268,7 +275,7 @@ Debugging:
 
 ## Credits [![credits](https://img.shields.io/github/contributors/leukipp/cortile?style=flat-square)](#credits-)
 Based on [zentile](https://github.com/blrsn/zentile) ([Berin Larson](https://github.com/blrsn)) and [pytyle3](https://github.com/BurntSushi/pytyle3) ([Andrew Gallant](https://github.com/BurntSushi)).  
-The main libraries used in this project are [xgbutil](https://github.com/jezek/xgbutil), [toml](https://github.com/BurntSushi/toml), [systray](https://github.com/fyne-io/systray), [dbus](https://github.com/godbus/dbus), [fsnotify](https://github.com/fsnotify/fsnotify) and [logrus](https://github.com/sirupsen/logrus).
+The main libraries used in this project are [xgbutil](https://github.com/jezek/xgbutil), [toml](https://github.com/BurntSushi/toml), [dbus](https://github.com/godbus/dbus), [systray](https://github.com/fyne-io/systray), [gopsutil](https://github.com/shirou/gopsutil), [fsnotify](https://github.com/fsnotify/fsnotify), [selfupdate](https://github.com/minio/selfupdate) and [logrus](https://github.com/sirupsen/logrus).
 
 ## License [![license](https://img.shields.io/github/license/leukipp/cortile?style=flat-square)](#license-)
 [MIT](https://github.com/leukipp/cortile/blob/main/LICENSE)
