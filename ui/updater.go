@@ -82,6 +82,25 @@ func UpdateBinary(ws *desktop.Workspace, asset common.Info, fun func()) error {
 	return nil
 }
 
+func CheckPermissions(filepath string) (*selfupdate.Options, error) {
+	file, err := os.Stat(filepath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check file update permissions
+	options := selfupdate.Options{
+		TargetPath: filepath,
+		TargetMode: file.Mode(),
+	}
+	err = options.CheckPermissions()
+	if err != nil {
+		return nil, err
+	}
+
+	return &options, nil
+}
+
 func downloadRelease(url string) ([]byte, error) {
 	response, err := http.Get(url)
 	if err != nil {
@@ -175,23 +194,13 @@ func extractFile(body []byte, filename string) (*tar.Reader, error) {
 }
 
 func applyUpdate(reader io.Reader, filepath string) error {
-	file, err := os.Stat(filepath)
-	if err != nil {
-		return failure(err)
-	}
-
-	// Check file update permissions
-	options := selfupdate.Options{
-		TargetPath: filepath,
-		TargetMode: file.Mode(),
-	}
-	err = options.CheckPermissions()
+	options, err := CheckPermissions(filepath)
 	if err != nil {
 		return failure(err)
 	}
 
 	// Apply binary update
-	err = selfupdate.Apply(reader, options)
+	err = selfupdate.Apply(reader, *options)
 	if err != nil {
 		return failure(err)
 	}

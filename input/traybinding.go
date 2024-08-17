@@ -136,6 +136,8 @@ func items(tr *desktop.Tracker) {
 		for _, release := range common.Source.Releases {
 			major, minor, patch := common.SemverUpdateInfos()
 			title := fmt.Sprintf("Update %s v%s to v%s", common.Build.Name, common.Build.Version, release.Name)
+
+			// Append update type information
 			if major {
 				title = fmt.Sprintf("%s (Major)", title)
 			} else if minor {
@@ -143,12 +145,20 @@ func items(tr *desktop.Tracker) {
 			} else if patch {
 				title = fmt.Sprintf("%s (Patch)", title)
 			}
+
+			// Check update file permissions
+			_, err := ui.CheckPermissions(common.Process.Path)
+			permitted := err == nil
+			if !permitted {
+				title = "Missing write permissions for update"
+			}
 			subitem := version.AddSubMenuItem(title, title)
+			enabled := permitted && !major && !minor
 
 			// Update hint icon
-			icon := ui.HintIcon(!major && !minor)
+			icon := ui.HintIcon(enabled)
 			subitem.SetIcon(icon)
-			if major || minor {
+			if !enabled {
 				subitem.Disable()
 			}
 
