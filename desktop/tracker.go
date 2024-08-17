@@ -35,6 +35,13 @@ type Handlers struct {
 	SwapScreen   *Handler    // Stores client for screen swap
 }
 
+func (h *Handlers) Reset() {
+	h.ResizeClient.Reset()
+	h.MoveClient.Reset()
+	h.SwapClient.Reset()
+	h.SwapScreen.Reset()
+}
+
 type Handler struct {
 	Dragging bool        // Indicates pointer dragging event
 	Source   interface{} // Stores moved/resized client
@@ -192,6 +199,17 @@ func (tr *Tracker) ClientAt(ws *Workspace, p common.Point) *store.Client {
 	}
 
 	return nil
+}
+
+func (tr *Tracker) ActiveClient() *store.Client {
+	c, exists := tr.Clients[store.Windows.Active.Id]
+
+	// Validate client
+	if !exists {
+		return nil
+	}
+
+	return c
 }
 
 func (tr *Tracker) unlockClients() {
@@ -486,7 +504,7 @@ func (tr *Tracker) onStateUpdate(state string, desktop uint, screen uint) {
 		// Update sticky windows
 		for _, c := range tr.Clients {
 			if store.IsSticky(c.Latest) && c.Latest.Location.Desktop != store.Workplace.CurrentDesktop {
-				c.MoveDesktop(^uint32(0))
+				c.MoveToDesktop(^uint32(0))
 			}
 		}
 	}
@@ -494,10 +512,7 @@ func (tr *Tracker) onStateUpdate(state string, desktop uint, screen uint) {
 	if viewportChanged || clientsChanged || focusChanged {
 
 		// Deactivate handlers
-		tr.Handlers.ResizeClient.Reset()
-		tr.Handlers.MoveClient.Reset()
-		tr.Handlers.SwapClient.Reset()
-		tr.Handlers.SwapScreen.Reset()
+		tr.Handlers.Reset()
 
 		// Unlock clients
 		tr.unlockClients()

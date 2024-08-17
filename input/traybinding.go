@@ -27,7 +27,6 @@ var (
 )
 
 type Menu struct {
-	Exit       *systray.MenuItem   // Exit application
 	Toggle     *systray.MenuItem   // Toggle checkbox item
 	Decoration *systray.MenuItem   // Decoration checkbox item
 	Actions    []*systray.MenuItem // Actions for commands
@@ -189,9 +188,10 @@ func items(tr *desktop.Tracker) {
 		case "decoration":
 			item = systray.AddMenuItemCheckbox(text, text, common.Config.WindowDecoration)
 			menu.Decoration = item
+		case "restart":
+			item = systray.AddMenuItem(text, text)
 		case "exit":
 			item = systray.AddMenuItem(text, text)
-			menu.Exit = item
 		default:
 			item = systray.AddMenuItem(text, text)
 			menu.Actions = append(menu.Actions, item)

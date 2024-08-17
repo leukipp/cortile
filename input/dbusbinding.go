@@ -92,8 +92,7 @@ func (m Methods) WindowToDesktop(id int32, desktop int32) (string, *dbus.Error) 
 	// Move window to desktop
 	valid := desktop >= 0 && uint(desktop) < store.Workplace.DesktopCount
 	if c, ok := m.Tracker.Clients[xproto.Window(id)]; ok && valid {
-		c.MoveDesktop(uint32(desktop))
-		success = true
+		success = c.MoveToDesktop(uint32(desktop))
 	}
 
 	// Return result
@@ -108,10 +107,7 @@ func (m Methods) WindowToScreen(id int32, screen int32) (string, *dbus.Error) {
 	// Move window to screen
 	valid := screen >= 0 && uint(screen) < store.Workplace.ScreenCount
 	if c, ok := m.Tracker.Clients[xproto.Window(id)]; ok && valid {
-		p := store.Workplace.Displays.Screens[screen].Geometry.Center()
-		ewmh.MoveWindow(store.X, c.Window.Id, int(p.X), int(p.Y))
-		store.Pointer.Press()
-		success = true
+		success = c.MoveToScreen(uint32(screen))
 	}
 
 	// Return result

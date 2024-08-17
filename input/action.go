@@ -50,6 +50,8 @@ func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bo
 		success = ToggleDecoration(tr, ws)
 	case "restore":
 		success = Restore(tr, ws)
+	case "reset":
+		success = Reset(tr, ws)
 	case "cycle_next":
 		success = CycleNext(tr, ws)
 	case "cycle_previous":
@@ -66,30 +68,32 @@ func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bo
 		success = MaximizedLayout(tr, ws)
 	case "layout_fullscreen":
 		success = FullscreenLayout(tr, ws)
+	case "slave_increase":
+		success = IncreaseSlave(tr, ws)
+	case "slave_decrease":
+		success = DecreaseSlave(tr, ws)
+	case "master_increase":
+		success = IncreaseMaster(tr, ws)
+	case "master_decrease":
+		success = DecreaseMaster(tr, ws)
+	case "window_next":
+		success = NextWindow(tr, ws)
+	case "window_previous":
+		success = PreviousWindow(tr, ws)
+	case "screen_next":
+		success = NextScreen(tr, ws)
+	case "screen_previous":
+		success = PreviousScreen(tr, ws)
 	case "master_make":
 		success = MakeMaster(tr, ws)
 	case "master_make_next":
 		success = MakeMasterNext(tr, ws)
 	case "master_make_previous":
 		success = MakeMasterPrevious(tr, ws)
-	case "master_increase":
-		success = IncreaseMaster(tr, ws)
-	case "master_decrease":
-		success = DecreaseMaster(tr, ws)
-	case "slave_increase":
-		success = IncreaseSlave(tr, ws)
-	case "slave_decrease":
-		success = DecreaseSlave(tr, ws)
 	case "proportion_increase":
 		success = IncreaseProportion(tr, ws)
 	case "proportion_decrease":
 		success = DecreaseProportion(tr, ws)
-	case "window_next":
-		success = NextWindow(tr, ws)
-	case "window_previous":
-		success = PreviousWindow(tr, ws)
-	case "reset":
-		success = Reset(tr, ws)
 	case "restart":
 		success = Restart(tr)
 	case "exit":
@@ -210,6 +214,19 @@ func Restore(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	}
 	ws.DisableTiling()
 	tr.Restore(ws, store.Original)
+
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
+
+	return true
+}
+
+func Reset(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
+		return false
+	}
+	ws.ResetLayouts()
+	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
 	ui.UpdateIcon(ws)
@@ -353,75 +370,6 @@ func FullscreenLayout(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	return true
 }
 
-func MakeMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.TilingDisabled() {
-		return false
-	}
-	if c, ok := tr.Clients[store.Windows.Active.Id]; ok {
-		ws.ActiveLayout().MakeMaster(c)
-		tr.Tile(ws)
-		return true
-	}
-
-	return false
-}
-
-func MakeMasterNext(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.TilingDisabled() {
-		return false
-	}
-	c := ws.ActiveLayout().NextClient()
-	if c == nil {
-		return false
-	}
-
-	ws.ActiveLayout().MakeMaster(c)
-	tr.Tile(ws)
-
-	return NextWindow(tr, ws)
-}
-
-func MakeMasterPrevious(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.TilingDisabled() {
-		return false
-	}
-	c := ws.ActiveLayout().PreviousClient()
-	if c == nil {
-		return false
-	}
-
-	ws.ActiveLayout().MakeMaster(c)
-	tr.Tile(ws)
-
-	return PreviousWindow(tr, ws)
-}
-
-func IncreaseMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.TilingDisabled() {
-		return false
-	}
-	ws.ActiveLayout().IncreaseMaster()
-	tr.Tile(ws)
-
-	ui.ShowLayout(ws)
-	ui.UpdateIcon(ws)
-
-	return true
-}
-
-func DecreaseMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.TilingDisabled() {
-		return false
-	}
-	ws.ActiveLayout().DecreaseMaster()
-	tr.Tile(ws)
-
-	ui.ShowLayout(ws)
-	ui.UpdateIcon(ws)
-
-	return true
-}
-
 func IncreaseSlave(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.TilingDisabled() {
 		return false
@@ -448,22 +396,28 @@ func DecreaseSlave(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	return true
 }
 
-func IncreaseProportion(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+func IncreaseMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.TilingDisabled() {
 		return false
 	}
-	ws.ActiveLayout().IncreaseProportion()
+	ws.ActiveLayout().IncreaseMaster()
 	tr.Tile(ws)
+
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
 
-func DecreaseProportion(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+func DecreaseMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.TilingDisabled() {
 		return false
 	}
-	ws.ActiveLayout().DecreaseProportion()
+	ws.ActiveLayout().DecreaseMaster()
 	tr.Tile(ws)
+
+	ui.ShowLayout(ws)
+	ui.UpdateIcon(ws)
 
 	return true
 }
@@ -496,15 +450,103 @@ func PreviousWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	return true
 }
 
-func Reset(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+func NextScreen(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.TilingDisabled() {
 		return false
 	}
-	ws.ResetLayouts()
+	c := tr.ActiveClient()
+	if c == nil {
+		return false
+	}
+
+	screen := int(c.Latest.Location.Screen) + 1
+	if screen > int(store.Workplace.ScreenCount)-1 {
+		return false
+	}
+	tr.Handlers.Reset()
+
+	return c.MoveToScreen(uint32(screen))
+}
+
+func PreviousScreen(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
+		return false
+	}
+	c := tr.ActiveClient()
+	if c == nil {
+		return false
+	}
+
+	screen := int(c.Latest.Location.Screen) - 1
+	if screen < 0 {
+		return false
+	}
+	tr.Handlers.Reset()
+
+	return c.MoveToScreen(uint32(screen))
+}
+
+func MakeMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
+		return false
+	}
+	c := ws.ActiveLayout().ActiveClient()
+	if c == nil {
+		return false
+	}
+
+	ws.ActiveLayout().MakeMaster(c)
 	tr.Tile(ws)
 
-	ui.ShowLayout(ws)
-	ui.UpdateIcon(ws)
+	return true
+}
+
+func MakeMasterNext(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
+		return false
+	}
+	c := ws.ActiveLayout().NextClient()
+	if c == nil {
+		return false
+	}
+
+	ws.ActiveLayout().MakeMaster(c)
+	tr.Tile(ws)
+
+	return NextWindow(tr, ws)
+}
+
+func MakeMasterPrevious(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
+		return false
+	}
+	c := ws.ActiveLayout().PreviousClient()
+	if c == nil {
+		return false
+	}
+
+	ws.ActiveLayout().MakeMaster(c)
+	tr.Tile(ws)
+
+	return PreviousWindow(tr, ws)
+}
+
+func IncreaseProportion(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
+		return false
+	}
+	ws.ActiveLayout().IncreaseProportion()
+	tr.Tile(ws)
+
+	return true
+}
+
+func DecreaseProportion(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
+		return false
+	}
+	ws.ActiveLayout().DecreaseProportion()
+	tr.Tile(ws)
 
 	return true
 }

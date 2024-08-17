@@ -163,6 +163,19 @@ func (mg *Manager) SwapClient(c1 *Client, c2 *Client) {
 	}
 }
 
+func (mg *Manager) ActiveClient() *Client {
+	clients := mg.Clients(Stacked)
+
+	// Get active client
+	for _, c := range clients {
+		if c.Window.Id == Windows.Active.Id {
+			return c
+		}
+	}
+
+	return nil
+}
+
 func (mg *Manager) NextClient() *Client {
 	clients := mg.Clients(Stacked)
 	last := len(clients) - 1

@@ -195,7 +195,7 @@ func (c *Client) UnMaximize() bool {
 	return true
 }
 
-func (c *Client) MoveDesktop(desktop uint32) {
+func (c *Client) MoveToDesktop(desktop uint32) bool {
 	if desktop == ^uint32(0) {
 		ewmh.WmStateReq(X, c.Window.Id, ewmh.StateAdd, "_NET_WM_STATE_STICKY")
 	}
@@ -203,6 +203,18 @@ func (c *Client) MoveDesktop(desktop uint32) {
 	// Set client desktop
 	ewmh.WmDesktopSet(X, c.Window.Id, uint(desktop))
 	ewmh.ClientEvent(X, c.Window.Id, "_NET_WM_DESKTOP", int(desktop), int(2))
+
+	return true
+}
+
+func (c *Client) MoveToScreen(screen uint32) bool {
+	center := Workplace.Displays.Screens[screen].Geometry.Center()
+
+	// Move window and simulate tracker pointer press
+	ewmh.MoveWindow(X, c.Window.Id, int(center.X), int(center.Y))
+	Pointer.Press()
+
+	return true
 }
 
 func (c *Client) MoveWindow(x, y, w, h int) {
@@ -278,7 +290,7 @@ func (c *Client) Restore(flag uint8) {
 	// Restore window states
 	if flag == Cached {
 		if IsSticky(c.Cached) {
-			c.MoveDesktop(^uint32(0))
+			c.MoveToDesktop(^uint32(0))
 		}
 	}
 

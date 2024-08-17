@@ -11,6 +11,7 @@ type Layout interface {
 	RemoveClient(c *store.Client)
 	MakeMaster(c *store.Client)
 	SwapClient(c1 *store.Client, c2 *store.Client)
+	ActiveClient() *store.Client
 	NextClient() *store.Client
 	PreviousClient() *store.Client
 	IncreaseMaster()
