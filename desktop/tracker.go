@@ -214,9 +214,12 @@ func (tr *Tracker) ActiveClient() *store.Client {
 
 func (tr *Tracker) unlockClients() {
 	ws := tr.ActiveWorkspace()
-	mg := ws.ActiveLayout().GetManager()
+	if ws == nil {
+		return
+	}
 
 	// Unlock clients
+	mg := ws.ActiveLayout().GetManager()
 	for _, c := range mg.Clients(store.Stacked) {
 		if c == nil {
 			continue
@@ -230,10 +233,15 @@ func (tr *Tracker) trackWindow(w xproto.Window) bool {
 		return false
 	}
 
-	// Add new client
+	// Client and workspace
 	c := store.CreateClient(w)
-	tr.Clients[c.Window.Id] = c
 	ws := tr.ClientWorkspace(c)
+	if ws == nil {
+		return false
+	}
+
+	// Add new client
+	tr.Clients[c.Window.Id] = c
 	ws.AddClient(c)
 
 	// Attach handlers
@@ -251,6 +259,9 @@ func (tr *Tracker) untrackWindow(w xproto.Window) bool {
 	// Client and workspace
 	c := tr.Clients[w]
 	ws := tr.ClientWorkspace(c)
+	if ws == nil {
+		return false
+	}
 
 	// Detach events
 	xevent.Detach(store.X, w)
