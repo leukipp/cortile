@@ -92,33 +92,35 @@ Additional information about individual entries can be found in the comments sec
 ### Shortcuts
 The default keyboard shortcuts are assigned as shown below.
 If some of them are already in use by your system, update the default values in the `[keys]` section of the configuration file:
-| Keys                                                    | Description                              |
-| ------------------------------------------------------- | ---------------------------------------- |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Home</kbd>        | Enable tiling on the current screen      |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>End</kbd>         | Disable tiling on the current screen     |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>           | Toggle between enable and disable        |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd>           | Toggle window decoration on and off      |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>           | Disable tiling and restore windows       |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>BackSpace</kbd>   | Reset layouts to default proportions     |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Next</kbd>        | Cycle through next layouts               |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Prior</kbd>       | Cycle through previous layouts           |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Left</kbd>        | Activate vertical-left layout            |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Right</kbd>       | Activate vertical-right layout           |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Up</kbd>          | Activate horizontal-top layout           |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Down</kbd>        | Activate horizontal-bottom layout        |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>       | Activate maximized layout                |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Return</kbd>      | Activate fullscreen layout               |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_5</kbd>        | Make the active window master            |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_6</kbd>        | Make the next window master              |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_4</kbd>        | Make the previous window master          |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_Add</kbd>      | Increase number of master windows        |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_Subtract</kbd> | Decrease number of master windows        |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Plus</kbd>        | Increase number of maximum slave windows |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Minus</kbd>       | Decrease number of maximum slave windows |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_3</kbd>        | Increase proportion of master-slave area |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_1</kbd>        | Decrease proportion of master-slave area |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_2</kbd>        | Focus next window                        |
-| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_8</kbd>        | Focus previous window                    |
+| Keys                                                    | Description                                   |
+| ------------------------------------------------------- | --------------------------------------------- |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Home</kbd>        | Enable tiling on the current screen           |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>End</kbd>         | Disable tiling on the current screen          |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>           | Toggle between enable and disable             |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd>           | Toggle window decoration on and off           |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>           | Disable tiling and restore windows            |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>BackSpace</kbd>   | Reset layouts to default proportions          |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Next</kbd>        | Cycle through next layouts                    |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Prior</kbd>       | Cycle through previous layouts                |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Left</kbd>        | Activate vertical-left layout                 |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Right</kbd>       | Activate vertical-right layout                |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Up</kbd>          | Activate horizontal-top layout                |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Down</kbd>        | Activate horizontal-bottom layout             |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>       | Activate maximized layout                     |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Return</kbd>      | Activate fullscreen layout                    |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Plus</kbd>        | Increase number of maximum slave windows      |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Minus</kbd>       | Decrease number of maximum slave windows      |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_Add</kbd>      | Increase number of master windows             |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_Subtract</kbd> | Decrease number of master windows             |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_2</kbd>        | Move focus to the next window                 |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_8</kbd>        | Move focus to the previous window             |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_9</kbd>        | Move the active window to the next screen     |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_7</kbd>        | Move the active window to the previous screen |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_5</kbd>        | Make the active window master                 |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_6</kbd>        | Make the next window master                   |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_4</kbd>        | Make the previous window master               |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_3</kbd>        | Increase proportion of master-slave area      |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>KP_1</kbd>        | Decrease proportion of master-slave area      |
 
 Hot corner events are defined under the `[corners]` section and are triggered when the pointer enters one of the target areas:
 | Corners                            | Description                              |
