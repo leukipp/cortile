@@ -73,22 +73,7 @@ func ShowLayout(ws *desktop.Workspace) {
 func drawClients(cv *xgraphics.Image, ws *desktop.Workspace, layout string) {
 	al := ws.ActiveLayout()
 	mg := al.GetManager()
-
-	// Obtain visible clients
-	clients := mg.Clients(store.Visible)
-	for _, c := range clients {
-		if c == nil {
-			continue
-		}
-
-		// Obtain single client
-		for _, state := range c.Latest.States {
-			if state == "_NET_WM_STATE_FULLSCREEN" || common.IsInList(layout, []string{"maximized", "fullscreen"}) {
-				clients = mg.Visible(&store.Clients{Stacked: mg.Clients(store.Stacked), Maximum: 1})
-				break
-			}
-		}
-	}
+	clients := ws.VisibleClients()
 
 	// Draw default rectangle
 	dim := dimensions(ws)

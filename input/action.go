@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 	"syscall"
+	"time"
 
 	"os/exec"
 
@@ -101,6 +102,7 @@ func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bo
 	default:
 		success = External(action)
 	}
+	time.AfterFunc(100*time.Millisecond, tr.Handlers.Reset)
 
 	// Check success
 	if !success {
@@ -114,9 +116,16 @@ func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bo
 }
 
 func ExecuteActions(action string, tr *desktop.Tracker, mod string) bool {
-	results := []bool{}
-
+	client := tr.ClientWorkspace(tr.ActiveClient())
 	active := tr.ActiveWorkspace()
+
+	// Use active client workspace as current
+	if client != nil {
+		active = client
+	}
+
+	// Execute actions per workspace
+	results := []bool{}
 	for _, ws := range tr.Workspaces {
 
 		// Execute only on active screen
@@ -423,9 +432,6 @@ func DecreaseMaster(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func NextWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.TilingDisabled() {
-		return false
-	}
 	c := ws.ActiveLayout().NextClient()
 	if c == nil {
 		return false
@@ -437,9 +443,6 @@ func NextWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func PreviousWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.TilingDisabled() {
-		return false
-	}
 	c := ws.ActiveLayout().PreviousClient()
 	if c == nil {
 		return false
@@ -451,9 +454,6 @@ func PreviousWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 }
 
 func NextScreen(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.TilingDisabled() {
-		return false
-	}
 	c := tr.ActiveClient()
 	if c == nil {
 		return false
@@ -463,15 +463,11 @@ func NextScreen(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if screen > int(store.Workplace.ScreenCount)-1 {
 		return false
 	}
-	tr.Handlers.Reset()
 
 	return c.MoveToScreen(uint32(screen))
 }
 
 func PreviousScreen(tr *desktop.Tracker, ws *desktop.Workspace) bool {
-	if ws.TilingDisabled() {
-		return false
-	}
 	c := tr.ActiveClient()
 	if c == nil {
 		return false
@@ -481,7 +477,6 @@ func PreviousScreen(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if screen < 0 {
 		return false
 	}
-	tr.Handlers.Reset()
 
 	return c.MoveToScreen(uint32(screen))
 }

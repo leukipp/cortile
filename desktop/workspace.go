@@ -155,6 +155,19 @@ func (ws *Workspace) RemoveClient(c *store.Client) {
 	}
 }
 
+func (ws *Workspace) VisibleClients() []*store.Client {
+	al := ws.ActiveLayout()
+	mg := al.GetManager()
+
+	// Obtain visible clients
+	clients := mg.Clients(store.Visible)
+	if common.IsInList(al.GetName(), []string{"maximized", "fullscreen"}) {
+		clients = mg.Visible(&store.Clients{Stacked: mg.Clients(store.Stacked), Maximum: 1})
+	}
+
+	return clients
+}
+
 func (ws *Workspace) Tile() {
 	if ws.TilingDisabled() {
 		return

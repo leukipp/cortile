@@ -35,6 +35,10 @@ type Handlers struct {
 	SwapScreen   *Handler    // Stores client for screen swap
 }
 
+func (h *Handlers) Active() bool {
+	return h.ResizeClient.Active() || h.MoveClient.Active() || h.SwapClient.Active() || h.SwapScreen.Active()
+}
+
 func (h *Handlers) Reset() {
 	h.ResizeClient.Reset()
 	h.MoveClient.Reset()
@@ -166,10 +170,16 @@ func (tr *Tracker) Restore(ws *Workspace, flag uint8) {
 }
 
 func (tr *Tracker) ActiveWorkspace() *Workspace {
+	if store.Workplace == nil {
+		return nil
+	}
 	return tr.WorkspaceAt(store.Workplace.CurrentDesktop, store.Workplace.CurrentScreen)
 }
 
 func (tr *Tracker) ClientWorkspace(c *store.Client) *Workspace {
+	if c == nil {
+		return nil
+	}
 	return tr.WorkspaceAt(c.Latest.Location.Desktop, c.Latest.Location.Screen)
 }
 
@@ -186,10 +196,12 @@ func (tr *Tracker) WorkspaceAt(desktop uint, screen uint) *Workspace {
 }
 
 func (tr *Tracker) ClientAt(ws *Workspace, p common.Point) *store.Client {
-	mg := ws.ActiveLayout().GetManager()
+	if ws == nil {
+		return nil
+	}
 
 	// Check if point hovers visible client
-	for _, c := range mg.Clients(store.Visible) {
+	for _, c := range ws.VisibleClients() {
 		if c == nil {
 			continue
 		}

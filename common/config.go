@@ -27,6 +27,7 @@ type Configuration struct {
 	WindowMastersMax  int               `toml:"window_masters_max"`  // Maximum number of allowed masters
 	WindowSlavesMax   int               `toml:"window_slaves_max"`   // Maximum number of allowed slaves
 	WindowGapSize     int               `toml:"window_gap_size"`     // Gap size between windows
+	WindowFocusDelay  int               `toml:"window_focus_delay"`  // Window focus delay when hovered
 	WindowDecoration  bool              `toml:"window_decoration"`   // Show window decorations
 	ProportionStep    float64           `toml:"proportion_step"`     // Master-slave area step size proportion
 	ProportionMin     float64           `toml:"proportion_min"`      // Window size minimum proportion
