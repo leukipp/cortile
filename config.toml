@@ -61,6 +61,9 @@ window_slaves_max = 3
 # How much space should be left between windows (0 - 100).
 window_gap_size = 10
 
+# When hovered for this duration [ms] windows are focused (0 = disabled).
+window_focus_delay = 200
+
 # Initial rendering of window decorations, will be cached afterwards (true | false).
 window_decoration = true
 
