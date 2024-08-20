@@ -261,7 +261,8 @@ Cortile works best with Xfwm and Openbox window systems.
 However, it`s still possible that you may encounter problems during usage.
 
 Windows:
-- It's recommended to disable all build-in window snapping features (snap to other windows, snap to screen borders, etc.).
+- It's recommended to disable all build-in window snapping features (e.g. snap to other windows, snap to screen borders).
+- It's recommended to disable any logic that changes the window focus other than by clicking or opening a window (e.g. focus follow mouse, scroll wheel focus). 
 - Automatic panel detection may not work under some window managers, use the `edge_margin` property to adjust for additional margins.
 - Particularly in GNOME based desktop environments, window displacements or resizing issues may occur.
 - Sticky windows may cause unwanted layout modifications during workspace changes.
