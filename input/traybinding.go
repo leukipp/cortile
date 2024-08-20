@@ -22,7 +22,7 @@ import (
 var (
 	clicked bool          // Tray clicked state from dbus
 	button  store.XButton // Pointer button state of device
-	timer   *time.Timer   // Timer to compress pointer events
+	click   *time.Timer   // Timer to compress pointer events
 	menu    *Menu         // Items collection of systray menu
 )
 
@@ -335,12 +335,12 @@ func onPointerClick(tr *desktop.Tracker, pointer store.XPointer) {
 	}
 
 	// Reset timer
-	if timer != nil {
-		timer.Stop()
+	if click != nil {
+		click.Stop()
 	}
 
 	// Wait for dbus events
-	timer = time.AfterFunc(150*time.Millisecond, func() {
+	click = time.AfterFunc(150*time.Millisecond, func() {
 		if clicked && button.Left {
 			ExecuteAction(common.Config.Systray["click_left"], tr, tr.ActiveWorkspace())
 		}
@@ -357,12 +357,12 @@ func onPointerClick(tr *desktop.Tracker, pointer store.XPointer) {
 func onPointerScroll(tr *desktop.Tracker, delta int32, orientation string) {
 
 	// Reset timer
-	if timer != nil {
-		timer.Stop()
+	if click != nil {
+		click.Stop()
 	}
 
 	// Compress scroll events
-	timer = time.AfterFunc(150*time.Millisecond, func() {
+	click = time.AfterFunc(150*time.Millisecond, func() {
 		switch orientation {
 		case "vertical":
 			if delta >= 0 {
