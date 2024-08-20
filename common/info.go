@@ -60,9 +60,27 @@ func InitInfo(name, target, version, commit, date, source string) {
 	Process = ProcessInfo{
 		Id: os.Getpid(),
 	}
-	Process.Path, _ = os.Executable()
-	Process.User, _ = user.Current()
-	Process.Host, _ = host.Info()
+
+	// Process path information
+	processPath, err := os.Executable()
+	if err != nil {
+		processPath = "unknown"
+	}
+	Process.Path = processPath
+
+	// Process user information
+	processUser, err := user.Current()
+	if err != nil {
+		processUser = &user.User{Username: "unknown", Name: "unknown"}
+	}
+	Process.User = processUser
+
+	// Process host information
+	processHost, err := host.Info()
+	if err != nil {
+		processHost = &host.InfoStat{Hostname: "unknown", Platform: "unknown"}
+	}
+	Process.Host = processHost
 
 	// Build information
 	Build = BuildInfo{
