@@ -208,10 +208,14 @@ func (c *Client) MoveToDesktop(desktop uint32) bool {
 }
 
 func (c *Client) MoveToScreen(screen uint32) bool {
-	center := Workplace.Displays.Screens[screen].Geometry.Center()
+	geom := Workplace.Displays.Screens[screen].Geometry
+
+	// Calculate move to position
+	_, _, w, h := c.OuterGeometry()
+	x, y := common.MaxInt(geom.Center().X-w/2, geom.X+100), common.MaxInt(geom.Center().Y-h/2, geom.Y+100)
 
 	// Move window and simulate tracker pointer press
-	ewmh.MoveWindow(X, c.Window.Id, int(center.X), int(center.Y))
+	ewmh.MoveWindow(X, c.Window.Id, x, y)
 	Pointer.Press()
 
 	return true

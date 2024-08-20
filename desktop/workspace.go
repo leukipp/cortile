@@ -2,7 +2,6 @@ package desktop
 
 import (
 	"fmt"
-	"math"
 	"os"
 
 	"encoding/json"
@@ -55,8 +54,8 @@ func CreateWorkspaces() map[store.Location]*Workspace {
 				for _, cl := range cached.Layouts {
 					if l.GetName() == cl.GetName() {
 						mg, cmg := l.GetManager(), cl.GetManager()
-						mg.Masters.Maximum = int(math.Min(float64(cmg.Masters.Maximum), float64(common.Config.WindowMastersMax)))
-						mg.Slaves.Maximum = int(math.Min(float64(cmg.Slaves.Maximum), float64(common.Config.WindowSlavesMax)))
+						mg.Masters.Maximum = common.MinInt(cmg.Masters.Maximum, common.Config.WindowMastersMax)
+						mg.Slaves.Maximum = common.MinInt(cmg.Slaves.Maximum, common.Config.WindowSlavesMax)
 						mg.Proportions = cmg.Proportions
 						mg.Decoration = cmg.Decoration
 					}

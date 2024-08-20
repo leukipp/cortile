@@ -352,7 +352,7 @@ func (mg *Manager) Ordered(windows *Clients) []*Client {
 }
 
 func (mg *Manager) Visible(windows *Clients) []*Client {
-	visible := make([]*Client, int(math.Min(float64(len(windows.Stacked)), float64(windows.Maximum))))
+	visible := make([]*Client, common.MinInt(len(windows.Stacked), windows.Maximum))
 
 	// Create visible client list
 	for _, c := range mg.Ordered(windows) {

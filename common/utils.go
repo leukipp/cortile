@@ -1,6 +1,7 @@
 package common
 
 import (
+	"math"
 	"strconv"
 	"strings"
 
@@ -92,9 +93,7 @@ func AllTrue(items []bool) bool {
 
 func IsInsideRect(p Point, g Geometry) bool {
 	x, y, w, h := g.Pieces()
-	xInRect := int(p.X) >= x && int(p.X) <= (x+w)
-	yInRect := int(p.Y) >= y && int(p.Y) <= (y+h)
-	return xInRect && yInRect
+	return p.X >= x && p.X <= (x+w) && p.Y >= y && p.Y <= (y+h)
 }
 
 func IsInList(item string, items []string) bool {
@@ -134,4 +133,12 @@ func StringsToInts(items []string) []int {
 		result[i] = integer
 	}
 	return result
+}
+
+func MinInt(a int, b int) int {
+	return int(math.Min(float64(a), float64(b)))
+}
+
+func MaxInt(a int, b int) int {
+	return int(math.Max(float64(a), float64(b)))
 }
