@@ -84,7 +84,12 @@ func readConfig(configFilePath string) {
 	fmt.Printf("FILES: \n  log: %s\n  lock: %s\n  cache: %s\n  config: %s\n\n", Args.Log, Args.Lock, Args.Cache, configFilePath)
 
 	// Decode config file into struct
-	toml.DecodeFile(configFilePath, &Config)
+	_, err := toml.DecodeFile(configFilePath, &Config)
+	if err != nil {
+		log.
+			WithFields(log.Fields{"File": configFilePath}).
+			Fatal("Error reading config file: ", err)
+	}
 
 	// Print shortcut infos
 	keys, _ := json.MarshalIndent(Config.Keys, "", "  ")
