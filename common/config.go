@@ -55,7 +55,7 @@ func InitConfig() {
 	}
 
 	// Read config file into memory
-	readConfig(Args.Config)
+	readConfig(Args.Config, true)
 
 	// Config file system watcher
 	watchConfig(Args.Config)
@@ -72,32 +72,38 @@ func ConfigFolderPath(name string) string {
 	return filepath.Join(userConfigDir, name)
 }
 
-func readConfig(configFilePath string) {
+func readConfig(configFilePath string, initial bool) {
 
-	// Print build infos
-	fmt.Print("BUILD")
-	if HasReleaseInfos() {
-		fmt.Printf(" [>>> %s v%s is available <<<]", Build.Name, Source.Releases[0].Name)
+	// Print runtime infos
+	if initial {
+		fmt.Print("BUILD")
+		if HasReleaseInfos() {
+			fmt.Printf(" [>>> %s v%s is available <<<]", Build.Name, Source.Releases[0].Name)
+		}
+		fmt.Printf(": \n  name: %s\n  target: %s\n  version: v%s-%s\n  date: %s\n\n", Build.Name, Build.Target, Build.Version, Build.Commit, Build.Date)
+		fmt.Printf("FILES: \n  log: %s\n  lock: %s\n  cache: %s\n  config: %s\n\n", Args.Log, Args.Lock, Args.Cache, configFilePath)
 	}
-	fmt.Printf(": \n  name: %s\n  target: %s\n  version: v%s-%s\n  date: %s\n\n", Build.Name, Build.Target, Build.Version, Build.Commit, Build.Date)
-
-	// Print file infos
-	fmt.Printf("FILES: \n  log: %s\n  lock: %s\n  cache: %s\n  config: %s\n\n", Args.Log, Args.Lock, Args.Cache, configFilePath)
 
 	// Decode config file into struct
 	_, err := toml.DecodeFile(configFilePath, &Config)
 	if err != nil {
-		log.Fatal("Error reading config file ", err)
+		if initial {
+			log.Fatal("Error reading config file ", err)
+		} else {
+			log.Warn("Error updating config file ", err)
+		}
 	}
 
 	// Print shortcut infos
-	keys, _ := json.MarshalIndent(Config.Keys, "", "  ")
-	corners, _ := json.MarshalIndent(Config.Corners, "", "  ")
-	systray, _ := json.MarshalIndent(Config.Systray, "", "  ")
+	if initial {
+		keys, _ := json.MarshalIndent(Config.Keys, "", "  ")
+		corners, _ := json.MarshalIndent(Config.Corners, "", "  ")
+		systray, _ := json.MarshalIndent(Config.Systray, "", "  ")
 
-	fmt.Printf("KEYS: %s\n", RemoveChars(string(keys), []string{"{", "}", "\"", ","}))
-	fmt.Printf("CORNERS: %s\n", RemoveChars(string(corners), []string{"{", "}", "\"", ","}))
-	fmt.Printf("SYSTRAY: %s\n", RemoveChars(string(systray), []string{"{", "}", "\"", ","}))
+		fmt.Printf("KEYS: %s\n", RemoveChars(string(keys), []string{"{", "}", "\"", ","}))
+		fmt.Printf("CORNERS: %s\n", RemoveChars(string(corners), []string{"{", "}", "\"", ","}))
+		fmt.Printf("SYSTRAY: %s\n", RemoveChars(string(systray), []string{"{", "}", "\"", ","}))
+	}
 }
 
 func watchConfig(configFilePath string) {
@@ -119,7 +125,7 @@ func watchConfig(configFilePath string) {
 					return
 				}
 				if event.Has(fsnotify.Write) {
-					readConfig(configFilePath)
+					readConfig(configFilePath, false)
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
