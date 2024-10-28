@@ -87,9 +87,7 @@ func readConfig(configFilePath string) {
 	// Decode config file into struct
 	_, err := toml.DecodeFile(configFilePath, &Config)
 	if err != nil {
-		log.
-			WithFields(log.Fields{"File": configFilePath}).
-			Fatal("Error reading config file: ", err)
+		log.Fatal("Error reading config file ", err)
 	}
 
 	// Print shortcut infos
