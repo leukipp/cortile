@@ -1,6 +1,8 @@
 module github.com/leukipp/cortile/v2
 
-go 1.20
+go 1.21
+
+toolchain go1.23.2
 
 require (
 	fyne.io/systray v1.11.0
