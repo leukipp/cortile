@@ -35,14 +35,14 @@ The _go_ implementation ensures a fast and responsive system, where _multiple la
 [![demo](https://raw.githubusercontent.com/leukipp/cortile/main/assets/images/demo.gif)](https://github.com/leukipp/cortile/blob/main/assets/images/demo.gif)
 
 ## Installation [![installation](https://img.shields.io/github/v/release/leukipp/cortile?style=flat-square)](#installation-)
-Manually `download`/`extract` the latest binary file from [releases](https://github.com/leukipp/cortile/releases/latest) or use `wget`/`tar`:
+Manually [download](https://github.com/leukipp/cortile/releases/latest) the latest binary file from [releases](https://github.com/leukipp/cortile/releases/latest) or use wget:
 ```bash
 wget -qO- $(wget -qO- https://api.github.com/repos/leukipp/cortile/releases/latest | \
 jq -r '.assets[] | select(.name | contains ("linux_amd64.tar.gz")) | .browser_download_url') | \
 tar -xvz
 ```
 
-Run the binary file and cortile will automatically tile until you stop it:
+Execute the binary file and cortile will automatically begin tiling windows until you choose to stop it:
 ```bash
 ./cortile
 ```
@@ -250,10 +250,16 @@ Security concerns:
   Therefore the decision was made that direct access to cortile provides greater flexibility for running custom logic without compromising security.
   - If you want to disable this feature run cortile with `cortile disable-dbus-interface`.
 - Any scripts placed in the `~/.config/cortile/addons/` folder will be executed when the application starts.
-  This provides the possibility to run custom [cortile python](https://github.com/leukipp/cortile/tree/develop?tab=readme-ov-file#addons-) scripts without worrying much about startup behavior and dependency issues.
-  However, it also creates a potential security risk as malicious code could place files in this folder to be executed by cortile.
+  This provides the possibility to run custom [cortile-addons](https://github.com/leukipp/cortile/tree/develop?tab=readme-ov-file#addons-) scripts without worrying much about startup behavior and dependency issues.
+  However, it also creates a potential security risk, as malicious code could place files in this folder to be executed by cortile.
   - If you want to disable this feature run cortile with `cortile disable-addons-folder`.
-- Cortile runs perfectly fine with user permissions.
+- Newly pinned issues appear as menu entries in a submenu within the systray.
+  This feature requires a network request to the GitHub API.
+  - If you want to disable this feature run cortile with `cortile disable-issue-info`.
+- Cortile checks for new releases and provides the option for an in-place upgrade of the current binary.
+  Similar to the GitHub issue information, this feature also requires a network request.
+  - If you want to disable this feature run cortile with `cortile disable-release-info`.  
+- The binary file runs perfectly fine with user permissions.
   - Do not run cortile as root!
 
 ## Issues [![issues](https://img.shields.io/github/issues-closed/leukipp/cortile?style=flat-square)](#issues-)
