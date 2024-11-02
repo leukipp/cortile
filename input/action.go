@@ -247,11 +247,7 @@ func CycleNext(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.TilingDisabled() {
 		return false
 	}
-	if int(ws.Layout) == len(ws.Layouts)-2 {
-		ws.CycleLayout(2)
-	} else {
-		ws.CycleLayout(1)
-	}
+	ws.CycleLayout(1)
 	tr.Tile(ws)
 
 	ui.ShowLayout(ws)
@@ -264,11 +260,7 @@ func CyclePrevious(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if ws.TilingDisabled() {
 		return false
 	}
-	if int(ws.Layout) == 0 {
-		ws.CycleLayout(-2)
-	} else {
-		ws.CycleLayout(-1)
-	}
+	ws.CycleLayout(-1)
 	tr.Tile(ws)
 
 	ui.ShowLayout(ws)

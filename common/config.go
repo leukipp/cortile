@@ -21,6 +21,7 @@ var (
 type Configuration struct {
 	TilingEnabled     bool              `toml:"tiling_enabled"`      // Tile windows on startup
 	TilingLayout      string            `toml:"tiling_layout"`       // Initial tiling layout
+	TilingCycle       []string          `toml:"tiling_cycle"`        // Cycle layout order
 	TilingGui         int               `toml:"tiling_gui"`          // Time duration of gui
 	TilingIcon        [][]string        `toml:"tiling_icon"`         // Menu entries of systray
 	WindowIgnore      [][]string        `toml:"window_ignore"`       // Regex to ignore windows

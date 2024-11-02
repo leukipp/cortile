@@ -12,6 +12,14 @@ tiling_enabled = true
 # Initial tiling layout, will be cached afterwards ("vertical-left" | "vertical-right" | "horizontal-top" | "horizontal-bottom" | "maximized" | "fullscreen").
 tiling_layout = "vertical-right"
 
+# List of tiling layouts used for next/previous layout cycle ([] = default).
+tiling_cycle = [
+    "vertical-left",
+    "vertical-right",
+    "horizontal-top",
+    "horizontal-bottom",
+]
+
 # An overlay window is displayed for this time period [ms] when the layout was changed (0 = disabled).
 tiling_gui = 1500
 

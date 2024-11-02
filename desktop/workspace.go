@@ -126,15 +126,39 @@ func (ws *Workspace) ResetLayouts() {
 	}
 }
 
-func (ws *Workspace) CycleLayout(step int) {
-
-	// Calculate cycle direction
-	i := (int(ws.Layout) + step) % len(ws.Layouts)
-	if i < 0 {
-		i = len(ws.Layouts) + step
+func (ws *Workspace) CycleLayout(dir int) {
+	cycle := common.Config.TilingCycle
+	if len(cycle) == 0 {
+		cycle = []string{"vertical-left", "vertical-right", "horizontal-top", "horizontal-bottom"}
 	}
 
-	ws.SetLayout(uint(i))
+	// Map layout cycle names into layout indices
+	indices := make([]int, len(cycle))
+	for i, name := range cycle {
+		for j, l := range ws.Layouts {
+			if l.GetName() == name {
+				indices[i] = j
+			}
+		}
+	}
+
+	// Obtain target layout index
+	target := indices[0]
+	if common.IsInList(ws.ActiveLayout().GetName(), cycle) {
+		for i, name := range cycle {
+			// Calculate next/previous layout index
+			if ws.ActiveLayout().GetName() == name {
+				index := (i + dir) % len(indices)
+				target = indices[map[bool]int{true: index, false: len(indices) - 1}[index >= 0]]
+			}
+		}
+	} else {
+		// Restart if current layout is not in cycle list
+		target = indices[map[bool]int{true: 0, false: len(indices) - 1}[dir >= 0]]
+	}
+
+	// Set active layout
+	ws.SetLayout(uint(target))
 }
 
 func (ws *Workspace) AddClient(c *store.Client) {
