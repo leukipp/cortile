@@ -23,22 +23,25 @@ import (
 
 var (
 	// Build name
-	name = "cortile"
+	name string = "cortile"
 
 	// Build target
-	target = "unknown"
+	target string = "unknown"
 
 	// Build version
-	version = "0.0.0"
+	version string = "0.0.0"
 
 	// Build commit
-	commit = "local"
+	commit string = "local"
 
 	// Build date
-	date = "unknown"
+	date string = "unknown"
 
 	// Build source
-	source = "github.com/leukipp/cortile"
+	source string = "github.com/leukipp/cortile"
+
+	// Build flags
+	flags string
 )
 
 var (
@@ -52,7 +55,7 @@ var (
 func main() {
 
 	// Init process, build and source information
-	common.InitInfo(name, target, version, commit, date, source)
+	common.InitInfo(name, target, version, commit, date, source, flags)
 
 	// Init command line arguments
 	common.InitArgs(input.Introspect())

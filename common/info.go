@@ -30,12 +30,13 @@ type ProcessInfo struct {
 }
 
 type BuildInfo struct {
-	Name    string // Build name
-	Target  string // Build target
-	Version string // Build version
-	Commit  string // Build commit
-	Date    string // Build date
-	Summary string // Build summary
+	Name    string   // Build name
+	Target  string   // Build target
+	Version string   // Build version
+	Commit  string   // Build commit
+	Date    string   // Build date
+	Summary string   // Build summary
+	Flags   []string // Build flags
 }
 
 type SourceInfo struct {
@@ -54,7 +55,7 @@ type Info struct {
 	Extra   *Info  // Source extra info
 }
 
-func InitInfo(name, target, version, commit, date, source string) {
+func InitInfo(name, target, version, commit, date, source, flags string) {
 
 	// Process information
 	Process = ProcessInfo{
@@ -89,6 +90,7 @@ func InitInfo(name, target, version, commit, date, source string) {
 		Version: version,
 		Commit:  TruncateString(commit, 7),
 		Date:    date,
+		Flags:   strings.Split(flags, ","),
 	}
 	Build.Summary = fmt.Sprintf("%s v%s-%s, built on %s (%s)", Build.Name, Build.Version, Build.Commit, Build.Date, Build.Target)
 
@@ -255,7 +257,7 @@ func IsDevVersion() bool {
 }
 
 func HasFlag(name string) bool {
-	return IsInList(name, os.Args[1:])
+	return IsInList(name, Build.Flags) || IsInList(name, os.Args[1:])
 }
 
 func HasReleaseInfos() bool {

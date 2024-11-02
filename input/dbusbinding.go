@@ -542,6 +542,6 @@ func print(typ string, name string, data common.Map) {
 func fatal(msg string, err error) {
 	print("Error", "Fatal", common.Map{"Message": fmt.Sprintf("%s: %s", msg, err)})
 
-	// exit with success error code
+	// Exit with success error code
 	os.Exit(0)
 }
