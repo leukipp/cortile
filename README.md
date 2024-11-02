@@ -164,7 +164,7 @@ For simplicity, the python bindings just spawn another cortile instance via `cor
 Example scripts and detailed information's on how to get started can be found in the [cortile-addons](https://github.com/leukipp/cortile-addons) repository.
 
 ## Development [![development](https://img.shields.io/github/go-mod/go-version/leukipp/cortile?label=go&style=flat-square)](#development-)
-You need [go >= 1.20](https://go.dev/dl/) to compile cortile.
+You need [go >= 1.22](https://go.dev/dl/) to compile cortile.
 
 <details><summary>Install - go</summary><div>
 
@@ -187,8 +187,8 @@ sudo pacman -S go
 ### Option 2: Install go via archive download
 Download a binary release suitable for your system:
 ```bash
-cd /tmp/ && wget https://dl.google.com/go/go1.20.linux-amd64.tar.gz
-sudo tar -xvf go1.20.linux-amd64.tar.gz
+cd /tmp/ && wget https://dl.google.com/go/go1.22.8.linux-amd64.tar.gz
+sudo tar -xvf go1.22.8.linux-amd64.tar.gz
 sudo mv -fi go /usr/local
 ```
 
