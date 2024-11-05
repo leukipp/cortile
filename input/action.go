@@ -81,6 +81,10 @@ func ExecuteAction(action string, tr *desktop.Tracker, ws *desktop.Workspace) bo
 		success = NextWindow(tr, ws)
 	case "window_previous":
 		success = PreviousWindow(tr, ws)
+	case "position_next":
+		success = NextPosition(tr, ws)
+	case "position_previous":
+		success = PreviousPosition(tr, ws)
 	case "screen_next":
 		success = NextScreen(tr, ws)
 	case "screen_previous":
@@ -445,12 +449,49 @@ func PreviousWindow(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	return true
 }
 
+func NextPosition(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
+		return false
+	}
+	c1 := ws.ActiveLayout().ActiveClient()
+	if c1 == nil {
+		return false
+	}
+	c2 := ws.ActiveLayout().NextClient()
+	if c2 == nil {
+		return false
+	}
+
+	ws.ActiveLayout().SwapClient(c1, c2)
+	tr.Tile(ws)
+
+	return true
+}
+
+func PreviousPosition(tr *desktop.Tracker, ws *desktop.Workspace) bool {
+	if ws.TilingDisabled() {
+		return false
+	}
+	c1 := ws.ActiveLayout().ActiveClient()
+	if c1 == nil {
+		return false
+	}
+	c2 := ws.ActiveLayout().PreviousClient()
+	if c2 == nil {
+		return false
+	}
+
+	ws.ActiveLayout().SwapClient(c1, c2)
+	tr.Tile(ws)
+
+	return true
+}
+
 func NextScreen(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	c := tr.ActiveClient()
 	if c == nil {
 		return false
 	}
-
 	screen := int(c.Latest.Location.Screen) + 1
 	if screen > int(store.Workplace.ScreenCount)-1 {
 		return false
@@ -464,7 +505,6 @@ func PreviousScreen(tr *desktop.Tracker, ws *desktop.Workspace) bool {
 	if c == nil {
 		return false
 	}
-
 	screen := int(c.Latest.Location.Screen) - 1
 	if screen < 0 {
 		return false

@@ -183,6 +183,12 @@ window_next = "Control-Shift-KP_2"
 # Move focus to the previous window (KP_8 = Num_8).
 window_previous = "Control-Shift-KP_8"
 
+# Move the active window to the next position (KP_3 = Num_3).
+position_next = "Control-Shift-KP_3"
+
+# Move the active window to the previous position (KP_1 = Num_1).
+position_previous = "Control-Shift-KP_1"
+
 # Move the active window to the next screen (KP_9 = Num_9).
 screen_next = "Control-Shift-KP_9"
 
@@ -198,11 +204,11 @@ master_make_next = "Control-Shift-KP_6"
 # Make the previous window a master (KP_4 = Num_4).
 master_make_previous = "Control-Shift-KP_4"
 
-# Increase the proportion of master-slave area (KP_3 = Num_3).
-proportion_increase = "Control-Shift-KP_3"
+# Increase the proportion of master-slave area (Insert = Ins).
+proportion_increase = "Control-Shift-Insert"
 
-# Decrease the proportion of master-slave area (KP_1 = Num_1).
-proportion_decrease = "Control-Shift-KP_1"
+# Decrease the proportion of master-slave area (Delete = Del).
+proportion_decrease = "Control-Shift-Delete"
 
 # Some commands above will affect all screens if this key is pressed in addition (Mod1 = Alt_L).
 mod_screens = "Mod1"
