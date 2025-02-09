@@ -224,6 +224,74 @@ func (mg *Manager) PreviousClient() *Client {
 	return clients[prev]
 }
 
+func (mg *Manager) DirectionClient(direction common.Direction) *Client {
+	var targetClient *Client
+	var minPrimary, minSecondary int
+	// Update the target client that we will move to based on the smallest primary and
+	// secondary distances
+	updateTarget := func(c *Client, primary, secondary int) {
+		primary = common.AbsInt(primary)
+		secondary = common.AbsInt(secondary)
+		if targetClient == nil {
+			targetClient = c
+			minPrimary = primary
+			minSecondary = secondary
+		} else if primary < minPrimary || (primary == minPrimary && secondary < minSecondary) {
+			targetClient = c
+			minPrimary = primary
+			minSecondary = secondary
+		}
+	}
+
+	activeClient := mg.ActiveClient()
+	if activeClient == nil {
+		return nil
+	}
+	// Use the centers as some windows have slightly negative dimensions
+	activeGeo := activeClient.Latest.Dimensions.Geometry
+	activeClientX := activeGeo.X + activeGeo.Width/2
+	activeClientY := activeGeo.Y + activeGeo.Height/2
+
+	// Find the client in the proper screen segment and closest to the active origin
+	clients := mg.Clients(Stacked)
+	for _, c := range clients {
+		if c.Window.Id == Windows.Active.Id {
+			continue
+		}
+
+		// Candidate client coordinates
+		cGeo := c.Latest.Dimensions.Geometry
+		cX := cGeo.X + cGeo.Width/2
+		cY := cGeo.Y + cGeo.Height/2
+
+		switch direction {
+		case common.Up:
+			if cY < activeClientY {
+				updateTarget(c, activeClientX-cX, activeClientY-cY)
+			}
+		case common.Down:
+			if cY > activeClientY {
+				updateTarget(c, activeClientX-cX, activeClientY-cY)
+			}
+		case common.Left:
+			if cX < activeClientX {
+				updateTarget(c, activeClientY-cY, activeClientX-cX)
+			}
+		case common.Right:
+			if cX > activeClientX {
+				updateTarget(c, activeClientY-cY, activeClientX-cX)
+			}
+		}
+	}
+
+	if targetClient != nil {
+		log.Info("Selected [", targetClient.Latest.Class, "]")
+		return targetClient
+	}
+
+	return nil
+}
+
 func (mg *Manager) IncreaseMaster() {
 
 	// Increase master area
